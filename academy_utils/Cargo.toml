@@ -1,0 +1,16 @@
+[package]
+name = "academy_utils"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+academy_utils_derive.workspace = true
+hex.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

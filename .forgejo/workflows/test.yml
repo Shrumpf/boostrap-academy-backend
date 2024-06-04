@@ -1,0 +1,75 @@
+name: test
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: debian-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: https://github.com/dtolnay/rust-toolchain@stable
+      - uses: https://github.com/Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - run: cargo test --no-fail-fast --all-features --bins --lib
+      - run: cargo test --no-fail-fast --all-features --doc
+
+  postgres:
+    runs-on: debian-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: https://github.com/dtolnay/rust-toolchain@stable
+      - uses: https://github.com/Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - run: echo 'database.url = "postgres://academy@postgres/academy"' > config.extra.toml
+      - run: cargo test -p academy_persistence_postgres --no-fail-fast --all-features --test '*'
+        env:
+          EXTRA_CONFIG: ${{ github.workspace }}/config.extra.toml
+          RUST_TEST_THREADS: 1
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: academy
+          POSTGRES_DB: academy
+          POSTGRES_HOST_AUTH_METHOD: trust
+
+  valkey:
+    runs-on: debian-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: https://github.com/dtolnay/rust-toolchain@stable
+      - uses: https://github.com/Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - run: echo 'cache.url = "redis://valkey"' > config.extra.toml
+      - run: cargo test -p academy_cache_valkey --no-fail-fast --all-features --test '*'
+        env:
+          EXTRA_CONFIG: ${{ github.workspace }}/config.extra.toml
+          RUST_TEST_THREADS: 1
+    services:
+      valkey:
+        image: valkey/valkey:8.0-alpine
+
+  email:
+    runs-on: debian-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: https://github.com/dtolnay/rust-toolchain@stable
+      - uses: https://github.com/Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - run: echo 'email.smtp_url = "smtp://smtp4dev:25"' > config.extra.toml
+      - run: cargo test -p academy_email_impl --no-fail-fast --all-features --test '*'
+        env:
+          EXTRA_CONFIG: ${{ github.workspace }}/config.extra.toml
+          SMTP4DEV_URL: http://smtp4dev:8080
+          RUST_TEST_THREADS: 1
+    services:
+      smtp4dev:
+        image: rnwood/smtp4dev:3.3.4

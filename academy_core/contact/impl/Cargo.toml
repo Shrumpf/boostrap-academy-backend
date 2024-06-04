@@ -1,0 +1,21 @@
+[package]
+name = "academy_core_contact_impl"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+academy_core_contact_contracts.workspace = true
+academy_di.workspace = true
+academy_email_contracts.workspace = true
+academy_models.workspace = true
+anyhow.workspace = true
+email_address.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+academy_utils.workspace = true
+tokio.workspace = true

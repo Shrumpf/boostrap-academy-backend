@@ -1,0 +1,11 @@
+[package]
+name = "academy_di"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+academy_di_derive.workspace = true

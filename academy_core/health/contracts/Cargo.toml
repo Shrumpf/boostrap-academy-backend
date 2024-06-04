@@ -1,0 +1,10 @@
+[package]
+name = "academy_core_health_contracts"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]

@@ -1,0 +1,6 @@
+target
+.env
+result
+.direnv
+.devenv
+.lcov*

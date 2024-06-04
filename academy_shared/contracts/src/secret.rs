@@ -1,0 +1,51 @@
+use academy_models::{mfa::MfaRecoveryCode, VerificationCode};
+
+#[cfg_attr(feature = "mock", mockall::automock)]
+pub trait SecretService: Send + Sync + 'static {
+    /// Generates a new random alphanumeric string of the given length.
+    fn generate(&self, len: usize) -> String;
+
+    /// Generates `len` bytes of random data.
+    fn generate_bytes(&self, len: usize) -> Vec<u8>;
+
+    /// Generates a new random verification code.
+    fn generate_verification_code(&self) -> VerificationCode;
+
+    /// Generates a new random mfa recovery code.
+    fn generate_mfa_recovery_code(&self) -> MfaRecoveryCode;
+}
+
+#[cfg(feature = "mock")]
+impl MockSecretService {
+    pub fn with_generate(mut self, len: usize, result: String) -> Self {
+        self.expect_generate()
+            .once()
+            .with(mockall::predicate::eq(len))
+            .return_once(|_| result);
+        self
+    }
+
+    pub fn with_generate_bytes(mut self, len: usize, result: Vec<u8>) -> Self {
+        self.expect_generate_bytes()
+            .once()
+            .with(mockall::predicate::eq(len))
+            .return_once(|_| result);
+        self
+    }
+
+    pub fn with_generate_verification_code(mut self, result: VerificationCode) -> Self {
+        self.expect_generate_verification_code()
+            .once()
+            .with()
+            .return_once(|| result);
+        self
+    }
+
+    pub fn with_generate_mfa_recovery_code(mut self, result: MfaRecoveryCode) -> Self {
+        self.expect_generate_mfa_recovery_code()
+            .once()
+            .with()
+            .return_once(|| result);
+        self
+    }
+}

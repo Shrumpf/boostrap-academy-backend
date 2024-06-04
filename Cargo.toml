@@ -1,0 +1,87 @@
+[workspace]
+resolver = "2"
+members = [
+  "academy",
+  "academy_api/*",
+  "academy_cache/*",
+  "academy_config",
+  "academy_core/*/*",
+  "academy_demo",
+  "academy_di",
+  "academy_di_derive",
+  "academy_email/*",
+  "academy_models",
+  "academy_persistence/*",
+  "academy_shared/*",
+  "academy_templates/contracts",
+  "academy_templates/impl",
+  "academy_utils",
+  "academy_utils_derive",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+
+[workspace.dependencies]
+academy.path = "academy"
+academy_api_rest.path = "academy_api/rest"
+academy_cache_contracts.path = "academy_cache/contracts"
+academy_cache_valkey.path = "academy_cache/valkey"
+academy_config.path = "academy_config"
+academy_core_auth_contracts.path = "academy_core/auth/contracts"
+academy_core_auth_impl.path = "academy_core/auth/impl"
+academy_core_contact_contracts.path = "academy_core/contact/contracts"
+academy_core_contact_impl.path = "academy_core/contact/impl"
+academy_core_health_contracts.path = "academy_core/health/contracts"
+academy_core_health_impl.path = "academy_core/health/impl"
+academy_core_mfa_contracts.path = "academy_core/mfa/contracts"
+academy_core_mfa_impl.path = "academy_core/mfa/impl"
+academy_core_session_contracts.path = "academy_core/session/contracts"
+academy_core_session_impl.path = "academy_core/session/impl"
+academy_core_user_contracts.path = "academy_core/user/contracts"
+academy_core_user_impl.path = "academy_core/user/impl"
+academy_demo.path = "academy_demo"
+academy_di.path = "academy_di"
+academy_di_derive.path = "academy_di_derive"
+academy_email_contracts.path = "academy_email/contracts"
+academy_email_impl.path = "academy_email/impl"
+academy_models.path = "academy_models"
+academy_persistence_contracts.path = "academy_persistence/contracts"
+academy_persistence_postgres.path = "academy_persistence/postgres"
+academy_shared_contracts.path = "academy_shared/contracts"
+academy_shared_impl.path = "academy_shared/impl"
+academy_templates_contracts.path = "academy_templates/contracts"
+academy_templates_impl.path = "academy_templates/impl"
+academy_utils.path = "academy_utils"
+academy_utils_derive.path = "academy_utils_derive"
+
+anyhow = { version = "1.0.86", default-features = false, features = ["std"] }
+chrono = { version = "0.4.38", default-features = false, features = ["serde", "clock"] }
+email_address = { version = "0.2.9", default-features = false, features = ["serde_support"]}
+hex = { version = "0.4.3", default-features = false, features = ["std"] }
+mockall = { version = "0.13.0", default-features = false }
+nutype = { version = "0.4.2", default-features = false, features = ["std", "regex", "serde"] }
+pretty_assertions = { version = "1.4.0", default-features = false, features = ["std"] }
+quote = { version = "1.0.36", default-features = false, features = ["proc-macro"] }
+regex = { version = "1.10.4", default-features = false }
+reqwest = { version = "0.12.7", default-features = false, features = ["http2", "rustls-tls", "json"] }
+serde = { version = "1.0.203", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1.0.117", default-features = false, features = ["std"] }
+syn = { version = "2.0.72", default-features = false, features = ["parsing", "proc-macro", "derive", "printing"] }
+thiserror = { version = "1.0.63", default-features = false }
+tokio = { version = "1.37.0", default-features = false, features = ["rt-multi-thread", "macros"] }
+tracing = { version = "0.1.40", default-features = false }
+url = { version = "2.5.2", default-features = false, features = ["serde"] }
+uuid = { version = "1.8.0", default-features = false, features = ["v4", "serde"] }
+
+[profile.dev.package]
+argon2.opt-level = 3

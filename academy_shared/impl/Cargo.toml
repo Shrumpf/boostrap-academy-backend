@@ -1,0 +1,33 @@
+[package]
+name = "academy_shared_impl"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+academy_cache_contracts.workspace = true
+academy_di.workspace = true
+academy_models.workspace = true
+academy_shared_contracts.workspace = true
+anyhow.workspace = true
+argon2 = { version = "0.5.3", default-features = false, features = ["std", "password-hash"] }
+chrono.workspace = true
+hex.workspace = true
+hmac = { version = "0.12.1", default-features = false }
+jwt = { version = "0.16.0", default-features = false }
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
+serde.workspace = true
+sha2 = { version = "0.10.8", default-features = false }
+tokio.workspace = true
+totp-rs = { version = "5.6.0", default-features = false }
+uuid.workspace = true
+
+[dev-dependencies]
+academy_cache_contracts = { workspace = true, features = ["mock"] }
+academy_demo.workspace = true
+academy_shared_contracts = { workspace = true, features = ["mock"] }
+academy_utils.workspace = true
+hex.workspace = true

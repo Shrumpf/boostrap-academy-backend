@@ -1,0 +1,21 @@
+[package]
+name = "academy_core_user_contracts"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+mock = ["dep:mockall"]
+
+[dependencies]
+academy_models.workspace = true
+academy_shared_contracts.workspace = true
+academy_utils.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+email_address.workspace = true
+mockall = { workspace = true, optional = true }
+thiserror.workspace = true

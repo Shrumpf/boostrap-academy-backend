@@ -1,0 +1,17 @@
+[package]
+name = "academy_email_contracts"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+mock = ["dep:mockall"]
+
+[dependencies]
+academy_templates_contracts.workspace = true
+anyhow.workspace = true
+email_address.workspace = true
+mockall = { workspace = true, optional = true }

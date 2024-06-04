@@ -1,0 +1,49 @@
+[http]
+host = "127.0.0.1"
+port = 8000
+
+[database]
+url = "postgres://academy@127.0.0.1/academy" # https://docs.rs/tokio-postgres/latest/tokio_postgres/config/struct.Config.html
+max_connections = 10
+min_connections = 0
+acquire_timeout = "10s"
+idle_timeout = "10m"
+max_lifetime = "30m"
+
+[cache]
+url = "redis://127.0.0.1:6379/0"
+max_connections = 10
+min_connections = 0
+acquire_timeout = "10s"
+idle_timeout = "10m"
+max_lifetime = "30m"
+
+[email]
+smtp_url = "smtp://127.0.0.1:2525" # https://docs.rs/lettre/latest/lettre/transport/smtp/struct.AsyncSmtpTransport.html#method.from_url
+from = "dev@bootstrap.academy"
+
+[jwt]
+secret = "changeme"
+
+[health]
+cache_ttl = "10s"
+
+[user]
+name_change_rate_limit = "30d"
+verification_code_ttl = "4h"
+verification_redirect_url = "https://bootstrap.academy/auth/verify-account"
+password_reset_code_ttl = "4h"
+password_reset_redirect_url = "https://bootstrap.academy/auth/reset-password"
+newsletter_code_ttl = "4h"
+newsletter_redirect_url = "https://bootstrap.academy/account/newsletter"
+
+[session]
+access_token_ttl = "1d"
+refresh_token_ttl = "30d"
+refresh_token_length = 64
+
+[totp]
+secret_length = 32
+
+[contact]
+email = "contact@example.com"

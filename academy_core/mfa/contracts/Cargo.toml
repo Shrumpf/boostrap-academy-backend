@@ -1,0 +1,17 @@
+[package]
+name = "academy_core_mfa_contracts"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+mock = ["dep:mockall"]
+
+[dependencies]
+academy_models.workspace = true
+anyhow.workspace = true
+mockall = { workspace = true, optional = true }
+thiserror.workspace = true

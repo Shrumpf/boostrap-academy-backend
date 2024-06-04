@@ -1,0 +1,16 @@
+[package]
+name = "academy_cache_contracts"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+mock = ["dep:mockall"]
+
+[dependencies]
+anyhow.workspace = true
+mockall = { workspace = true, optional = true }
+serde.workspace = true
