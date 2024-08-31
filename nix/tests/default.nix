@@ -12,10 +12,7 @@
     builtins.readDir
     (lib.filterAttrs (name: type: type == "regular" && isTest name))
     (lib.mapAttrs' (name: _: {
-      name = lib.pipe name [
-        (lib.removeSuffix ".py")
-        (lib.removeSuffix ".nix")
-      ];
+      name = removeSuffix name;
       value = mkTest name;
     }))
   ];
@@ -24,6 +21,10 @@
   isPythonTest = lib.hasSuffix ".py";
   isNixosTest = lib.hasSuffix ".nix";
   ignored = ["default.nix" "utils.py"];
+  removeSuffix = lib.flip lib.pipe [
+    (lib.removeSuffix ".py")
+    (lib.removeSuffix ".nix")
+  ];
 
   mkTest = name:
     if isPythonTest name
@@ -38,7 +39,7 @@
     '';
   in
     testers.runNixOSTest {
-      name = "academy-${name}";
+      name = "academy-${removeSuffix name}";
 
       nodes.machine = {pkgs, ...}: {
         imports = [self.nixosModules.default];
