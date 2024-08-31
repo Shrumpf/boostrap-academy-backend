@@ -14,7 +14,7 @@ dummy = []
 anyhow.workspace = true
 academy_cache_contracts.workspace = true
 bb8-redis = { version = "0.16.0", default-features = false }
-postcard = { version = "1.0.8", default-features = false, features = ["use-std"] }
+postcard = { version = "1.0.10", default-features = false, features = ["use-std"] }
 serde.workspace = true
 
 [dev-dependencies]
