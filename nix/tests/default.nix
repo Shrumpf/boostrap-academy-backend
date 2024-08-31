@@ -46,7 +46,6 @@
         services.academy.backend = {
           enable = true;
           logLevel = "debug,academy=trace";
-          tasks.prune-database.schedule = lib.mkIf (name == "prune-database.py") "*:*:0/2";
           settings = {
             http = {
               host = "127.0.0.1";
@@ -61,7 +60,7 @@
             jwt.secret = "changeme";
             health.cache_ttl = "2s";
             contact.email = "contact@academy";
-            session.refresh_token_ttl = lib.mkIf (name == "prune-database.py") 2;
+            session.refresh_token_ttl = lib.mkIf (name == "prune-database.py") "10m";
           };
         };
 

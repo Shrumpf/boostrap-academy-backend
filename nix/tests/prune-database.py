@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 
@@ -37,11 +38,14 @@ save_auth(bl, b)
 assert test(a)
 assert test(b)
 assert_sessions([al["session"]["id"], bl["session"]["id"]])
-time.sleep(1)
 
-for _ in range(4):
+for _ in range(7):
+    os.system("date -s '+2min'")
+    time.sleep(0.5)
     assert test(a)
-    time.sleep(1)
+
+os.system("systemctl start academy-task-prune-database")
+time.sleep(3)
 
 assert_sessions([al["session"]["id"]])
 assert test(a)
