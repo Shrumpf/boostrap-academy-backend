@@ -232,7 +232,6 @@ macro_rules! columns {
         ::paste::paste! {
             #[allow(unused)]
             $vis const [< $ident:snake:upper _CNT >]: usize = [ $fst $(, $col)* ].len();
-            #[allow(unused)]
             $vis const [< $ident:snake:upper _COLS >]: &str = ::core::concat!( '"', $alias, "\".\"", $fst, '"' $(, ", \"" , $alias, "\".\"", $col, '"' )* );
             #[allow(unused)]
             $vis const [< $ident:snake:upper _COL_NAMES >]: &str = ::core::concat!( '"', $fst, '"' $(, ", \"", $col, '"' )* );

@@ -1,31 +1,13 @@
 {
   lib,
   testers,
-  self,
+  defaultModule,
 }:
 testers.runNixOSTest {
   name = "academy-basics";
 
-  nodes.machine = {pkgs, ...}: {
-    imports = [self.nixosModules.default];
-
-    services.academy.backend = {
-      enable = true;
-      logLevel = "debug,academy=trace";
-      settings = {
-        http = {
-          host = "127.0.0.1";
-          port = 8000;
-        };
-        jwt.secret = "changeme";
-        email = {
-          smtp_url = "smtp://127.0.0.1:25";
-          from = "test@bootstrap.academy";
-        };
-      };
-    };
-
-    services.postfix.enable = true;
+  nodes.machine = {
+    imports = [defaultModule];
   };
 
   testScript = ''

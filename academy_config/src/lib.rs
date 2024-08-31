@@ -111,7 +111,7 @@ pub struct ContactConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct RecaptchaConfig {
-    pub siteverify_endpoint: Url,
+    pub siteverify_endpoint_override: Option<Url>,
     pub sitekey: String,
     pub secret: String,
     pub min_score: f64,

@@ -2,6 +2,7 @@ use academy_cache_valkey::ValkeyCache;
 use academy_core_auth_impl::{
     commands::invalidate_access_token::AuthInvalidateAccessTokenCommandServiceImpl, AuthServiceImpl,
 };
+use academy_core_config_impl::ConfigServiceImpl;
 use academy_core_contact_impl::ContactServiceImpl;
 use academy_core_health_impl::HealthServiceImpl;
 use academy_core_mfa_impl::{
@@ -44,18 +45,20 @@ use academy_core_user_impl::{
     UserServiceImpl,
 };
 use academy_email_impl::{template::TemplateEmailServiceImpl, EmailServiceImpl};
+use academy_extern_impl::recaptcha::RecaptchaApiServiceImpl;
 use academy_persistence_postgres::{
     mfa::PostgresMfaRepository, session::PostgresSessionRepository, user::PostgresUserRepository,
     PostgresDatabase,
 };
 use academy_shared_impl::{
-    hash::HashServiceImpl, id::IdServiceImpl, jwt::JwtServiceImpl, password::PasswordServiceImpl,
-    secret::SecretServiceImpl, time::TimeServiceImpl, totp::TotpServiceImpl,
+    captcha::CaptchaServiceImpl, hash::HashServiceImpl, id::IdServiceImpl, jwt::JwtServiceImpl,
+    password::PasswordServiceImpl, secret::SecretServiceImpl, time::TimeServiceImpl,
+    totp::TotpServiceImpl,
 };
 use academy_templates_impl::TemplateServiceImpl;
 
 // API
-pub type RestServer = academy_api_rest::RestServer<Health, User, Session, Contact, Mfa>;
+pub type RestServer = academy_api_rest::RestServer<Health, Config, User, Session, Contact, Mfa>;
 
 // Persistence
 pub type Database = PostgresDatabase;
@@ -67,10 +70,14 @@ pub type Cache = ValkeyCache;
 pub type Email = EmailServiceImpl;
 pub type TemplateEmail = TemplateEmailServiceImpl<Email, Template>;
 
+// Extern
+pub type RecaptchaApi = RecaptchaApiServiceImpl;
+
 // Template
 pub type Template = TemplateServiceImpl;
 
 // Shared
+pub type Captcha = CaptchaServiceImpl<RecaptchaApi>;
 pub type Hash = HashServiceImpl;
 pub type Id = IdServiceImpl;
 pub type Jwt = JwtServiceImpl<Time>;
@@ -99,6 +106,8 @@ pub type Auth = AuthServiceImpl<
 pub type AuthInvalidateAccessToken = AuthInvalidateAccessTokenCommandServiceImpl<Cache>;
 
 pub type Health = HealthServiceImpl<Time, Database, Cache, Email>;
+
+pub type Config = ConfigServiceImpl<Captcha>;
 
 pub type User = UserServiceImpl<
     Database,

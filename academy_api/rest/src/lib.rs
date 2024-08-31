@@ -1,5 +1,6 @@
 use std::net::IpAddr;
 
+use academy_core_config_contracts::ConfigService;
 use academy_core_contact_contracts::ContactService;
 use academy_core_health_contracts::HealthService;
 use academy_core_mfa_contracts::MfaService;
@@ -14,17 +15,20 @@ mod models;
 mod routes;
 
 #[derive(Debug, Clone, Build)]
-pub struct RestServer<Health, User, Session, Contact, Mfa> {
+pub struct RestServer<Health, Config, User, Session, Contact, Mfa> {
     health: Health,
+    config: Config,
     user: User,
     session: Session,
     contact: Contact,
     mfa: Mfa,
 }
 
-impl<Health, User, Session, Contact, Mfa> RestServer<Health, User, Session, Contact, Mfa>
+impl<Health, Config, User, Session, Contact, Mfa>
+    RestServer<Health, Config, User, Session, Contact, Mfa>
 where
     Health: HealthService,
+    Config: ConfigService,
     User: UserService,
     Session: SessionService,
     Contact: ContactService,
@@ -39,6 +43,7 @@ where
     fn router(self) -> Router<()> {
         Router::new()
             .merge(routes::health::router(self.health.into()))
+            .merge(routes::config::router(self.config.into()))
             .merge(routes::user::router(self.user.into()))
             .merge(routes::session::router(self.session.into()))
             .merge(routes::contact::router(self.contact.into()))

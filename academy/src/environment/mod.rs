@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use academy_config::Config;
 use academy_core_auth_impl::AuthServiceConfig;
 use academy_core_contact_impl::ContactServiceConfig;
@@ -9,7 +11,12 @@ use academy_core_user_impl::commands::{
     update_name::UserUpdateNameCommandServiceConfig,
 };
 use academy_di::provider;
-use academy_shared_impl::{jwt::JwtServiceConfig, totp::TotpServiceConfig};
+use academy_extern_impl::recaptcha::RecaptchaApiServiceConfig;
+use academy_shared_impl::{
+    captcha::{CaptchaServiceConfig, RecaptchaCaptchaServiceConfig},
+    jwt::JwtServiceConfig,
+    totp::TotpServiceConfig,
+};
 use types::{Cache, Database, Email};
 
 pub mod types;
@@ -29,6 +36,8 @@ provider! {
             UserRequestVerificationEmailCommandServiceConfig,
             UserRequestPasswordResetEmailCommandServiceConfig,
             TotpServiceConfig,
+            Arc<CaptchaServiceConfig>,
+            Arc<RecaptchaApiServiceConfig>,
         }
     }
 }
@@ -56,6 +65,8 @@ provider! {
         user_request_verification_email_command_service_config: UserRequestVerificationEmailCommandServiceConfig,
         user_request_password_reset_email_command_service_config: UserRequestPasswordResetEmailCommandServiceConfig,
         totp_service_config: TotpServiceConfig,
+        captcha_service_config: Arc<CaptchaServiceConfig>,
+        recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>,
     }
 }
 
@@ -94,6 +105,24 @@ impl ConfigProvider {
         let totp_service_config = TotpServiceConfig {
             secret_length: config.totp.secret_length,
         };
+
+        let captcha_service_config = match config.recaptcha.as_ref() {
+            Some(recaptcha) => CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig {
+                sitekey: recaptcha.sitekey.clone(),
+                secret: recaptcha.secret.clone(),
+                min_score: recaptcha.min_score,
+            }),
+            None => CaptchaServiceConfig::Disabled,
+        }
+        .into();
+        let recaptcha_api_service_config = RecaptchaApiServiceConfig::new(
+            config
+                .recaptcha
+                .as_ref()
+                .and_then(|recaptcha| recaptcha.siteverify_endpoint_override.clone()),
+        )
+        .into();
+
         Ok(Self {
             _state: Default::default(),
             auth_service_config,
@@ -105,6 +134,8 @@ impl ConfigProvider {
             user_request_verification_email_command_service_config,
             user_request_password_reset_email_command_service_config,
             totp_service_config,
+            captcha_service_config,
+            recaptcha_api_service_config,
         })
     }
 }

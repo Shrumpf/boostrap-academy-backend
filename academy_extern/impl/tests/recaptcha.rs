@@ -7,7 +7,8 @@ use academy_extern_impl::recaptcha::{RecaptchaApiServiceConfig, RecaptchaApiServ
 
 #[tokio::test]
 async fn success_score() {
-    let result = make_sut().siteverify("success-0.7").await.unwrap();
+    let (sut, secret) = make_sut();
+    let result = sut.siteverify("success-0.7", &secret).await.unwrap();
     assert_eq!(
         result,
         RecaptchaSiteverifyResponse {
@@ -19,7 +20,8 @@ async fn success_score() {
 
 #[tokio::test]
 async fn success_no_score() {
-    let result = make_sut().siteverify("success").await.unwrap();
+    let (sut, secret) = make_sut();
+    let result = sut.siteverify("success", &secret).await.unwrap();
     assert_eq!(
         result,
         RecaptchaSiteverifyResponse {
@@ -31,7 +33,8 @@ async fn success_no_score() {
 
 #[tokio::test]
 async fn failure() {
-    let result = make_sut().siteverify("failure").await.unwrap();
+    let (sut, secret) = make_sut();
+    let result = sut.siteverify("failure", &secret).await.unwrap();
     assert_eq!(
         result,
         RecaptchaSiteverifyResponse {
@@ -41,7 +44,7 @@ async fn failure() {
     );
 }
 
-fn make_sut() -> RecaptchaApiServiceImpl {
+fn make_sut() -> (RecaptchaApiServiceImpl, String) {
     let mut paths = vec![Path::new(DEFAULT_CONFIG_PATH)];
     let extra = std::env::var("EXTRA_CONFIG");
     if let Ok(extra) = &extra {
@@ -50,7 +53,7 @@ fn make_sut() -> RecaptchaApiServiceImpl {
     let config = academy_config::load(&paths).unwrap();
 
     let RecaptchaConfig {
-        siteverify_endpoint,
+        siteverify_endpoint_override,
         secret,
         ..
     } = config.recaptcha.unwrap();
@@ -61,12 +64,9 @@ fn make_sut() -> RecaptchaApiServiceImpl {
 
     let mut provider = Provider {
         _state: Default::default(),
-        recaptcha_api_service_config: RecaptchaApiServiceConfig {
-            siteverify_endpoint,
-            secret,
-        }
-        .into(),
+        recaptcha_api_service_config: RecaptchaApiServiceConfig::new(siteverify_endpoint_override)
+            .into(),
     };
 
-    provider.provide()
+    (provider.provide(), secret)
 }

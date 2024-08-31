@@ -8,6 +8,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+academy_core_config_contracts.workspace = true
 academy_core_contact_contracts.workspace = true
 academy_core_health_contracts.workspace = true
 academy_core_mfa_contracts.workspace = true

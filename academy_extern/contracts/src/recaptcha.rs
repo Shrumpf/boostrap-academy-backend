@@ -5,6 +5,7 @@ pub trait RecaptchaApiService: Send + Sync + 'static {
     fn siteverify(
         &self,
         response: &str,
+        secret: &str,
     ) -> impl Future<Output = anyhow::Result<RecaptchaSiteverifyResponse>> + Send;
 }
 
@@ -19,12 +20,16 @@ impl MockRecaptchaApiService {
     pub fn with_siteverify(
         mut self,
         response: String,
+        secret: String,
         result: RecaptchaSiteverifyResponse,
     ) -> Self {
         self.expect_siteverify()
             .once()
-            .with(mockall::predicate::eq(response))
-            .return_once(move |_| Box::pin(std::future::ready(Ok(result))));
+            .with(
+                mockall::predicate::eq(response),
+                mockall::predicate::eq(secret),
+            )
+            .return_once(move |_, _| Box::pin(std::future::ready(Ok(result))));
         self
     }
 }

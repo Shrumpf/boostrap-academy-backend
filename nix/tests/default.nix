@@ -31,6 +31,36 @@
     then mkPythonTest name
     else mkNixosTest name;
 
+  defaultModule = {
+    imports = [self.nixosModules.default];
+
+    services.academy.backend = {
+      enable = true;
+      logLevel = "debug,academy=trace";
+      settings = {
+        http = {
+          host = "127.0.0.1";
+          port = 8000;
+        };
+        database.acquire_timeout = "2s";
+        cache.acquire_timeout = "2s";
+        email = {
+          smtp_url = "smtp://127.0.0.1:25";
+          from = "test@bootstrap.academy";
+        };
+        jwt.secret = "changeme";
+        health.cache_ttl = "2s";
+        contact.email = "contact@academy";
+      };
+    };
+
+    services.postfix = {
+      enable = true;
+      virtual = "/.*/ root";
+      virtualMapType = "pcre";
+    };
+  };
+
   mkPythonTest = name: let
     python = python3.withPackages (p: with p; [httpx pyotp]);
     run-test = writeShellScriptBin "run-test" ''
@@ -41,36 +71,11 @@
     testers.runNixOSTest {
       name = "academy-${removeSuffix name}";
 
-      nodes.machine = {pkgs, ...}: {
-        imports = [self.nixosModules.default];
-
-        services.academy.backend = {
-          enable = true;
-          logLevel = "debug,academy=trace";
-          settings = {
-            http = {
-              host = "127.0.0.1";
-              port = 8000;
-            };
-            database.acquire_timeout = "2s";
-            cache.acquire_timeout = "2s";
-            email = {
-              smtp_url = "smtp://127.0.0.1:25";
-              from = "test@bootstrap.academy";
-            };
-            jwt.secret = "changeme";
-            health.cache_ttl = "2s";
-            contact.email = "contact@academy";
-            session.refresh_token_ttl = lib.mkIf (name == "prune-database.py") "10m";
-          };
-        };
-
+      nodes.machine = {
+        imports = [defaultModule];
         environment.systemPackages = [run-test];
-
-        services.postfix = {
-          enable = true;
-          virtual = "/.*/ root";
-          virtualMapType = "pcre";
+        services.academy.backend.settings = {
+          session.refresh_token_ttl = lib.mkIf (name == "prune-database.py") "10m";
         };
       };
 
@@ -82,7 +87,7 @@
       '';
     };
 
-  mkNixosTest = name: callPackage ./${name} {inherit self;};
+  mkNixosTest = name: callPackage ./${name} {inherit defaultModule;};
 
   composite = linkFarm "academy-tests-composite" (builtins.mapAttrs (_: toString) tests);
 in

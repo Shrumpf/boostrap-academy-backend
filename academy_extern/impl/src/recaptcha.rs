@@ -6,6 +6,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+const SITEVERIFY_ENDPOINT: &str = "https://www.google.com/recaptcha/api/siteverify";
+
 #[derive(Debug, Clone, Build)]
 pub struct RecaptchaApiServiceImpl {
     config: Arc<RecaptchaApiServiceConfig>,
@@ -15,18 +17,27 @@ pub struct RecaptchaApiServiceImpl {
 
 #[derive(Debug)]
 pub struct RecaptchaApiServiceConfig {
-    pub siteverify_endpoint: Url,
-    pub secret: String,
+    siteverify_endpoint: Url,
+}
+
+impl RecaptchaApiServiceConfig {
+    pub fn new(siteverify_endpoint_override: Option<Url>) -> Self {
+        Self {
+            siteverify_endpoint: siteverify_endpoint_override
+                .unwrap_or_else(|| SITEVERIFY_ENDPOINT.parse().unwrap()),
+        }
+    }
 }
 
 impl RecaptchaApiService for RecaptchaApiServiceImpl {
-    async fn siteverify(&self, response: &str) -> anyhow::Result<RecaptchaSiteverifyResponse> {
+    async fn siteverify(
+        &self,
+        response: &str,
+        secret: &str,
+    ) -> anyhow::Result<RecaptchaSiteverifyResponse> {
         self.client
             .post(self.config.siteverify_endpoint.clone())
-            .json(&SiteverifyRequest {
-                response,
-                secret: &self.config.secret,
-            })
+            .json(&SiteverifyRequest { response, secret })
             .send()
             .await?
             .error_for_status()?

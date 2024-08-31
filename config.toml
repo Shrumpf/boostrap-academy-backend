@@ -48,9 +48,8 @@ secret_length = 32
 [contact]
 email = "contact@example.com"
 
-[recaptcha]
-# siteverify_endpoint = "https://www.google.com/recaptcha/api/siteverify"
-siteverify_endpoint = "http://127.0.0.1:8001/recaptcha/api/siteverify"
-sitekey = "test-sitekey"
-secret = "test-secret"
-min_score = 0.5
+# [recaptcha]
+# siteverify_endpoint_override = "http://127.0.0.1:8001/recaptcha/api/siteverify"
+# sitekey = "test-sitekey"
+# secret = "test-secret"
+# min_score = 0.5

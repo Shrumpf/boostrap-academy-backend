@@ -4,6 +4,9 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait CaptchaService: Send + Sync + 'static {
+    #[allow(clippy::needless_lifetimes)]
+    fn get_recaptcha_sitekey<'a>(&'a self) -> Option<&'a str>;
+
     fn check<'a>(
         &self,
         response: Option<&'a str>,
@@ -20,6 +23,14 @@ pub enum CaptchaCheckError {
 
 #[cfg(feature = "mock")]
 impl MockCaptchaService {
+    pub fn with_get_recaptcha_sitekey(mut self, sitekey: Option<&'static str>) -> Self {
+        self.expect_get_recaptcha_sitekey()
+            .once()
+            .with()
+            .return_once(move || sitekey);
+        self
+    }
+
     pub fn with_check(
         mut self,
         response: Option<&'static str>,

@@ -1,13 +1,26 @@
+use std::sync::Arc;
+
+use academy_di::Build;
 use academy_extern_contracts::recaptcha::RecaptchaApiService;
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 
+#[derive(Debug, Clone, Build)]
+#[cfg_attr(test, derive(Default))]
 pub struct CaptchaServiceImpl<RecaptchaApi> {
-    recaptcha_api: Option<RecaptchaApi>,
-    config: CaptchaServiceConfig,
+    recaptcha_api: RecaptchaApi,
+    config: Arc<CaptchaServiceConfig>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct CaptchaServiceConfig {
+#[derive(Debug)]
+pub enum CaptchaServiceConfig {
+    Disabled,
+    Recaptcha(RecaptchaCaptchaServiceConfig),
+}
+
+#[derive(Debug)]
+pub struct RecaptchaCaptchaServiceConfig {
+    pub sitekey: String,
+    pub secret: String,
     pub min_score: f64,
 }
 
@@ -15,14 +28,28 @@ impl<RecaptchaApi> CaptchaService for CaptchaServiceImpl<RecaptchaApi>
 where
     RecaptchaApi: RecaptchaApiService,
 {
+    fn get_recaptcha_sitekey(&self) -> Option<&str> {
+        match &*self.config {
+            CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig { sitekey, .. }) => {
+                Some(sitekey)
+            }
+            CaptchaServiceConfig::Disabled => None,
+        }
+    }
+
     async fn check(&self, response: Option<&str>) -> Result<(), CaptchaCheckError> {
-        let Some(recaptcha_api) = &self.recaptcha_api else {
+        let CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig {
+            ref secret,
+            min_score,
+            ..
+        }) = *self.config
+        else {
             return Ok(());
         };
 
         let response = response.ok_or(CaptchaCheckError::Failed)?;
-        let response = recaptcha_api.siteverify(response).await?;
-        let ok = response.success && response.score.unwrap_or(0.0) >= self.config.min_score;
+        let response = self.recaptcha_api.siteverify(response, secret).await?;
+        let ok = response.success && response.score.unwrap_or(0.0) >= min_score;
         ok.then_some(()).ok_or(CaptchaCheckError::Failed)
     }
 }
@@ -36,22 +63,52 @@ mod tests {
 
     use super::*;
 
-    #[tokio::test]
-    async fn ok() {
-        // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.5 };
+    type Sut = CaptchaServiceImpl<MockRecaptchaApiService>;
 
-        let recaptcha_api = Some(MockRecaptchaApiService::new().with_siteverify(
+    #[test]
+    fn get_recaptcha_sitekey_enabled() {
+        // Arrange
+        let sut = Sut::default();
+
+        // Act
+        let result = sut.get_recaptcha_sitekey();
+
+        // Arrange
+        assert_eq!(result, Some("sitekey"));
+    }
+
+    #[test]
+    fn get_recaptcha_sitekey_disabled() {
+        // Arrange
+        let config = CaptchaServiceConfig::Disabled.into();
+
+        let sut = CaptchaServiceImpl {
+            config,
+            ..Sut::default()
+        };
+
+        // Act
+        let result = sut.get_recaptcha_sitekey();
+
+        // Arrange
+        assert_eq!(result, None);
+    }
+
+    #[tokio::test]
+    async fn check_ok() {
+        // Arrange
+        let recaptcha_api = MockRecaptchaApiService::new().with_siteverify(
             "captcha response".into(),
+            "secret".into(),
             RecaptchaSiteverifyResponse {
                 success: true,
                 score: Some(0.7),
             },
-        ));
+        );
 
         let sut = CaptchaServiceImpl {
             recaptcha_api,
-            config,
+            ..Sut::default()
         };
 
         // Act
@@ -62,17 +119,22 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn ok_no_score() {
+    async fn check_ok_no_score() {
         // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.0 };
+        let config = CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig {
+            min_score: 0.0,
+            ..Default::default()
+        })
+        .into();
 
-        let recaptcha_api = Some(MockRecaptchaApiService::new().with_siteverify(
+        let recaptcha_api = MockRecaptchaApiService::new().with_siteverify(
             "captcha response".into(),
+            "secret".into(),
             RecaptchaSiteverifyResponse {
                 success: true,
                 score: None,
             },
-        ));
+        );
 
         let sut = CaptchaServiceImpl {
             recaptcha_api,
@@ -87,15 +149,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn ok_disabled() {
+    async fn check_ok_disabled() {
         // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.5 };
-
-        let recaptcha_api = None::<MockRecaptchaApiService>;
+        let config = CaptchaServiceConfig::Disabled.into();
 
         let sut = CaptchaServiceImpl {
-            recaptcha_api,
             config,
+            ..Sut::default()
         };
 
         // Act
@@ -106,15 +166,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn ok_disabled_no_response() {
+    async fn check_ok_disabled_no_response() {
         // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.5 };
-
-        let recaptcha_api = None::<MockRecaptchaApiService>;
+        let config = CaptchaServiceConfig::Disabled.into();
 
         let sut = CaptchaServiceImpl {
-            recaptcha_api,
             config,
+            ..Sut::default()
         };
 
         // Act
@@ -125,21 +183,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn failed_no_score() {
+    async fn check_failed_no_score() {
         // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.1 };
-
-        let recaptcha_api = Some(MockRecaptchaApiService::new().with_siteverify(
+        let recaptcha_api = MockRecaptchaApiService::new().with_siteverify(
             "captcha response".into(),
+            "secret".into(),
             RecaptchaSiteverifyResponse {
                 success: true,
                 score: None,
             },
-        ));
+        );
 
         let sut = CaptchaServiceImpl {
             recaptcha_api,
-            config,
+            ..Sut::default()
         };
 
         // Act
@@ -150,21 +207,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn failed_insufficient_score() {
+    async fn check_failed_insufficient_score() {
         // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.7 };
-
-        let recaptcha_api = Some(MockRecaptchaApiService::new().with_siteverify(
+        let recaptcha_api = MockRecaptchaApiService::new().with_siteverify(
             "captcha response".into(),
+            "secret".into(),
             RecaptchaSiteverifyResponse {
                 success: true,
                 score: Some(0.3),
             },
-        ));
+        );
 
         let sut = CaptchaServiceImpl {
             recaptcha_api,
-            config,
+            ..Sut::default()
         };
 
         // Act
@@ -175,21 +231,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn failed_no_success() {
+    async fn check_failed_no_success() {
         // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.5 };
-
-        let recaptcha_api = Some(MockRecaptchaApiService::new().with_siteverify(
+        let recaptcha_api = MockRecaptchaApiService::new().with_siteverify(
             "captcha response".into(),
+            "secret".into(),
             RecaptchaSiteverifyResponse {
                 success: false,
                 score: None,
             },
-        ));
+        );
 
         let sut = CaptchaServiceImpl {
             recaptcha_api,
-            config,
+            ..Sut::default()
         };
 
         // Act
@@ -200,21 +255,30 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn failed_no_response() {
+    async fn check_failed_no_response() {
         // Arrange
-        let config = CaptchaServiceConfig { min_score: 0.5 };
-
-        let recaptcha_api = Some(MockRecaptchaApiService::new());
-
-        let sut = CaptchaServiceImpl {
-            recaptcha_api,
-            config,
-        };
+        let sut = Sut::default();
 
         // Act
         let result = sut.check(None).await;
 
         // Assert
         assert_matches!(result, Err(CaptchaCheckError::Failed));
+    }
+
+    impl Default for CaptchaServiceConfig {
+        fn default() -> Self {
+            Self::Recaptcha(Default::default())
+        }
+    }
+
+    impl Default for RecaptchaCaptchaServiceConfig {
+        fn default() -> Self {
+            Self {
+                sitekey: "sitekey".into(),
+                secret: "secret".into(),
+                min_score: 0.5,
+            }
+        }
     }
 }

@@ -7,6 +7,7 @@ use axum::{
 
 use crate::models::ApiError;
 
+pub mod config;
 pub mod contact;
 pub mod health;
 pub mod mfa;

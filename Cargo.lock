@@ -11,6 +11,7 @@ dependencies = [
  "academy_cache_valkey",
  "academy_config",
  "academy_core_auth_impl",
+ "academy_core_config_impl",
  "academy_core_contact_impl",
  "academy_core_health_impl",
  "academy_core_mfa_impl",
@@ -21,6 +22,7 @@ dependencies = [
  "academy_di",
  "academy_email_contracts",
  "academy_email_impl",
+ "academy_extern_impl",
  "academy_persistence_contracts",
  "academy_persistence_postgres",
  "academy_shared_contracts",
@@ -41,6 +43,7 @@ dependencies = [
 name = "academy_api_rest"
 version = "0.0.0"
 dependencies = [
+ "academy_core_config_contracts",
  "academy_core_contact_contracts",
  "academy_core_health_contracts",
  "academy_core_mfa_contracts",
@@ -121,6 +124,22 @@ dependencies = [
  "hex",
  "serde",
  "tokio",
+]
+
+[[package]]
+name = "academy_core_config_contracts"
+version = "0.0.0"
+dependencies = [
+ "mockall",
+]
+
+[[package]]
+name = "academy_core_config_impl"
+version = "0.0.0"
+dependencies = [
+ "academy_core_config_contracts",
+ "academy_di",
+ "academy_shared_contracts",
 ]
 
 [[package]]
