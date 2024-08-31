@@ -1,3 +1,4 @@
+pub mod captcha;
 pub mod hash;
 pub mod id;
 pub mod jwt;

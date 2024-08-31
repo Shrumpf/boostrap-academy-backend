@@ -53,3 +53,4 @@ email = "contact@example.com"
 siteverify_endpoint = "http://127.0.0.1:8001/recaptcha/api/siteverify"
 sitekey = "test-sitekey"
 secret = "test-secret"
+min_score = 0.5

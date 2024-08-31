@@ -1,6 +1,6 @@
 use std::{path::Path, sync::Arc};
 
-use academy_config::DEFAULT_CONFIG_PATH;
+use academy_config::{RecaptchaConfig, DEFAULT_CONFIG_PATH};
 use academy_di::{provider, Provides};
 use academy_extern_contracts::recaptcha::{RecaptchaApiService, RecaptchaSiteverifyResponse};
 use academy_extern_impl::recaptcha::{RecaptchaApiServiceConfig, RecaptchaApiServiceImpl};
@@ -49,6 +49,12 @@ fn make_sut() -> RecaptchaApiServiceImpl {
     }
     let config = academy_config::load(&paths).unwrap();
 
+    let RecaptchaConfig {
+        siteverify_endpoint,
+        secret,
+        ..
+    } = config.recaptcha.unwrap();
+
     provider! {
         Provider { recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>, }
     }
@@ -56,8 +62,8 @@ fn make_sut() -> RecaptchaApiServiceImpl {
     let mut provider = Provider {
         _state: Default::default(),
         recaptcha_api_service_config: RecaptchaApiServiceConfig {
-            siteverify_endpoint: config.recaptcha.siteverify_endpoint,
-            secret: config.recaptcha.secret,
+            siteverify_endpoint,
+            secret,
         }
         .into(),
     };

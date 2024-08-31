@@ -36,7 +36,7 @@ pub struct Config {
     pub session: SessionConfig,
     pub totp: TotpConfig,
     pub contact: ContactConfig,
-    pub recaptcha: RecaptchaConfig,
+    pub recaptcha: Option<RecaptchaConfig>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -114,6 +114,7 @@ pub struct RecaptchaConfig {
     pub siteverify_endpoint: Url,
     pub sitekey: String,
     pub secret: String,
+    pub min_score: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
