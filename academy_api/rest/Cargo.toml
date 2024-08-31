@@ -16,7 +16,7 @@ academy_core_user_contracts.workspace = true
 academy_di.workspace = true
 academy_models.workspace = true
 anyhow.workspace = true
-axum = { version = "0.7.5", default-features = false, features = ["http1", "http2", "tokio", "json", "query"] }
+axum.workspace = true
 axum-extra = { version = "0.9.3", default-features = false, features = ["typed-header"] }
 email_address.workspace = true
 serde.workspace = true

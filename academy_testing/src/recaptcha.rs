@@ -1,0 +1,53 @@
+use std::{net::IpAddr, sync::Arc};
+
+use axum::{extract::State, routing, Json, Router};
+use serde::{Deserialize, Serialize};
+use tokio::net::TcpListener;
+use tracing::info;
+
+const SITEVERIFY_ROUTE: &str = "/recaptcha/api/siteverify";
+
+pub async fn start_server(host: IpAddr, port: u16, secret: String) -> anyhow::Result<()> {
+    info!("Starting recaptcha testing server on {host}:{port}");
+    info!("Recaptcha siteverify endpoint: http://{host}:{port}{SITEVERIFY_ROUTE}");
+    info!("Secret: {secret:?}");
+    info!(
+        "Valid recaptcha responses are \"success\" and \"success-SCORE\", where SCORE is a \
+         floating point number between 0 and 1"
+    );
+
+    let router = Router::new()
+        .route(SITEVERIFY_ROUTE, routing::post(siteverify))
+        .with_state(secret.into());
+    let listener = TcpListener::bind((host, port)).await?;
+    axum::serve(listener, router).await?;
+
+    Ok(())
+}
+
+#[derive(Deserialize)]
+struct SiteverifyRequest {
+    secret: String,
+    response: String,
+}
+
+#[derive(Serialize)]
+struct SiteverifyResponse {
+    success: bool,
+    score: Option<f64>,
+}
+
+async fn siteverify(
+    state: State<Arc<str>>,
+    Json(SiteverifyRequest { secret, response }): Json<SiteverifyRequest>,
+) -> Json<SiteverifyResponse> {
+    let mut parts = response.split('-');
+    let success = *secret == **state && parts.next() == Some("success");
+    let score = success
+        .then(|| parts.next())
+        .flatten()
+        .and_then(|score| score.parse::<f64>().ok())
+        .filter(|score| (0.0..=1.0).contains(score));
+
+    Json(SiteverifyResponse { success, score })
+}

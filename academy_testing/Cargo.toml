@@ -4,7 +4,19 @@ version.workspace = true
 edition.workspace = true
 publish.workspace = true
 
+[[bin]]
+name = "academy-testing"
+path = "src/main.rs"
+
 [lints]
 workspace = true
 
 [dependencies]
+anyhow.workspace = true
+axum.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true

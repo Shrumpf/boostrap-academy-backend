@@ -423,6 +423,16 @@ dependencies = [
 [[package]]
 name = "academy_testing"
 version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "clap",
+ "clap_complete",
+ "serde",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "academy_utils"

@@ -11,51 +11,53 @@
     inherit (toolchain) cargo rustc;
   };
 
-  inherit (cargoToml.workspace.package) version;
-  src = lib.fileset.toSource {
-    root = ../.;
-    fileset = lib.fileset.unions ([
-        ../Cargo.toml
-        ../Cargo.lock
-      ]
-      ++ (lib.pipe ../. [
-        builtins.readDir
-        builtins.attrNames
-        (builtins.filter (lib.hasPrefix "academy"))
-        (map (x: ../${x}))
-      ]));
-  };
-  cargoLock.lockFile = ../Cargo.lock;
+  buildRustPackage = {
+    pname,
+    subdir,
+    mainProgram,
+  }:
+    rustPlatform.buildRustPackage {
+      inherit pname;
+      inherit (cargoToml.workspace.package) version;
+
+      src = lib.fileset.toSource {
+        root = ../.;
+        fileset = lib.fileset.unions ([
+            ../Cargo.toml
+            ../Cargo.lock
+          ]
+          ++ (lib.pipe ../. [
+            builtins.readDir
+            builtins.attrNames
+            (builtins.filter (lib.hasPrefix "academy"))
+            (map (x: ../${x}))
+          ]));
+      };
+      cargoLock.lockFile = ../Cargo.lock;
+      doCheck = false;
+
+      buildAndTestSubdir = subdir;
+
+      nativeBuildInputs = [installShellFiles];
+      postInstall = ''
+        installShellCompletion --cmd ${mainProgram} \
+          --bash <($out/bin/${mainProgram} completion bash) \
+          --fish <($out/bin/${mainProgram} completion fish) \
+          --zsh <($out/bin/${mainProgram} completion zsh)
+      '';
+
+      meta.mainProgram = mainProgram;
+    };
 in {
-  default = rustPlatform.buildRustPackage {
+  default = buildRustPackage {
     pname = "academy-backend";
-    inherit version src cargoLock;
-    doCheck = false;
-
-    buildAndTestSubdir = "academy";
-
-    nativeBuildInputs = [installShellFiles];
-    postInstall = ''
-      installShellCompletion --cmd academy \
-        --bash <($out/bin/academy completion bash) \
-        --fish <($out/bin/academy completion fish) \
-        --zsh <($out/bin/academy completion zsh)
-    '';
-
-    meta.mainProgram = "academy";
+    subdir = "academy";
+    mainProgram = "academy";
   };
 
-  testing = rustPlatform.buildRustPackage {
+  testing = buildRustPackage {
     pname = "academy-testing";
-    inherit version src cargoLock;
-    doCheck = false;
-
-    buildAndTestSubdir = "academy_testing";
-
-    postInstall = ''
-      mv $out/bin/{academy_testing,academy-testing}
-    '';
-
-    meta.mainProgram = "academy-testing";
+    subdir = "academy_testing";
+    mainProgram = "academy-testing";
   };
 }
