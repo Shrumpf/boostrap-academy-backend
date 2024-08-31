@@ -10,11 +10,16 @@
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
+    }, {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchManagers": ["cargo"],
+      "groupName": "rust minor"
     }
   ],
   "platformAutomerge": true,
   "automergeStrategy": "fast-forward",
   "nix": {
     "enabled": true
-  }
+  },
+  "addLabels": ["renovate"]
 }
