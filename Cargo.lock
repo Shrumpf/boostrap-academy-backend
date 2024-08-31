@@ -92,6 +92,7 @@ dependencies = [
  "email_address",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]
@@ -311,6 +312,28 @@ dependencies = [
  "tokio",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "academy_extern_contracts"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "mockall",
+]
+
+[[package]]
+name = "academy_extern_impl"
+version = "0.0.0"
+dependencies = [
+ "academy_config",
+ "academy_di",
+ "academy_extern_contracts",
+ "anyhow",
+ "reqwest",
+ "serde",
+ "tokio",
+ "url",
 ]
 
 [[package]]

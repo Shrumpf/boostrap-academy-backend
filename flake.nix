@@ -45,7 +45,7 @@
 
     devShells = eachDefaultSystem (system: {
       default = devenv.lib.mkShell {
-        inherit inputs;
+        inputs = inputs // {inherit (self.packages.${system}) testing;};
         pkgs = importNixpkgs system;
         modules = [./nix/dev.nix];
       };

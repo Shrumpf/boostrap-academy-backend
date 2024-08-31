@@ -75,3 +75,18 @@ jobs:
     services:
       smtp4dev:
         image: rnwood/smtp4dev:3.3.4
+
+  extern:
+    runs-on: debian-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: https://github.com/dtolnay/rust-toolchain@stable
+      - uses: https://github.com/Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: test recaptcha
+        run: |
+          cargo build --bin academy-testing
+          cargo run --bin academy-testing -- recaptcha &
+          while ! curl -s http://127.0.0.1:8001; do sleep .1; done
+          cargo test -p academy_extern_impl --no-fail-fast --all-features --test recaptcha

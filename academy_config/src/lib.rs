@@ -5,6 +5,7 @@ use anyhow::Context;
 use config::{File, FileFormat};
 use email_address::EmailAddress;
 use serde::Deserialize;
+use url::Url;
 
 pub const DEFAULT_CONFIG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../config.toml");
 
@@ -35,6 +36,7 @@ pub struct Config {
     pub session: SessionConfig,
     pub totp: TotpConfig,
     pub contact: ContactConfig,
+    pub recaptcha: RecaptchaConfig,
 }
 
 #[derive(Debug, Deserialize)]
@@ -105,6 +107,13 @@ pub struct TotpConfig {
 #[derive(Debug, Deserialize)]
 pub struct ContactConfig {
     pub email: EmailAddress,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RecaptchaConfig {
+    pub siteverify_endpoint: Url,
+    pub sitekey: String,
+    pub secret: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

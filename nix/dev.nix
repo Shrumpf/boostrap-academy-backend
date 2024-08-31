@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  testing,
   ...
 }: {
   languages.rust.enable = builtins.getEnv "DEVENV_RUST" != "0";
@@ -31,6 +32,10 @@
 
   processes.smtp4dev.exec = ''
     ${pkgs.smtp4dev}/bin/smtp4dev --smtpport=2525 --imapport=1143
+  '';
+
+  processes.testing-recaptcha.exec = ''
+    ${testing}/bin/academy-testing recaptcha
   '';
 
   env = {

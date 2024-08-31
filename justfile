@@ -19,13 +19,13 @@ reset-valkey:
 alias rv := reset-valkey
 
 # Run unit and integration tests
-test: test-unit test-valkey test-email test-postgres
+test: test-unit test-extern test-valkey test-email test-postgres
 [private]
 alias t := test
 
 # Run unit and integration tests with coverage
-coverage: coverage-unit coverage-valkey coverage-email coverage-postgres
-    lcov -a .lcov-unit.info -a .lcov-valkey.info -a .lcov-email.info -a .lcov-postgres.info -o .lcov-combined.info
+coverage: coverage-unit coverage-extern coverage-valkey coverage-email coverage-postgres
+    lcov -a .lcov-unit.info -a .lcov-extern.info -a .lcov-valkey.info -a .lcov-email.info -a .lcov-postgres.info -o .lcov-combined.info
     genhtml -o .lcov_html .lcov-combined.info
 [private]
 alias cov := coverage
@@ -85,6 +85,19 @@ coverage-email *args:
     {{ if is_dependency() == "false" { "genhtml -o .lcov_html .lcov-email.info" } else { "" } }}
 [private]
 alias covm := coverage-email
+
+# Run extern integration tests
+test-extern *args:
+    RUST_TEST_THREADS=1 cargo test -p academy_extern_impl --locked --all-features --test '*' {{args}}
+[private]
+alias te := test-extern
+
+# Run valkey integration tests with coverage
+coverage-extern *args:
+    RUST_TEST_THREADS=1 cargo llvm-cov test --lcov --output-path .lcov-extern.info -p academy_extern_impl --locked --all-features --test '*' {{args}}
+    {{ if is_dependency() == "false" { "genhtml -o .lcov_html .lcov-extern.info" } else { "" } }}
+[private]
+alias cove := coverage-extern
 
 # Run cargo fmt, cargo clippy and cargo test
 check: && test
