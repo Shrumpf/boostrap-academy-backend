@@ -32,12 +32,12 @@
   in {
     packages = eachDefaultSystem (system: let
       pkgs = importNixpkgs system;
-    in {
-      default = pkgs.callPackage ./nix/package.nix {inherit fenix;};
-      tests = pkgs.callPackages ./nix/tests {inherit self;};
-
-      devenv-up = self.devShells.${system}.default.config.procfileScript;
-    });
+    in
+      (pkgs.callPackages ./nix/packages.nix {inherit fenix;})
+      // {
+        tests = pkgs.callPackages ./nix/tests {inherit self;};
+        devenv-up = self.devShells.${system}.default.config.procfileScript;
+      });
 
     nixosModules = {
       default = import ./nix/module.nix self;

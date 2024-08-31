@@ -3,6 +3,7 @@ name = "academy"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+default-run = "academy"
 
 [lints]
 workspace = true

@@ -421,6 +421,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "academy_testing"
+version = "0.0.0"
+
+[[package]]
 name = "academy_utils"
 version = "0.0.0"
 dependencies = [

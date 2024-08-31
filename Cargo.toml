@@ -15,6 +15,7 @@ members = [
   "academy_shared/*",
   "academy_templates/contracts",
   "academy_templates/impl",
+  "academy_testing",
   "academy_utils",
   "academy_utils_derive",
 ]
