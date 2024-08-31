@@ -10,25 +10,25 @@ permissions:
 
 jobs:
   unit:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: https://github.com/dtolnay/rust-toolchain@stable
-      - uses: https://github.com/Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
       - run: cargo test --no-fail-fast --all-features --bins --lib
       - run: cargo test --no-fail-fast --all-features --doc
 
   postgres:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: https://github.com/dtolnay/rust-toolchain@stable
-      - uses: https://github.com/Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-      - run: echo 'database.url = "postgres://academy@postgres/academy"' > config.extra.toml
+      - run: echo 'database.url = "postgres://academy@localhost/academy"' > config.extra.toml
       - run: cargo test -p academy_persistence_postgres --no-fail-fast --all-features --test '*'
         env:
           ACADEMY_CONFIG: ${{ github.workspace }}/config.extra.toml:${{ github.workspace }}/config.dev.toml
@@ -36,20 +36,22 @@ jobs:
     services:
       postgres:
         image: postgres:17-alpine
+        ports:
+          - '5432:5432'
         env:
           POSTGRES_USER: academy
           POSTGRES_DB: academy
           POSTGRES_HOST_AUTH_METHOD: trust
 
   valkey:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: https://github.com/dtolnay/rust-toolchain@stable
-      - uses: https://github.com/Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-      - run: echo 'cache.url = "redis://valkey"' > config.extra.toml
+      - run: echo 'cache.url = "redis://localhost"' > config.extra.toml
       - run: cargo test -p academy_cache_valkey --no-fail-fast --all-features --test '*'
         env:
           ACADEMY_CONFIG: ${{ github.workspace }}/config.extra.toml:${{ github.workspace }}/config.dev.toml
@@ -57,20 +59,22 @@ jobs:
     services:
       valkey:
         image: valkey/valkey:8.0-alpine
+        ports:
+          - '6379:6379'
 
   email:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: https://github.com/dtolnay/rust-toolchain@stable
-      - uses: https://github.com/Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-      - run: echo 'email.smtp_url = "smtp://academy:academy@smtp4dev:25"' > config.extra.toml
+      - run: echo 'email.smtp_url = "smtp://academy:academy@localhost:25"' > config.extra.toml
       - run: cargo test -p academy_email_impl --no-fail-fast --all-features --test '*'
         env:
           ACADEMY_CONFIG: ${{ github.workspace }}/config.extra.toml:${{ github.workspace }}/config.dev.toml
-          SMTP4DEV_URL: http://smtp4dev:80
+          SMTP4DEV_URL: http://localhost:80
           RUST_TEST_THREADS: 1
     services:
       smtp4dev:
@@ -79,13 +83,16 @@ jobs:
           ServerOptions__AuthenticationRequired: "true"
           ServerOptions__Users__0__Username: academy
           ServerOptions__Users__0__Password: academy
+        ports:
+          - '25:25'
+          - '80:80'
 
   extern:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: https://github.com/dtolnay/rust-toolchain@stable
-      - uses: https://github.com/Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
       - run: cargo build --bin academy-testing
