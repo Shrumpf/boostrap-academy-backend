@@ -106,6 +106,7 @@ pub trait UserService: Send + Sync + 'static {
     fn request_password_reset(
         &self,
         email: EmailAddress,
+        recaptcha_response: Option<RecaptchaResponse>,
     ) -> impl Future<Output = Result<(), UserRequestPasswordResetError>> + Send;
 
     fn reset_password(
@@ -252,6 +253,8 @@ pub enum UserVerifyNewsletterSubscriptionError {
 
 #[derive(Debug, Error)]
 pub enum UserRequestPasswordResetError {
+    #[error("Invalid recaptcha response")]
+    Recaptcha,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

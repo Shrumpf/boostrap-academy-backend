@@ -494,7 +494,16 @@ where
     async fn request_password_reset(
         &self,
         email: EmailAddress,
+        recaptcha_response: Option<RecaptchaResponse>,
     ) -> Result<(), UserRequestPasswordResetError> {
+        self.captcha
+            .check(recaptcha_response.as_deref().map(String::as_str))
+            .await
+            .map_err(|err| match err {
+                CaptchaCheckError::Failed => UserRequestPasswordResetError::Recaptcha,
+                CaptchaCheckError::Other(err) => err.into(),
+            })?;
+
         let mut txn = self.db.begin_transaction().await?;
 
         if let Some(user_composite) = self

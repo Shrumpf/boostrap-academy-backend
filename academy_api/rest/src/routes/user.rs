@@ -314,14 +314,24 @@ async fn verify_newsletter_subscription(
 #[derive(Deserialize)]
 struct RequestPasswordResetRequest {
     email: EmailAddress,
+    recaptcha_response: Option<RecaptchaResponse>,
 }
 
 async fn request_password_reset(
     service: State<Arc<impl UserService>>,
-    Json(RequestPasswordResetRequest { email }): Json<RequestPasswordResetRequest>,
+    Json(RequestPasswordResetRequest {
+        email,
+        recaptcha_response,
+    }): Json<RequestPasswordResetRequest>,
 ) -> Response {
-    match service.request_password_reset(email).await {
+    match service
+        .request_password_reset(email, recaptcha_response)
+        .await
+    {
         Ok(()) => Json(true).into_response(),
+        Err(UserRequestPasswordResetError::Recaptcha) => {
+            error(StatusCode::PRECONDITION_FAILED, "Recaptcha failed")
+        }
         Err(UserRequestPasswordResetError::Other(err)) => internal_server_error(err),
     }
 }

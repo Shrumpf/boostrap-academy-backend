@@ -226,7 +226,14 @@ assert resp.json() == {"detail": "Permission denied"}
 
 # reset password
 discard_auth()
-resp = c.post("/auth/password_reset", json={"email": user["email"]})
+
+## recaptcha error
+resp = c.post("/auth/password_reset", json={"email": user["email"], "recaptcha_response": "success-0.3"})
+assert resp.status_code == 412
+assert resp.json() == {"detail": "Recaptcha failed"}
+
+## success
+resp = c.post("/auth/password_reset", json={"email": user["email"], "recaptcha_response": "success-0.7"})
 assert resp.status_code == 200
 assert resp.json() is True
 
