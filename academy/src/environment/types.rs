@@ -22,6 +22,7 @@ use academy_core_session_impl::{
         delete_by_user::SessionDeleteByUserCommandServiceImpl,
         refresh::SessionRefreshCommandServiceImpl,
     },
+    failed_auth_count::SessionFailedAuthCountServiceImpl,
     SessionServiceImpl,
 };
 use academy_core_user_impl::{
@@ -151,10 +152,12 @@ pub type UserList = UserListQueryServiceImpl<UserRepo>;
 pub type Session = SessionServiceImpl<
     Database,
     Auth,
+    Captcha,
     SessionCreate,
     SessionRefresh,
     SessionDelete,
     SessionDeleteByUser,
+    SessionFailedAuthCount,
     UserGetByNameOrEmail,
     MfaAuthenticate,
     UserRepo,
@@ -164,6 +167,7 @@ pub type SessionCreate = SessionCreateCommandServiceImpl<Id, Time, Auth, Session
 pub type SessionRefresh = SessionRefreshCommandServiceImpl<Time, Auth, UserRepo, SessionRepo>;
 pub type SessionDelete = SessionDeleteCommandServiceImpl<Auth, SessionRepo>;
 pub type SessionDeleteByUser = SessionDeleteByUserCommandServiceImpl<Auth, SessionRepo>;
+pub type SessionFailedAuthCount = SessionFailedAuthCountServiceImpl<Hash, Cache>;
 
 pub type Contact = ContactServiceImpl<Captcha, Email>;
 

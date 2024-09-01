@@ -32,6 +32,55 @@ resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x"})
 assert resp.status_code == 401
 assert resp.json() == {"detail": "Invalid credentials"}
 
+## recaptcha
+for _ in range(2):
+    resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x"})
+    assert resp.status_code == 401
+    assert resp.json() == {"detail": "Invalid credentials"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x"})
+assert resp.status_code == 412
+assert resp.json() == {"detail": "Recaptcha failed"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x", "recaptcha_response": "success-0.3"})
+assert resp.status_code == 412
+assert resp.json() == {"detail": "Recaptcha failed"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x", "recaptcha_response": "success-0.7"})
+assert resp.status_code == 401
+assert resp.json() == {"detail": "Invalid credentials"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x"})
+assert resp.status_code == 412
+assert resp.json() == {"detail": "Recaptcha failed"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x", "recaptcha_response": "success-0.7"})
+assert resp.status_code == 401
+assert resp.json() == {"detail": "Invalid credentials"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a"})
+assert resp.status_code == 412
+assert resp.json() == {"detail": "Recaptcha failed"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a", "recaptcha_response": "success-0.7"})
+assert resp.status_code == 201
+login = resp.json()
+sessions.append(login["session"])
+
+for _ in range(3):
+    resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "x"})
+    assert resp.status_code == 401
+    assert resp.json() == {"detail": "Invalid credentials"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a"})
+assert resp.status_code == 412
+assert resp.json() == {"detail": "Recaptcha failed"}
+
+resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a", "recaptcha_response": "success-0.7"})
+assert resp.status_code == 201
+login = resp.json()
+sessions.append(login["session"])
+
 ## disabled
 os.system("academy admin user create --disabled b b@b b")
 resp = c.post("/auth/sessions", json={"name_or_email": "b", "password": "b"})

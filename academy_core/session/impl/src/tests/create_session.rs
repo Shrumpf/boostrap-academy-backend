@@ -3,7 +3,8 @@ use academy_core_mfa_contracts::commands::authenticate::{
     MfaAuthenticateCommandError, MfaAuthenticateCommandResult, MockMfaAuthenticateCommandService,
 };
 use academy_core_session_contracts::{
-    commands::create::MockSessionCreateCommandService, SessionCreateCommand, SessionCreateError,
+    commands::create::MockSessionCreateCommandService,
+    failed_auth_count::MockSessionFailedAuthCountService, SessionCreateCommand, SessionCreateError,
     SessionService,
 };
 use academy_core_user_contracts::queries::get_by_name_or_email::MockUserGetByNameOrEmailQueryService;
@@ -13,6 +14,7 @@ use academy_demo::{
 };
 use academy_models::{auth::Login, mfa::MfaAuthenticateCommand, user::UserNameOrEmailAddress};
 use academy_persistence_contracts::MockDatabase;
+use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::{assert_matches, Apply};
 
 use crate::{tests::Sut, SessionServiceImpl};
@@ -36,6 +38,13 @@ async fn ok() {
 
     let db = MockDatabase::build(true);
 
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 1)
+        .with_reset(UserNameOrEmailAddress::Name(FOO.user.name.clone()))
+        .with_reset(UserNameOrEmailAddress::Email(
+            FOO.user.email.clone().unwrap(),
+        ));
+
     let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new()
         .with_invoke(cmd.name_or_email.clone(), Some(FOO.clone()));
 
@@ -54,6 +63,7 @@ async fn ok() {
 
     let sut = SessionServiceImpl {
         db,
+        session_failed_auth_count,
         auth,
         session_create,
         user_get_by_name_or_email,
@@ -61,7 +71,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.create_session(cmd).await;
+    let result = sut.create_session(cmd, None).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -89,6 +99,13 @@ async fn ok_mfa() {
 
     let db = MockDatabase::build(true);
 
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 1)
+        .with_reset(UserNameOrEmailAddress::Name(FOO.user.name.clone()))
+        .with_reset(UserNameOrEmailAddress::Email(
+            FOO.user.email.clone().unwrap(),
+        ));
+
     let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
         cmd.name_or_email.clone(),
         Some(expected.user_composite.clone()),
@@ -115,6 +132,7 @@ async fn ok_mfa() {
 
     let sut = SessionServiceImpl {
         db,
+        session_failed_auth_count,
         auth,
         session_create,
         mfa_authenticate,
@@ -123,7 +141,7 @@ async fn ok_mfa() {
     };
 
     // Act
-    let result = sut.create_session(cmd).await;
+    let result = sut.create_session(cmd, None).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -150,6 +168,13 @@ async fn ok_mfa_reset() {
     };
 
     let db = MockDatabase::build(true);
+
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 1)
+        .with_reset(UserNameOrEmailAddress::Name(FOO.user.name.clone()))
+        .with_reset(UserNameOrEmailAddress::Email(
+            FOO.user.email.clone().unwrap(),
+        ));
 
     let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
         cmd.name_or_email.clone(),
@@ -182,6 +207,7 @@ async fn ok_mfa_reset() {
 
     let sut = SessionServiceImpl {
         db,
+        session_failed_auth_count,
         auth,
         session_create,
         mfa_authenticate,
@@ -190,10 +216,104 @@ async fn ok_mfa_reset() {
     };
 
     // Act
-    let result = sut.create_session(cmd).await;
+    let result = sut.create_session(cmd, None).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
+}
+
+#[tokio::test]
+async fn ok_captcha() {
+    // Arrange
+    let cmd = SessionCreateCommand {
+        name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
+        password: FOO_PASSWORD.clone(),
+        device_name: FOO_1.device_name.clone(),
+        mfa: MfaAuthenticateCommand::default(),
+    };
+
+    let expected = Login {
+        user_composite: FOO.clone(),
+        session: FOO_1.clone(),
+        access_token: "the access token".into(),
+        refresh_token: "some refresh token".into(),
+    };
+
+    let db = MockDatabase::build(true);
+
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 3)
+        .with_reset(UserNameOrEmailAddress::Name(FOO.user.name.clone()))
+        .with_reset(UserNameOrEmailAddress::Email(
+            FOO.user.email.clone().unwrap(),
+        ));
+
+    let captcha = MockCaptchaService::new().with_check(Some("resp"), Ok(()));
+
+    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new()
+        .with_invoke(cmd.name_or_email.clone(), Some(FOO.clone()));
+
+    let auth = MockAuthService::new().with_authenticate_by_password(
+        FOO.user.id,
+        cmd.password.clone(),
+        true,
+    );
+
+    let session_create = MockSessionCreateCommandService::new().with_invoke(
+        FOO.clone(),
+        cmd.device_name.clone(),
+        true,
+        expected.clone(),
+    );
+
+    let sut = SessionServiceImpl {
+        db,
+        session_failed_auth_count,
+        captcha,
+        auth,
+        session_create,
+        user_get_by_name_or_email,
+        ..Sut::default()
+    };
+
+    // Act
+    let result = sut
+        .create_session(cmd, Some("resp".try_into().unwrap()))
+        .await;
+
+    // Assert
+    assert_eq!(result.unwrap(), expected);
+}
+
+#[tokio::test]
+async fn invalid_recaptcha_response() {
+    // Arrange
+    let cmd = SessionCreateCommand {
+        name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
+        password: FOO_PASSWORD.clone(),
+        device_name: FOO_1.device_name.clone(),
+        mfa: MfaAuthenticateCommand::default(),
+    };
+
+    let session_failed_auth_count =
+        MockSessionFailedAuthCountService::new().with_get(cmd.name_or_email.clone(), 4);
+
+    let captcha =
+        MockCaptchaService::new().with_check(Some("resp"), Err(CaptchaCheckError::Failed));
+
+    let sut = SessionServiceImpl {
+        session_failed_auth_count,
+        captcha,
+        ..Sut::default()
+    };
+
+    // Act
+    let result = sut
+        .create_session(cmd, Some("resp".try_into().unwrap()))
+        .await;
+
+    // Assert
+    assert_matches!(result, Err(SessionCreateError::Recaptcha));
 }
 
 #[tokio::test]
@@ -208,17 +328,22 @@ async fn user_not_found() {
 
     let db = MockDatabase::build(false);
 
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 1)
+        .with_increment(cmd.name_or_email.clone());
+
     let user_get_by_name_or_email =
         MockUserGetByNameOrEmailQueryService::new().with_invoke(cmd.name_or_email.clone(), None);
 
     let sut = SessionServiceImpl {
         db,
+        session_failed_auth_count,
         user_get_by_name_or_email,
         ..Sut::default()
     };
 
     // Act
-    let result = sut.create_session(cmd).await;
+    let result = sut.create_session(cmd, None).await;
 
     // Assert
     assert_matches!(result, Err(SessionCreateError::InvalidCredentials));
@@ -236,6 +361,13 @@ async fn wrong_password() {
 
     let db = MockDatabase::build(false);
 
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 1)
+        .with_increment(UserNameOrEmailAddress::Name(FOO.user.name.clone()))
+        .with_increment(UserNameOrEmailAddress::Email(
+            FOO.user.email.clone().unwrap(),
+        ));
+
     let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
         cmd.name_or_email.clone(),
         Some(FOO.clone().with(|u| u.details.mfa_enabled = true)),
@@ -249,13 +381,14 @@ async fn wrong_password() {
 
     let sut = SessionServiceImpl {
         db,
+        session_failed_auth_count,
         auth,
         user_get_by_name_or_email,
         ..Sut::default()
     };
 
     // Act
-    let result = sut.create_session(cmd).await;
+    let result = sut.create_session(cmd, None).await;
 
     // Assert
     assert_matches!(result, Err(SessionCreateError::InvalidCredentials));
@@ -276,6 +409,13 @@ async fn mfa_failed() {
 
     let db = MockDatabase::build(false);
 
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 1)
+        .with_increment(UserNameOrEmailAddress::Name(FOO.user.name.clone()))
+        .with_increment(UserNameOrEmailAddress::Email(
+            FOO.user.email.clone().unwrap(),
+        ));
+
     let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
         cmd.name_or_email.clone(),
         Some(FOO.clone().with(|u| u.details.mfa_enabled = true)),
@@ -295,6 +435,7 @@ async fn mfa_failed() {
 
     let sut = SessionServiceImpl {
         db,
+        session_failed_auth_count,
         auth,
         user_get_by_name_or_email,
         mfa_authenticate,
@@ -302,7 +443,7 @@ async fn mfa_failed() {
     };
 
     // Act
-    let result = sut.create_session(cmd).await;
+    let result = sut.create_session(cmd, None).await;
 
     // Assert
     assert_matches!(result, Err(SessionCreateError::MfaFailed));
@@ -320,6 +461,10 @@ async fn user_disabled() {
 
     let db = MockDatabase::build(false);
 
+    let session_failed_auth_count = MockSessionFailedAuthCountService::new()
+        .with_get(cmd.name_or_email.clone(), 1)
+        .with_reset(UserNameOrEmailAddress::Name(BAR.user.name.clone()));
+
     let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new()
         .with_invoke(cmd.name_or_email.clone(), Some(BAR.clone()));
 
@@ -331,13 +476,14 @@ async fn user_disabled() {
 
     let sut = SessionServiceImpl {
         db,
+        session_failed_auth_count,
         auth,
         user_get_by_name_or_email,
         ..Sut::default()
     };
 
     // Act
-    let result = sut.create_session(cmd).await;
+    let result = sut.create_session(cmd, None).await;
 
     // Assert
     assert_matches!(result, Err(SessionCreateError::UserDisabled));

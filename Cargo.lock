@@ -227,6 +227,7 @@ dependencies = [
 name = "academy_core_session_impl"
 version = "0.0.0"
 dependencies = [
+ "academy_cache_contracts",
  "academy_core_auth_contracts",
  "academy_core_mfa_contracts",
  "academy_core_session_contracts",
@@ -238,6 +239,7 @@ dependencies = [
  "academy_shared_contracts",
  "academy_utils",
  "anyhow",
+ "hex",
  "tokio",
 ]
 

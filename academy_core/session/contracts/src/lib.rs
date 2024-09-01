@@ -5,10 +5,12 @@ use academy_models::{
     mfa::MfaAuthenticateCommand,
     session::{DeviceName, Session, SessionId},
     user::{UserId, UserIdOrSelf, UserNameOrEmailAddress, UserPassword},
+    RecaptchaResponse,
 };
 use thiserror::Error;
 
 pub mod commands;
+pub mod failed_auth_count;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SessionService: Send + Sync + 'static {
@@ -32,6 +34,7 @@ pub trait SessionService: Send + Sync + 'static {
     fn create_session(
         &self,
         cmd: SessionCreateCommand,
+        recaptcha_response: Option<RecaptchaResponse>,
     ) -> impl Future<Output = Result<Login, SessionCreateError>> + Send;
 
     /// Impersonate a user by creating a new session for them.
@@ -115,6 +118,8 @@ pub enum SessionCreateError {
     MfaFailed,
     #[error("The user account has been disabled.")]
     UserDisabled,
+    #[error("Invalid recaptcha response")]
+    Recaptcha,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

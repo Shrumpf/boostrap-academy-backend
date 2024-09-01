@@ -4,6 +4,7 @@ use academy_config::Config;
 use academy_core_auth_impl::AuthServiceConfig;
 use academy_core_contact_impl::ContactServiceConfig;
 use academy_core_health_impl::HealthServiceConfig;
+use academy_core_session_impl::SessionServiceConfig;
 use academy_core_user_impl::commands::{
     request_password_reset_email::UserRequestPasswordResetEmailCommandServiceConfig,
     request_subscribe_newsletter_email::UserRequestSubscribeNewsletterEmailCommandServiceConfig,
@@ -38,6 +39,7 @@ provider! {
             TotpServiceConfig,
             Arc<CaptchaServiceConfig>,
             Arc<RecaptchaApiServiceConfig>,
+            SessionServiceConfig,
         }
     }
 }
@@ -67,6 +69,7 @@ provider! {
         totp_service_config: TotpServiceConfig,
         captcha_service_config: Arc<CaptchaServiceConfig>,
         recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>,
+        session_service_config: SessionServiceConfig,
     }
 }
 
@@ -123,6 +126,10 @@ impl ConfigProvider {
         )
         .into();
 
+        let session_service_config = SessionServiceConfig {
+            login_fails_before_captcha: config.session.login_fails_before_captcha,
+        };
+
         Ok(Self {
             _state: Default::default(),
             auth_service_config,
@@ -136,6 +143,7 @@ impl ConfigProvider {
             totp_service_config,
             captcha_service_config,
             recaptcha_api_service_config,
+            session_service_config,
         })
     }
 }

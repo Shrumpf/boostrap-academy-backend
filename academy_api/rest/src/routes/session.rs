@@ -9,6 +9,7 @@ use academy_models::{
     mfa::{MfaAuthenticateCommand, MfaRecoveryCode, TotpCode},
     session::{DeviceName, SessionId},
     user::{UserId, UserNameOrEmailAddress, UserPassword},
+    RecaptchaResponse,
 };
 use axum::{
     extract::{Path, State},
@@ -84,6 +85,7 @@ struct CreateRequest {
     password: UserPassword,
     mfa_code: Option<TotpCode>,
     recovery_code: Option<MfaRecoveryCode>,
+    recaptcha_response: Option<RecaptchaResponse>,
 }
 
 async fn create(
@@ -94,18 +96,22 @@ async fn create(
         password,
         mfa_code,
         recovery_code,
+        recaptcha_response,
     }): Json<CreateRequest>,
 ) -> Response {
     match session_service
-        .create_session(SessionCreateCommand {
-            name_or_email,
-            password,
-            device_name: user_agent.0.map(DeviceName::from_string_truncated),
-            mfa: MfaAuthenticateCommand {
-                totp_code: mfa_code,
-                recovery_code,
+        .create_session(
+            SessionCreateCommand {
+                name_or_email,
+                password,
+                device_name: user_agent.0.map(DeviceName::from_string_truncated),
+                mfa: MfaAuthenticateCommand {
+                    totp_code: mfa_code,
+                    recovery_code,
+                },
             },
-        })
+            recaptcha_response,
+        )
         .await
     {
         Ok(result) => (StatusCode::CREATED, Json(ApiLogin::from(result))).into_response(),
@@ -116,6 +122,9 @@ async fn create(
             error(StatusCode::PRECONDITION_FAILED, "Invalid code")
         }
         Err(SessionCreateError::UserDisabled) => error(StatusCode::FORBIDDEN, "User disabled"),
+        Err(SessionCreateError::Recaptcha) => {
+            error(StatusCode::PRECONDITION_FAILED, "Recaptcha failed")
+        }
         Err(SessionCreateError::Other(err)) => internal_server_error(err),
     }
 }

@@ -11,6 +11,7 @@ use academy_core_session_contracts::{
         delete_by_user::SessionDeleteByUserCommandService,
         refresh::{SessionRefreshCommandError, SessionRefreshCommandService},
     },
+    failed_auth_count::SessionFailedAuthCountService,
     SessionCreateCommand, SessionCreateError, SessionDeleteByUserError, SessionDeleteCurrentError,
     SessionDeleteError, SessionGetCurrentError, SessionImpersonateError, SessionListByUserError,
     SessionRefreshError, SessionService,
@@ -20,26 +21,32 @@ use academy_di::Build;
 use academy_models::{
     auth::Login,
     session::{Session, SessionId},
-    user::{UserId, UserIdOrSelf},
+    user::{UserId, UserIdOrSelf, UserNameOrEmailAddress},
+    RecaptchaResponse,
 };
 use academy_persistence_contracts::{
     session::SessionRepository, user::UserRepository, Database, Transaction,
 };
+use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 use anyhow::anyhow;
 
 pub mod commands;
+pub mod failed_auth_count;
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, Clone, Default, Build)]
+#[derive(Debug, Clone, Build)]
+#[cfg_attr(test, derive(Default))]
 pub struct SessionServiceImpl<
     Db,
     Auth,
+    Captcha,
     SessionCreate,
     SessionRefresh,
     SessionDelete,
     SessionDeleteByUser,
+    SessionFailedAuthCount,
     UserGetByNameOrEmail,
     MfaAuthenticate,
     UserRepo,
@@ -47,23 +54,33 @@ pub struct SessionServiceImpl<
 > {
     db: Db,
     auth: Auth,
+    captcha: Captcha,
     session_create: SessionCreate,
     session_refresh: SessionRefresh,
     session_delete: SessionDelete,
     session_delete_by_user: SessionDeleteByUser,
+    session_failed_auth_count: SessionFailedAuthCount,
     user_get_by_name_or_email: UserGetByNameOrEmail,
     mfa_authenticate: MfaAuthenticate,
     user_repo: UserRepo,
     session_repo: SessionRepo,
+    config: SessionServiceConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct SessionServiceConfig {
+    pub login_fails_before_captcha: u64,
 }
 
 impl<
         Db,
         Auth,
+        Captcha,
         SessionCreate,
         SessionRefresh,
         SessionDelete,
         SessionDeleteByUser,
+        SessionFailedAuthCount,
         UserGetByNameOrEmail,
         MfaAuthenticate,
         UserRepo,
@@ -72,10 +89,12 @@ impl<
     for SessionServiceImpl<
         Db,
         Auth,
+        Captcha,
         SessionCreate,
         SessionRefresh,
         SessionDelete,
         SessionDeleteByUser,
+        SessionFailedAuthCount,
         UserGetByNameOrEmail,
         MfaAuthenticate,
         UserRepo,
@@ -84,10 +103,12 @@ impl<
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
+    Captcha: CaptchaService,
     SessionCreate: SessionCreateCommandService<Db::Transaction>,
     SessionRefresh: SessionRefreshCommandService<Db::Transaction>,
     SessionDelete: SessionDeleteCommandService<Db::Transaction>,
     SessionDeleteByUser: SessionDeleteByUserCommandService<Db::Transaction>,
+    SessionFailedAuthCount: SessionFailedAuthCountService,
     UserGetByNameOrEmail: UserGetByNameOrEmailQueryService<Db::Transaction>,
     MfaAuthenticate: MfaAuthenticateCommandService<Db::Transaction>,
     UserRepo: UserRepository<Db::Transaction>,
@@ -121,37 +142,96 @@ where
             .map_err(Into::into)
     }
 
-    async fn create_session(&self, cmd: SessionCreateCommand) -> Result<Login, SessionCreateError> {
+    async fn create_session(
+        &self,
+        cmd: SessionCreateCommand,
+        recaptcha_response: Option<RecaptchaResponse>,
+    ) -> Result<Login, SessionCreateError> {
+        let failed_login_attempts = self
+            .session_failed_auth_count
+            .get(&cmd.name_or_email)
+            .await?;
+
+        if failed_login_attempts >= self.config.login_fails_before_captcha {
+            self.captcha
+                .check(recaptcha_response.as_deref().map(String::as_str))
+                .await
+                .map_err(|err| match err {
+                    CaptchaCheckError::Failed => SessionCreateError::Recaptcha,
+                    CaptchaCheckError::Other(err) => err.into(),
+                })?;
+        }
+
         let mut txn = self.db.begin_transaction().await?;
 
-        let mut user_composite = self
+        let mut user_composite = match self
             .user_get_by_name_or_email
             .invoke(&mut txn, &cmd.name_or_email)
             .await?
-            .ok_or(SessionCreateError::InvalidCredentials)?;
+        {
+            Some(user_composite) => user_composite,
+            None => {
+                self.session_failed_auth_count
+                    .increment(&cmd.name_or_email)
+                    .await?;
+                return Err(SessionCreateError::InvalidCredentials);
+            }
+        };
 
-        self.auth
+        let increment_failed_login_attempts = || async {
+            self.session_failed_auth_count
+                .increment(&UserNameOrEmailAddress::Name(
+                    user_composite.user.name.clone(),
+                ))
+                .await?;
+            if let Some(email) = user_composite.user.email.clone() {
+                self.session_failed_auth_count
+                    .increment(&UserNameOrEmailAddress::Email(email))
+                    .await?;
+            }
+            anyhow::Ok(())
+        };
+
+        match self
+            .auth
             .authenticate_by_password(&mut txn, user_composite.user.id, cmd.password)
             .await
-            .map_err(|err| match err {
-                AuthenticateByPasswordError::InvalidCredentials => {
-                    SessionCreateError::InvalidCredentials
-                }
-                AuthenticateByPasswordError::Other(err) => err.into(),
-            })?;
+        {
+            Ok(()) => {}
+            Err(AuthenticateByPasswordError::InvalidCredentials) => {
+                increment_failed_login_attempts().await?;
+                return Err(SessionCreateError::InvalidCredentials);
+            }
+            Err(AuthenticateByPasswordError::Other(err)) => return Err(err.into()),
+        };
 
         if user_composite.details.mfa_enabled {
             match self
                 .mfa_authenticate
                 .invoke(&mut txn, user_composite.user.id, cmd.mfa)
                 .await
-                .map_err(|err| match err {
-                    MfaAuthenticateCommandError::Failed => SessionCreateError::MfaFailed,
-                    MfaAuthenticateCommandError::Other(err) => err.into(),
-                })? {
-                MfaAuthenticateCommandResult::Ok => (),
-                MfaAuthenticateCommandResult::Reset => user_composite.details.mfa_enabled = false,
+            {
+                Ok(MfaAuthenticateCommandResult::Ok) => (),
+                Ok(MfaAuthenticateCommandResult::Reset) => {
+                    user_composite.details.mfa_enabled = false
+                }
+                Err(MfaAuthenticateCommandError::Failed) => {
+                    increment_failed_login_attempts().await?;
+                    return Err(SessionCreateError::MfaFailed);
+                }
+                Err(MfaAuthenticateCommandError::Other(err)) => return Err(err.into()),
             }
+        }
+
+        self.session_failed_auth_count
+            .reset(&UserNameOrEmailAddress::Name(
+                user_composite.user.name.clone(),
+            ))
+            .await?;
+        if let Some(email) = user_composite.user.email.clone() {
+            self.session_failed_auth_count
+                .reset(&UserNameOrEmailAddress::Email(email))
+                .await?;
         }
 
         if !user_composite.user.enabled {

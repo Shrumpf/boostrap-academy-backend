@@ -117,6 +117,7 @@ pub struct SessionConfig {
     pub access_token_ttl: Duration,
     pub refresh_token_ttl: Duration,
     pub refresh_token_length: usize,
+    pub login_fails_before_captcha: u64,
 }
 
 #[derive(Debug, Deserialize)]

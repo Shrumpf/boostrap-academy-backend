@@ -107,7 +107,10 @@ assert resp.status_code == 412
 assert resp.json() == {"detail": "Invalid code"}
 
 # recovery code
-resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a", "recovery_code": recovery_code})
+resp = c.post(
+    "/auth/sessions",
+    json={"name_or_email": "a", "password": "a", "recovery_code": recovery_code, "recaptcha_response": "success-1.0"},
+)
 assert resp.status_code == 201
 login = resp.json()
 assert login["user"]["mfa_enabled"] is False

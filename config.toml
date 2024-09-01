@@ -41,6 +41,7 @@ newsletter_redirect_url = "https://bootstrap.academy/account/newsletter"
 access_token_ttl = "1d"
 refresh_token_ttl = "30d"
 refresh_token_length = 64
+login_fails_before_captcha = 3
 
 [totp]
 secret_length = 32
