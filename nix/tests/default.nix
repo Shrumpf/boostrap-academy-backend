@@ -7,6 +7,7 @@
   testers,
   writeShellScriptBin,
   writeTextDir,
+  system,
 }: let
   tests = lib.pipe ./. [
     builtins.readDir
@@ -31,7 +32,7 @@
     then mkPythonTest name
     else mkNixosTest name;
 
-  defaultModule = {
+  defaultModule = {config, ...}: {
     imports = [self.nixosModules.default];
 
     services.academy.backend = {
@@ -51,7 +52,22 @@
         jwt.secret = "changeme";
         health.cache_ttl = "2s";
         contact.email = "contact@academy";
+        recaptcha = {
+          enable = lib.mkDefault true;
+          siteverify_endpoint_override = "http://127.0.0.1:8001/recaptcha/api/siteverify";
+          sitekey = "test-sitekey";
+          secret = "test-secret";
+          min_score = 0.5;
+        };
       };
+    };
+
+    systemd.services."academy-testing-recaptcha" = lib.mkIf config.services.academy.backend.settings.recaptcha.enable {
+      wantedBy = ["academy-backend.service"];
+      before = ["academy-backend.service"];
+      script = ''
+        ${self.packages.${system}.testing}/bin/academy-testing recaptcha
+      '';
     };
 
     services.postfix = {
