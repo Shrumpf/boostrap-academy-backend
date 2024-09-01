@@ -18,6 +18,7 @@ use academy_core_user_contracts::{
     queries::list::MockUserListQueryService,
 };
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase, MockTransaction};
+use academy_shared_contracts::captcha::MockCaptchaService;
 
 use crate::UserServiceImpl;
 
@@ -35,6 +36,7 @@ mod verify_newsletter_subscription;
 type Sut = UserServiceImpl<
     MockDatabase,
     MockAuthService<MockTransaction>,
+    MockCaptchaService,
     MockUserListQueryService<MockTransaction>,
     MockUserCreateCommandService<MockTransaction>,
     MockUserRequestSubscribeNewsletterEmailCommandService,

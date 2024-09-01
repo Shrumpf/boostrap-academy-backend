@@ -2,7 +2,7 @@ import os
 import subprocess
 import time
 
-from utils import make_client, refresh_session, save_auth
+from utils import create_account, make_client, refresh_session
 
 
 def test(c):
@@ -23,16 +23,10 @@ def assert_sessions(expected):
 
 
 a = make_client()
-resp = a.post("/auth/users", json={"name": "a", "display_name": "a", "email": "a@a", "password": "a"})
-assert resp.status_code == 201
-al = resp.json()
-save_auth(al, a)
+al = create_account("a", "a@a", "a", a)
 
 b = make_client()
-resp = b.post("/auth/users", json={"name": "b", "display_name": "b", "email": "b@b", "password": "b"})
-assert resp.status_code == 201
-bl = resp.json()
-save_auth(bl, b)
+bl = create_account("b", "b@b", "b", b)
 
 
 assert test(a)

@@ -112,6 +112,7 @@ pub type Config = ConfigServiceImpl<Captcha>;
 pub type User = UserServiceImpl<
     Database,
     Auth,
+    Captcha,
     UserList,
     UserCreate,
     UserRequestSubscribeNewsletterEmail,

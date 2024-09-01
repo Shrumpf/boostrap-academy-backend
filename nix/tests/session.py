@@ -1,15 +1,6 @@
 import os
 
-from utils import (
-    assert_access_token_invalid,
-    c,
-    create_account,
-    discard_auth,
-    get_self,
-    make_client,
-    refresh_session,
-    save_auth,
-)
+from utils import assert_access_token_invalid, c, create_account, get_self, make_client, save_auth
 
 login = create_account("a", "a@a", "a")
 sessions = [login["session"]]

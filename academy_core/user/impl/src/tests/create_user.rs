@@ -6,6 +6,7 @@ use academy_core_user_contracts::{
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::auth::Login;
 use academy_persistence_contracts::MockDatabase;
+use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::assert_matches;
 
 use crate::{tests::Sut, UserServiceImpl};
@@ -29,6 +30,8 @@ async fn ok() {
 
     let db = MockDatabase::build(true);
 
+    let captcha = MockCaptchaService::new().with_check(Some("resp"), Ok(()));
+
     let user_create =
         MockUserCreateCommandService::new().with_invoke(req_to_cmd(&request), Ok(FOO.clone()));
 
@@ -41,16 +44,54 @@ async fn ok() {
 
     let sut = UserServiceImpl {
         db,
+        captcha,
         user_create,
         session_create,
         ..Sut::default()
     };
 
     // Act
-    let result = sut.create_user(request, FOO_1.device_name.clone()).await;
+    let result = sut
+        .create_user(
+            request,
+            FOO_1.device_name.clone(),
+            Some("resp".try_into().unwrap()),
+        )
+        .await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
+}
+
+#[tokio::test]
+async fn invalid_recaptcha_response() {
+    // Arrange
+    let request = UserCreateRequest {
+        name: FOO.user.name.clone(),
+        display_name: FOO.profile.display_name.clone(),
+        email: FOO.user.email.clone().unwrap(),
+        password: "secure password".try_into().unwrap(),
+    };
+
+    let captcha =
+        MockCaptchaService::new().with_check(Some("resp"), Err(CaptchaCheckError::Failed));
+
+    let sut = UserServiceImpl {
+        captcha,
+        ..Sut::default()
+    };
+
+    // Act
+    let result = sut
+        .create_user(
+            request,
+            FOO_1.device_name.clone(),
+            Some("resp".try_into().unwrap()),
+        )
+        .await;
+
+    // Assert
+    assert_matches!(result, Err(UserCreateError::Recaptcha));
 }
 
 #[tokio::test]
@@ -65,6 +106,8 @@ async fn name_conflict() {
 
     let db = MockDatabase::build(false);
 
+    let captcha = MockCaptchaService::new().with_check(None, Ok(()));
+
     let user_create = MockUserCreateCommandService::new().with_invoke(
         req_to_cmd(&request),
         Err(UserCreateCommandError::NameConflict),
@@ -72,12 +115,15 @@ async fn name_conflict() {
 
     let sut = UserServiceImpl {
         db,
+        captcha,
         user_create,
         ..Sut::default()
     };
 
     // Act
-    let result = sut.create_user(request, FOO_1.device_name.clone()).await;
+    let result = sut
+        .create_user(request, FOO_1.device_name.clone(), None)
+        .await;
 
     // Assert
     assert_matches!(result, Err(UserCreateError::NameConflict));
@@ -95,6 +141,8 @@ async fn email_conflict() {
 
     let db = MockDatabase::build(false);
 
+    let captcha = MockCaptchaService::new().with_check(None, Ok(()));
+
     let user_create = MockUserCreateCommandService::new().with_invoke(
         req_to_cmd(&request),
         Err(UserCreateCommandError::EmailConflict),
@@ -102,12 +150,15 @@ async fn email_conflict() {
 
     let sut = UserServiceImpl {
         db,
+        captcha,
         user_create,
         ..Sut::default()
     };
 
     // Act
-    let result = sut.create_user(request, FOO_1.device_name.clone()).await;
+    let result = sut
+        .create_user(request, FOO_1.device_name.clone(), None)
+        .await;
 
     // Assert
     assert_matches!(result, Err(UserCreateError::EmailConflict));

@@ -10,15 +10,29 @@ use url::Url;
 pub const DEFAULT_CONFIG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../config.toml");
 
 pub fn load(paths: &[impl AsRef<Path>]) -> anyhow::Result<Config> {
-    paths
-        .iter()
-        .try_fold(config::Config::builder(), |builder, path| {
-            let path = path.as_ref();
-            let content = std::fs::read_to_string(path)
-                .with_context(|| format!("Failed to read config file at {}", path.display()))?;
-            let source = File::from_str(&content, FileFormat::Toml);
-            anyhow::Ok(builder.add_source(source))
-        })?
+    load_with_override(paths, &[])
+}
+
+pub fn load_with_override(
+    paths: &[impl AsRef<Path>],
+    overrides: &[&str],
+) -> anyhow::Result<Config> {
+    let mut builder = config::Config::builder();
+
+    for path in paths {
+        let path = path.as_ref();
+        let content = std::fs::read_to_string(path)
+            .with_context(|| format!("Failed to read config file at {}", path.display()))?;
+        let source = File::from_str(&content, FileFormat::Toml);
+        builder = builder.add_source(source);
+    }
+
+    for content in overrides {
+        let source = File::from_str(content, FileFormat::Toml);
+        builder = builder.add_source(source);
+    }
+
+    builder
         .build()?
         .try_deserialize::<Config>()
         .context("Failed to load config")

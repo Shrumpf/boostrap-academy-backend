@@ -45,12 +45,8 @@ async fn failure() {
 }
 
 fn make_sut() -> (RecaptchaApiServiceImpl, String) {
-    let mut paths = vec![Path::new(DEFAULT_CONFIG_PATH)];
-    let extra = std::env::var("EXTRA_CONFIG");
-    if let Ok(extra) = &extra {
-        paths.push(Path::new(extra));
-    }
-    let config = academy_config::load(&paths).unwrap();
+    let paths = vec![Path::new(DEFAULT_CONFIG_PATH)];
+    let config = academy_config::load_with_override(&paths, &["recaptcha.enable = true"]).unwrap();
 
     let RecaptchaConfig {
         siteverify_endpoint_override,

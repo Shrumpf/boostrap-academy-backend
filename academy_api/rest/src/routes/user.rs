@@ -10,7 +10,7 @@ use academy_core_user_contracts::{
 use academy_models::{
     session::DeviceName,
     user::{UserBio, UserDisplayName, UserName, UserPassword, UserProfilePatch, UserTags},
-    VerificationCode,
+    RecaptchaResponse, VerificationCode,
 };
 use axum::{
     extract::{Path, Query, State},
@@ -107,6 +107,7 @@ struct CreateRequest {
     display_name: UserDisplayName,
     email: EmailAddress,
     password: UserPassword,
+    recaptcha_response: Option<RecaptchaResponse>,
 }
 
 async fn create(
@@ -117,6 +118,7 @@ async fn create(
         display_name,
         email,
         password,
+        recaptcha_response,
     }): Json<CreateRequest>,
 ) -> Response {
     match user_service
@@ -128,12 +130,16 @@ async fn create(
                 password,
             },
             user_agent.0.map(DeviceName::from_string_truncated),
+            recaptcha_response,
         )
         .await
     {
         Ok(result) => (StatusCode::CREATED, Json(ApiLogin::from(result))).into_response(),
         Err(UserCreateError::NameConflict) => error(StatusCode::CONFLICT, "User already exists"),
         Err(UserCreateError::EmailConflict) => error(StatusCode::CONFLICT, "Email already exists"),
+        Err(UserCreateError::Recaptcha) => {
+            error(StatusCode::PRECONDITION_FAILED, "Recaptcha failed")
+        }
         Err(UserCreateError::Other(err)) => internal_server_error(err),
     }
 }

@@ -31,9 +31,10 @@ use academy_models::{
     auth::Login,
     session::DeviceName,
     user::{UserComposite, UserId, UserIdOrSelf, UserPassword, UserPatchRef},
-    VerificationCode,
+    RecaptchaResponse, VerificationCode,
 };
 use academy_persistence_contracts::{user::UserRepository, Database, Transaction};
+use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 use academy_utils::patch::{Patch, PatchValue};
 use anyhow::anyhow;
 use email_address::EmailAddress;
@@ -48,6 +49,7 @@ mod tests;
 pub struct UserServiceImpl<
     Db,
     Auth,
+    Captcha,
     UserList,
     UserCreate,
     UserRequestSubscribeNewsletterEmail,
@@ -66,6 +68,7 @@ pub struct UserServiceImpl<
 > {
     db: Db,
     auth: Auth,
+    captcha: Captcha,
     user_list: UserList,
     user_create: UserCreate,
     user_request_subscribe_newsletter_email: UserRequestSubscribeNewsletterEmail,
@@ -86,6 +89,7 @@ pub struct UserServiceImpl<
 impl<
         Db,
         Auth,
+        Captcha,
         UserList,
         UserCreate,
         UserRequestSubscribeNewsletterEmail,
@@ -105,6 +109,7 @@ impl<
     for UserServiceImpl<
         Db,
         Auth,
+        Captcha,
         UserList,
         UserCreate,
         UserRequestSubscribeNewsletterEmail,
@@ -124,6 +129,7 @@ impl<
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
+    Captcha: CaptchaService,
     UserList: UserListQueryService<Db::Transaction>,
     UserCreate: UserCreateCommandService<Db::Transaction>,
     UserRequestSubscribeNewsletterEmail: UserRequestSubscribeNewsletterEmailCommandService,
@@ -178,7 +184,16 @@ where
         &self,
         request: UserCreateRequest,
         device_name: Option<DeviceName>,
+        recaptcha_response: Option<RecaptchaResponse>,
     ) -> Result<Login, UserCreateError> {
+        self.captcha
+            .check(recaptcha_response.as_deref().map(String::as_str))
+            .await
+            .map_err(|err| match err {
+                CaptchaCheckError::Failed => UserCreateError::Recaptcha,
+                CaptchaCheckError::Other(err) => err.into(),
+            })?;
+
         let mut txn = self.db.begin_transaction().await.unwrap();
 
         let cmd = UserCreateCommand {

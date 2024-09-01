@@ -17,9 +17,15 @@ c.headers["User-Agent"] = "httpx test client"
 
 # create
 password = "my secure password"
-resp = c.post(
-    "/auth/users", json={"name": "user", "display_name": "User 123", "email": "user@example.com", "password": password}
-)
+req = {"name": "user", "display_name": "User 123", "email": "user@example.com", "password": password}
+
+## recaptcha error
+resp = c.post("/auth/users", json={**req, "recaptcha_response": "success-0.3"})
+assert resp.status_code == 412
+assert resp.json() == {"detail": "Recaptcha failed"}
+
+## success
+resp = c.post("/auth/users", json={**req, "recaptcha_response": "success-0.7"})
 assert resp.status_code == 201
 login = resp.json()
 assert login == {
@@ -52,11 +58,23 @@ assert abs(time.time() - login["user"]["created_at"]) < 2
 assert abs(time.time() - login["user"]["last_login"]) < 2
 assert abs(time.time() - login["session"]["last_update"]) < 2
 
-resp = c.post("/auth/users", json={"name": "user", "display_name": "x", "email": "x@x", "password": "x"})
+resp = c.post(
+    "/auth/users",
+    json={"name": "user", "display_name": "x", "email": "x@x", "password": "x", "recaptcha_response": "success-1.0"},
+)
 assert resp.status_code == 409
 assert resp.json() == {"detail": "User already exists"}
 
-resp = c.post("/auth/users", json={"name": "x", "display_name": "x", "email": "user@example.com", "password": "x"})
+resp = c.post(
+    "/auth/users",
+    json={
+        "name": "x",
+        "display_name": "x",
+        "email": "user@example.com",
+        "password": "x",
+        "recaptcha_response": "success-1.0",
+    },
+)
 assert resp.status_code == 409
 assert resp.json() == {"detail": "Email already exists"}
 

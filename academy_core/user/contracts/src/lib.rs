@@ -6,7 +6,7 @@ use academy_models::{
     user::{
         UserComposite, UserDisplayName, UserIdOrSelf, UserName, UserPassword, UserProfilePatch,
     },
-    VerificationCode,
+    RecaptchaResponse, VerificationCode,
 };
 use academy_utils::patch::PatchValue;
 use chrono::{DateTime, Utc};
@@ -43,6 +43,7 @@ pub trait UserService: Send + Sync + 'static {
         &self,
         cmd: UserCreateRequest,
         device_name: Option<DeviceName>,
+        recaptcha_response: Option<RecaptchaResponse>,
     ) -> impl Future<Output = Result<Login, UserCreateError>> + Send;
 
     /// Updates a user.
@@ -147,6 +148,8 @@ pub enum UserCreateError {
     NameConflict,
     #[error("A user with the same email address already exists.")]
     EmailConflict,
+    #[error("Invalid recaptcha response")]
+    Recaptcha,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

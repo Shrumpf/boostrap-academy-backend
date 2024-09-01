@@ -62,7 +62,16 @@ def make_client():
 
 def create_account(name, email, password, client=None):
     client = client or c
-    resp = client.post("/auth/users", json={"name": name, "display_name": name, "email": email, "password": password})
+    resp = client.post(
+        "/auth/users",
+        json={
+            "name": name,
+            "display_name": name,
+            "email": email,
+            "password": password,
+            "recaptcha_response": "success-1.0",
+        },
+    )
     assert resp.status_code == 201
     login = resp.json()
     save_auth(login, client)

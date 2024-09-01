@@ -53,12 +53,5 @@ testers.runNixOSTest {
     login = json.loads(machine.succeed("curl -s http://127.0.0.1:8000/auth/sessions -X POST -H 'Content-Type: application/json' -d '{\"name_or_email\": \"admin\", \"password\": \"supersecureadminpassword\"}'"))
     assert login["user"]["admin"]
     assert login["user"]["email_verified"]
-
-    login = json.loads(machine.succeed("curl -s http://127.0.0.1:8000/auth/users -X POST -H 'Content-Type: application/json' -d '{\"name\": \"user\", \"display_name\": \"new user 42\", \"email\": \"user@example.com\", \"password\": \"password\"}'"))
-    assert login["user"]["name"] == "user"
-    assert login["user"]["display_name"] == "new user 42"
-
-    user = json.loads(machine.succeed(f"curl -s http://127.0.0.1:8000/auth/users/self -H 'Authorization: Bearer {login["access_token"]}'"))
-    assert user == login["user"]
   '';
 }
