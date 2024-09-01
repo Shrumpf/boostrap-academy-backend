@@ -86,7 +86,10 @@ jobs:
           cache-on-failure: true
       - name: test recaptcha
         run: |
+          echo 'recaptcha.enable = true' > $EXTRA_CONFIG
           cargo build --bin academy-testing
           cargo run --bin academy-testing -- recaptcha &
           while ! curl -s http://127.0.0.1:8001; do sleep .1; done
           cargo test -p academy_extern_impl --no-fail-fast --all-features --test recaptcha
+        env:
+          EXTRA_CONFIG: ${{ github.workspace }}/config.extra.toml

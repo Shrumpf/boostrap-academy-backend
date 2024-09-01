@@ -47,7 +47,7 @@ in {
     cfg = config.services.academy.backend;
 
     updateDefaultConfig = settings:
-      settings
+      (builtins.removeAttrs settings ["recaptcha"])
       // {
         http = builtins.removeAttrs settings.http ["host" "port"];
         database = builtins.removeAttrs settings.database ["url"];

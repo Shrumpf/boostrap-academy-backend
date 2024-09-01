@@ -20,8 +20,14 @@ pub fn load(paths: &[impl AsRef<Path>]) -> anyhow::Result<Config> {
             anyhow::Ok(builder.add_source(source))
         })?
         .build()?
-        .try_deserialize()
+        .try_deserialize::<Config>()
         .context("Failed to load config")
+        .map(|mut config| {
+            config
+                .recaptcha
+                .take_if(|recaptcha| recaptcha.enable == Some(false));
+            config
+        })
 }
 
 #[derive(Debug, Deserialize)]
@@ -111,6 +117,7 @@ pub struct ContactConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct RecaptchaConfig {
+    pub enable: Option<bool>,
     pub siteverify_endpoint_override: Option<Url>,
     pub sitekey: String,
     pub secret: String,

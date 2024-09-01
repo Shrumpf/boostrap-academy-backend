@@ -46,6 +46,9 @@
     SMTP4DEV_URL = "http://127.0.0.1:5000";
 
     PYTHONPATH = "${config.env.DEVENV_ROOT}/nix/tests";
+
+    RECAPTCHA_SITEVERIFY_ENDPOINT = "http://127.0.0.1:8001/recaptcha/api/siteverify";
+    RECAPTCHA_SECRET = "test-secret";
   };
 
   process.implementation = "hivemind";
