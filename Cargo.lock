@@ -160,6 +160,7 @@ dependencies = [
  "academy_di",
  "academy_email_contracts",
  "academy_models",
+ "academy_shared_contracts",
  "academy_utils",
  "anyhow",
  "email_address",

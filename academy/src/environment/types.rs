@@ -164,7 +164,7 @@ pub type SessionRefresh = SessionRefreshCommandServiceImpl<Time, Auth, UserRepo,
 pub type SessionDelete = SessionDeleteCommandServiceImpl<Auth, SessionRepo>;
 pub type SessionDeleteByUser = SessionDeleteByUserCommandServiceImpl<Auth, SessionRepo>;
 
-pub type Contact = ContactServiceImpl<Email>;
+pub type Contact = ContactServiceImpl<Captcha, Email>;
 
 pub type Mfa = MfaServiceImpl<
     Database,

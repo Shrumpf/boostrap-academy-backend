@@ -45,3 +45,9 @@ fn hyphenated_code_regex(chunk_count: usize, chunk_size: usize) -> Regex {
     ))
     .unwrap()
 }
+
+#[nutype(
+    validate(len_char_max = 256),
+    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
+)]
+pub struct RecaptchaResponse(String);
