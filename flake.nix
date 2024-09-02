@@ -2,6 +2,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     fenix.url = "github:nix-community/fenix";
+    crate2nix.url = "github:nix-community/crate2nix";
     devenv = {
       url = "github:cachix/devenv";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -13,6 +14,7 @@
     self,
     nixpkgs,
     fenix,
+    crate2nix,
     devenv,
     nixpkgs-smtp4dev,
     ...
@@ -33,7 +35,7 @@
     packages = eachDefaultSystem (system: let
       pkgs = importNixpkgs system;
     in
-      (pkgs.callPackages ./nix/packages.nix {inherit fenix;})
+      (pkgs.callPackages ./nix/packages.nix {inherit crate2nix fenix;})
       // {
         tests = pkgs.callPackages ./nix/tests {inherit self;};
         devenv-up = self.devShells.${system}.default.config.procfileScript;

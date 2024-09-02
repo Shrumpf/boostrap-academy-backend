@@ -1,63 +1,62 @@
 {
+  crate2nix,
   fenix,
+  callPackage,
   installShellFiles,
   lib,
-  makeRustPlatform,
+  pkgs,
   system,
 }: let
-  cargoToml = fromTOML (builtins.readFile ../Cargo.toml);
   toolchain = fenix.packages.${system}.stable;
-  rustPlatform = makeRustPlatform {
-    inherit (toolchain) cargo rustc;
+
+  src = lib.fileset.toSource {
+    root = ../.;
+    fileset = lib.fileset.unions ([
+        ../Cargo.toml
+        ../Cargo.lock
+      ]
+      ++ (lib.pipe ../. [
+        builtins.readDir
+        builtins.attrNames
+        (builtins.filter (lib.hasPrefix "academy"))
+        (map (x: ../${x}))
+      ]));
   };
 
-  buildRustPackage = {
-    pname,
-    subdir,
-    mainProgram,
-  }:
-    rustPlatform.buildRustPackage {
-      inherit pname;
-      inherit (cargoToml.workspace.package) version;
+  generateShellCompletionOverride = bin: attrs: {
+    pname = bin;
+    name = "${bin}-${attrs.version}";
+    CARGO_BIN_NAME = bin;
+    nativeBuildInputs = attrs.postInstall or [] ++ [installShellFiles];
+    postInstall = ''
+      ${attrs.postInstall or ""}
+      installShellCompletion --cmd ${bin} \
+        --bash <($out/bin/${bin} completion bash) \
+        --fish <($out/bin/${bin} completion fish) \
+        --zsh <($out/bin/${bin} completion zsh)
+    '';
+    meta.mainProgram = bin;
+  };
 
-      src = lib.fileset.toSource {
-        root = ../.;
-        fileset = lib.fileset.unions ([
-            ../Cargo.toml
-            ../Cargo.lock
-          ]
-          ++ (lib.pipe ../. [
-            builtins.readDir
-            builtins.attrNames
-            (builtins.filter (lib.hasPrefix "academy"))
-            (map (x: ../${x}))
-          ]));
-      };
-      cargoLock.lockFile = ../Cargo.lock;
-      doCheck = false;
+  crateOverrides = {
+    academy = generateShellCompletionOverride "academy";
+    academy_testing = generateShellCompletionOverride "academy-testing";
+  };
 
-      buildAndTestSubdir = subdir;
+  generated = crate2nix.tools.${system}.generatedCargoNix {
+    name = "academy";
+    inherit src;
+  };
 
-      nativeBuildInputs = [installShellFiles];
-      postInstall = ''
-        installShellCompletion --cmd ${mainProgram} \
-          --bash <($out/bin/${mainProgram} completion bash) \
-          --fish <($out/bin/${mainProgram} completion fish) \
-          --zsh <($out/bin/${mainProgram} completion zsh)
-      '';
-
-      meta.mainProgram = mainProgram;
-    };
+  cargoNix = callPackage generated {
+    pkgs = pkgs.extend (final: prev: {
+      inherit (toolchain) cargo;
+      # workaround for https://github.com/NixOS/nixpkgs/blob/d80a3129b239f8ffb9015473c59b09ac585b378b/pkgs/build-support/rust/build-rust-crate/default.nix#L19-L23
+      rustc = toolchain.rustc // {unwrapped = {configureFlags = ["--target="];};};
+    });
+    defaultCrateOverrides = pkgs.defaultCrateOverrides // crateOverrides;
+  };
 in {
-  default = buildRustPackage {
-    pname = "academy-backend";
-    subdir = "academy";
-    mainProgram = "academy";
-  };
-
-  testing = buildRustPackage {
-    pname = "academy-testing";
-    subdir = "academy_testing";
-    mainProgram = "academy-testing";
-  };
+  default = cargoNix.workspaceMembers.academy.build;
+  testing = cargoNix.workspaceMembers.academy_testing.build;
 }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use academy_di::Build;
-use academy_templates_contracts::{Template, TemplateService, TEMPLATES};
+use academy_templates_contracts::{Template, TemplateService, BASE_TEMPLATE, TEMPLATES};
 use tera::Tera;
 
 #[derive(Debug, Clone, Build)]
@@ -17,8 +17,7 @@ impl Default for State {
     fn default() -> Self {
         let mut tera = Tera::default();
 
-        tera.add_raw_template("base", include_str!("../../templates/base.html"))
-            .unwrap();
+        tera.add_raw_template("base", BASE_TEMPLATE).unwrap();
 
         for &(name, template) in TEMPLATES {
             tera.add_raw_template(name, template).unwrap();

@@ -25,12 +25,14 @@ pub trait Template: Serialize {
     const TEMPLATE: &'static str;
 }
 
+pub const BASE_TEMPLATE: &str = include_str!("../templates/base.html");
+
 macro_rules! templates {
     ($( $ident:ident ( $path:literal ), )* ) => {
         $(
             impl Template for $ident {
                 const NAME: &'static str = stringify!($ident);
-                const TEMPLATE: &'static str = include_str!(concat!("../../templates/", $path));
+                const TEMPLATE: &'static str = include_str!(concat!("../templates/", $path));
             }
         )*
 
