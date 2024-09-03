@@ -18,7 +18,7 @@ academy_di.workspace = true
 academy_models.workspace = true
 anyhow.workspace = true
 axum.workspace = true
-axum-extra = { version = "0.9.3", default-features = false, features = ["typed-header"] }
+axum-extra.workspace = true
 email_address.workspace = true
 serde.workspace = true
 tokio.workspace = true

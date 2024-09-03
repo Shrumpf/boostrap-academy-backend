@@ -38,6 +38,10 @@
     ${testing}/bin/academy-testing recaptcha
   '';
 
+  processes.testing-oauth2.exec = ''
+    ${testing}/bin/academy-testing oauth2
+  '';
+
   env = {
     RUST_LOG = "debug,backend=trace";
 

@@ -71,7 +71,8 @@ academy_utils.path = "academy_utils"
 academy_utils_derive.path = "academy_utils_derive"
 
 anyhow = { version = "1.0.86", default-features = false, features = ["std"] }
-axum = { version = "0.7.5", default-features = false, features = ["http1", "http2", "tokio", "json", "query"] }
+axum = { version = "0.7.5", default-features = false, features = ["http1", "http2", "tokio", "json", "query", "form"] }
+axum-extra = { version = "0.9.3", default-features = false, features = ["typed-header"] }
 chrono = { version = "0.4.38", default-features = false, features = ["serde", "clock"] }
 clap = { version = "4.5.17", features = ["derive", "env"] }
 clap_complete = { version = "4.5.25", default-features = false }
@@ -79,8 +80,10 @@ email_address = { version = "0.2.9", default-features = false, features = ["serd
 hex = { version = "0.4.3", default-features = false, features = ["std"] }
 mockall = { version = "0.13.0", default-features = false }
 nutype = { version = "0.5.0", default-features = false, features = ["std", "regex", "serde"] }
+oauth2 = { version = "4.4.2", default-features = false }
 pretty_assertions = { version = "1.4.0", default-features = false, features = ["std"] }
 quote = { version = "1.0.37", default-features = false, features = ["proc-macro"] }
+rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 regex = { version = "1.10.6", default-features = false }
 reqwest = { version = "0.12.7", default-features = false, features = ["http2", "rustls-tls", "json"] }
 serde = { version = "1.0.209", default-features = false, features = ["derive", "std"] }
