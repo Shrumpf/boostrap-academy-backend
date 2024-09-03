@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
 use academy_di::Build;
-use academy_extern_contracts::oauth2::{
-    OAuth2Provider, OAuth2ResolveCodeError, OAuth2Service, OAuth2UserInfo,
-};
+use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError, OAuth2UserInfo};
+use academy_models::oauth2::OAuth2Provider;
 use academy_utils::Apply;
 use anyhow::anyhow;
 use oauth2::{
@@ -15,23 +14,23 @@ use url::Url;
 use crate::http::{HttpClient, USER_AGENT};
 
 #[derive(Debug, Clone, Build, Default)]
-pub struct OAuth2ServiceImpl {
+pub struct OAuth2ApiServiceImpl {
     #[state]
     http: HttpClient,
 }
 
-impl OAuth2Service for OAuth2ServiceImpl {
-    fn generate_auth_url(&self, provider: OAuth2Provider) -> Url {
-        let mut url = provider.auth_url;
+impl OAuth2ApiService for OAuth2ApiServiceImpl {
+    fn generate_auth_url(&self, provider: &OAuth2Provider) -> Url {
+        let mut url = provider.auth_url.clone();
         url.query_pairs_mut()
             .append_pair("response_type", "code")
             .append_pair("client_id", &provider.client_id)
             .apply_if(!provider.scopes.is_empty(), |q| {
-                let mut it = provider.scopes.into_iter();
-                let mut scopes = it.next().unwrap();
+                let mut it = provider.scopes.iter();
+                let mut scopes = it.next().unwrap().clone();
                 for scope in it {
                     scopes.push(' ');
-                    scopes.push_str(&scope);
+                    scopes.push_str(scope);
                 }
                 q.append_pair("scope", &scopes)
             })
@@ -43,6 +42,7 @@ impl OAuth2Service for OAuth2ServiceImpl {
         &self,
         provider: OAuth2Provider,
         code: String,
+        redirect_url: Url,
     ) -> Result<OAuth2UserInfo, OAuth2ResolveCodeError> {
         let client = BasicClient::new(
             ClientId::new(provider.client_id),
@@ -50,7 +50,7 @@ impl OAuth2Service for OAuth2ServiceImpl {
             AuthUrl::from_url(provider.auth_url),
             Some(TokenUrl::from_url(provider.token_url)),
         )
-        .set_redirect_uri(RedirectUrl::from_url(provider.redirect_url));
+        .set_redirect_uri(RedirectUrl::from_url(redirect_url));
 
         let response = client
             .exchange_code(AuthorizationCode::new(code))
@@ -114,10 +114,10 @@ mod tests {
         // Arrange
         let provider = make_provider();
 
-        let sut = OAuth2ServiceImpl::default();
+        let sut = OAuth2ApiServiceImpl::default();
 
         // Act
-        let result = sut.generate_auth_url(provider);
+        let result = sut.generate_auth_url(&provider);
 
         // Assert
         assert_eq!(result.as_str(), "https://oauth2.provider/auth?response_type=code&client_id=the-client-id&scope=foo+bar+baz");
@@ -131,10 +131,10 @@ mod tests {
             ..make_provider()
         };
 
-        let sut = OAuth2ServiceImpl::default();
+        let sut = OAuth2ApiServiceImpl::default();
 
         // Act
-        let result = sut.generate_auth_url(provider);
+        let result = sut.generate_auth_url(&provider);
 
         // Assert
         assert_eq!(
@@ -145,11 +145,11 @@ mod tests {
 
     fn make_provider() -> OAuth2Provider {
         OAuth2Provider {
+            name: "test".into(),
             client_id: "the-client-id".into(),
             client_secret: None,
             auth_url: "https://oauth2.provider/auth".parse().unwrap(),
             token_url: "http://test".parse().unwrap(),
-            redirect_url: "http://test".parse().unwrap(),
             userinfo_url: "http://test".parse().unwrap(),
             userinfo_id_key: String::new(),
             userinfo_name_key: String::new(),

@@ -55,3 +55,54 @@ siteverify_endpoint_override = "http://127.0.0.1:8001/recaptcha/api/siteverify"
 sitekey = "test-sitekey"
 secret = "test-secret"
 min_score = 0.5
+
+[oauth2]
+enable = true
+
+[oauth2.providers.test]
+enable = true
+name = "Test"
+client_id = "client-id"
+client_secret = "client-secret"
+auth_url = "http://127.0.0.1:8002/oauth2/authorize"
+token_url = "http://127.0.0.1:8002/oauth2/token"
+userinfo_url = "http://127.0.0.1:8002/user"
+userinfo_id_key = "id"
+userinfo_name_key = "name"
+scopes = []
+
+[oauth2.providers.github]
+enable = false
+name = "GitHub"
+client_id = ""
+client_secret = ""
+auth_url = "https://github.com/login/oauth/authorize"
+token_url = "https://github.com/login/oauth/access_token"
+userinfo_url = "https://api.github.com/user"
+userinfo_id_key = "id"
+userinfo_name_key = "login"
+scopes = []
+
+[oauth2.providers.discord]
+enable = false
+name = "Discord"
+client_id = ""
+client_secret = ""
+auth_url = "https://discord.com/oauth2/authorize"
+token_url = "https://discord.com/api/oauth2/token"
+userinfo_url = "https://discord.com/api/users/@me"
+userinfo_id_key = "id"
+userinfo_name_key = "username"
+scopes = ["identify"]
+
+[oauth2.providers.google]
+enable = false
+name = "Google"
+client_id = ""
+client_secret = ""
+auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
+token_url = "https://www.googleapis.com/oauth2/v3/token"
+userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+userinfo_id_key = "sub"
+userinfo_name_key = "given_name"
+scopes = ["openid", "profile"]

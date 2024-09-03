@@ -15,6 +15,7 @@ dependencies = [
  "academy_core_contact_impl",
  "academy_core_health_impl",
  "academy_core_mfa_impl",
+ "academy_core_oauth2_impl",
  "academy_core_session_impl",
  "academy_core_user_contracts",
  "academy_core_user_impl",
@@ -23,6 +24,7 @@ dependencies = [
  "academy_email_contracts",
  "academy_email_impl",
  "academy_extern_impl",
+ "academy_models",
  "academy_persistence_contracts",
  "academy_persistence_postgres",
  "academy_shared_contracts",
@@ -47,6 +49,7 @@ dependencies = [
  "academy_core_contact_contracts",
  "academy_core_health_contracts",
  "academy_core_mfa_contracts",
+ "academy_core_oauth2_contracts",
  "academy_core_session_contracts",
  "academy_core_user_contracts",
  "academy_di",
@@ -59,6 +62,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -214,6 +218,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "academy_core_oauth2_contracts"
+version = "0.0.0"
+dependencies = [
+ "academy_models",
+ "anyhow",
+ "thiserror",
+ "url",
+]
+
+[[package]]
+name = "academy_core_oauth2_impl"
+version = "0.0.0"
+dependencies = [
+ "academy_core_oauth2_contracts",
+ "academy_di",
+ "academy_extern_contracts",
+ "academy_models",
+]
+
+[[package]]
 name = "academy_core_session_contracts"
 version = "0.0.0"
 dependencies = [
@@ -340,6 +364,7 @@ dependencies = [
 name = "academy_extern_contracts"
 version = "0.0.0"
 dependencies = [
+ "academy_models",
  "anyhow",
  "mockall",
  "thiserror",
@@ -353,6 +378,7 @@ dependencies = [
  "academy_config",
  "academy_di",
  "academy_extern_contracts",
+ "academy_models",
  "academy_utils",
  "anyhow",
  "oauth2",
@@ -376,6 +402,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "url",
  "uuid",
 ]
 

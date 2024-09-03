@@ -59,6 +59,11 @@ in {
           // {
             access_token_ttl = "5m";
           };
+        oauth2 =
+          settings.oauth2
+          // {
+            providers = builtins.removeAttrs settings.oauth2.providers ["test"];
+          };
       };
 
     settings = settingsFormat.generate "config.toml" cfg.settings;

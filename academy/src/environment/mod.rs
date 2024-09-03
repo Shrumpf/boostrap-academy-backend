@@ -1,9 +1,10 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use academy_config::Config;
 use academy_core_auth_impl::AuthServiceConfig;
 use academy_core_contact_impl::ContactServiceConfig;
 use academy_core_health_impl::HealthServiceConfig;
+use academy_core_oauth2_impl::OAuth2ServiceConfig;
 use academy_core_session_impl::SessionServiceConfig;
 use academy_core_user_impl::commands::{
     request_password_reset_email::UserRequestPasswordResetEmailCommandServiceConfig,
@@ -13,6 +14,7 @@ use academy_core_user_impl::commands::{
 };
 use academy_di::provider;
 use academy_extern_impl::recaptcha::RecaptchaApiServiceConfig;
+use academy_models::oauth2::OAuth2Provider;
 use academy_shared_impl::{
     captcha::{CaptchaServiceConfig, RecaptchaCaptchaServiceConfig},
     jwt::JwtServiceConfig,
@@ -40,6 +42,7 @@ provider! {
             Arc<CaptchaServiceConfig>,
             Arc<RecaptchaApiServiceConfig>,
             SessionServiceConfig,
+            OAuth2ServiceConfig,
         }
     }
 }
@@ -70,6 +73,7 @@ provider! {
         captcha_service_config: Arc<CaptchaServiceConfig>,
         recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>,
         session_service_config: SessionServiceConfig,
+        oauth2_service_config: OAuth2ServiceConfig,
     }
 }
 
@@ -130,6 +134,31 @@ impl ConfigProvider {
             login_fails_before_captcha: config.session.login_fails_before_captcha,
         };
 
+        let oauth2_service_config = OAuth2ServiceConfig {
+            providers: config
+                .oauth2
+                .iter()
+                .flat_map(|oauth2| oauth2.providers.iter())
+                .map(|(id, provider)| {
+                    (
+                        id.clone(),
+                        OAuth2Provider {
+                            name: provider.name.clone(),
+                            client_id: provider.client_id.clone(),
+                            client_secret: Some(provider.client_secret.clone()),
+                            auth_url: provider.auth_url.clone(),
+                            token_url: provider.token_url.clone(),
+                            userinfo_url: provider.userinfo_url.clone(),
+                            userinfo_id_key: provider.userinfo_id_key.clone(),
+                            userinfo_name_key: provider.userinfo_name_key.clone(),
+                            scopes: provider.scopes.clone(),
+                        },
+                    )
+                })
+                .collect::<HashMap<_, _>>()
+                .into(),
+        };
+
         Ok(Self {
             _state: Default::default(),
             auth_service_config,
@@ -144,6 +173,7 @@ impl ConfigProvider {
             captcha_service_config,
             recaptcha_api_service_config,
             session_service_config,
+            oauth2_service_config,
         })
     }
 }

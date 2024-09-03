@@ -8,6 +8,7 @@ pub mod auth;
 pub mod contact;
 mod macros;
 pub mod mfa;
+pub mod oauth2;
 pub mod pagination;
 pub mod session;
 pub mod user;

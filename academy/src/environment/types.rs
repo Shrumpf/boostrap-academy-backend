@@ -16,6 +16,7 @@ use academy_core_mfa_impl::{
     },
     MfaServiceImpl,
 };
+use academy_core_oauth2_impl::OAuth2ServiceImpl;
 use academy_core_session_impl::{
     commands::{
         create::SessionCreateCommandServiceImpl, delete::SessionDeleteCommandServiceImpl,
@@ -46,7 +47,7 @@ use academy_core_user_impl::{
     UserServiceImpl,
 };
 use academy_email_impl::{template::TemplateEmailServiceImpl, EmailServiceImpl};
-use academy_extern_impl::recaptcha::RecaptchaApiServiceImpl;
+use academy_extern_impl::{oauth2::OAuth2ApiServiceImpl, recaptcha::RecaptchaApiServiceImpl};
 use academy_persistence_postgres::{
     mfa::PostgresMfaRepository, session::PostgresSessionRepository, user::PostgresUserRepository,
     PostgresDatabase,
@@ -59,7 +60,8 @@ use academy_shared_impl::{
 use academy_templates_impl::TemplateServiceImpl;
 
 // API
-pub type RestServer = academy_api_rest::RestServer<Health, Config, User, Session, Contact, Mfa>;
+pub type RestServer =
+    academy_api_rest::RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2>;
 
 // Persistence
 pub type Database = PostgresDatabase;
@@ -73,6 +75,7 @@ pub type TemplateEmail = TemplateEmailServiceImpl<Email, Template>;
 
 // Extern
 pub type RecaptchaApi = RecaptchaApiServiceImpl;
+pub type OAuth2Api = OAuth2ApiServiceImpl;
 
 // Template
 pub type Template = TemplateServiceImpl;
@@ -188,3 +191,5 @@ pub type MfaConfirmTotpDevice = MfaConfirmTotpDeviceCommandServiceImpl<Totp, Mfa
 pub type MfaSetupRecovery = MfaSetupRecoveryCommandServiceImpl<Secret, Hash, MfaRepo>;
 pub type MfaAuthenticate = MfaAuthenticateCommandServiceImpl<Hash, Totp, MfaDisable, MfaRepo>;
 pub type MfaDisable = MfaDisableCommandServiceImpl<MfaRepo>;
+
+pub type OAuth2 = OAuth2ServiceImpl<OAuth2Api>;

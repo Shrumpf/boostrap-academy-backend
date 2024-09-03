@@ -1,4 +1,4 @@
-use std::{net::IpAddr, path::Path};
+use std::{collections::HashMap, net::IpAddr, path::Path};
 
 use academy_models::mfa::TotpSecretLength;
 use anyhow::Context;
@@ -40,6 +40,14 @@ pub fn load_with_override(
             config
                 .recaptcha
                 .take_if(|recaptcha| recaptcha.enable == Some(false));
+
+            if let Some(oauth2) = &mut config.oauth2 {
+                oauth2.providers.retain(|_, p| p.enable != Some(false));
+            }
+            config
+                .oauth2
+                .take_if(|oauth2| oauth2.enable == Some(false) || oauth2.providers.is_empty());
+
             config
         })
 }
@@ -57,6 +65,7 @@ pub struct Config {
     pub totp: TotpConfig,
     pub contact: ContactConfig,
     pub recaptcha: Option<RecaptchaConfig>,
+    pub oauth2: Option<OAuth2Config>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -137,6 +146,26 @@ pub struct RecaptchaConfig {
     pub sitekey: String,
     pub secret: String,
     pub min_score: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OAuth2Config {
+    pub enable: Option<bool>,
+    pub providers: HashMap<String, OAuth2ProviderConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OAuth2ProviderConfig {
+    pub enable: Option<bool>,
+    pub name: String,
+    pub client_id: String,
+    pub client_secret: String,
+    pub auth_url: Url,
+    pub token_url: Url,
+    pub userinfo_url: Url,
+    pub userinfo_id_key: String,
+    pub userinfo_name_key: String,
+    pub scopes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

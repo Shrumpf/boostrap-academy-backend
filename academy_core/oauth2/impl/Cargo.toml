@@ -1,5 +1,5 @@
 [package]
-name = "academy_extern_contracts"
+name = "academy_core_oauth2_impl"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
@@ -9,12 +9,8 @@ repository.workspace = true
 [lints]
 workspace = true
 
-[features]
-mock = ["dep:mockall"]
-
 [dependencies]
+academy_core_oauth2_contracts.workspace = true
+academy_di.workspace = true
+academy_extern_contracts.workspace = true
 academy_models.workspace = true
-anyhow.workspace = true
-mockall = { workspace = true, optional = true }
-thiserror.workspace = true
-url.workspace = true

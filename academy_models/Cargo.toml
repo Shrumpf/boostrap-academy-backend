@@ -18,6 +18,7 @@ nutype.workspace = true
 regex.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+url.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

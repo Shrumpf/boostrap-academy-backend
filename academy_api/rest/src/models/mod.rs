@@ -2,6 +2,7 @@ use academy_models::pagination::{PaginationLimit, PaginationSlice};
 use serde::{Deserialize, Serialize};
 
 pub mod contact;
+pub mod oauth2;
 pub mod session;
 pub mod user;
 

@@ -4,6 +4,7 @@ use academy_core_config_contracts::ConfigService;
 use academy_core_contact_contracts::ContactService;
 use academy_core_health_contracts::HealthService;
 use academy_core_mfa_contracts::MfaService;
+use academy_core_oauth2_contracts::OAuth2Service;
 use academy_core_session_contracts::SessionService;
 use academy_core_user_contracts::UserService;
 use academy_di::Build;
@@ -15,17 +16,18 @@ mod models;
 mod routes;
 
 #[derive(Debug, Clone, Build)]
-pub struct RestServer<Health, Config, User, Session, Contact, Mfa> {
+pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2> {
     health: Health,
     config: Config,
     user: User,
     session: Session,
     contact: Contact,
     mfa: Mfa,
+    oauth2: OAuth2,
 }
 
-impl<Health, Config, User, Session, Contact, Mfa>
-    RestServer<Health, Config, User, Session, Contact, Mfa>
+impl<Health, Config, User, Session, Contact, Mfa, OAuth2>
+    RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2>
 where
     Health: HealthService,
     Config: ConfigService,
@@ -33,6 +35,7 @@ where
     Session: SessionService,
     Contact: ContactService,
     Mfa: MfaService,
+    OAuth2: OAuth2Service,
 {
     pub async fn serve(self, host: IpAddr, port: u16) -> anyhow::Result<()> {
         let router = self.router();
@@ -48,5 +51,6 @@ where
             .merge(routes::session::router(self.session.into()))
             .merge(routes::contact::router(self.contact.into()))
             .merge(routes::mfa::router(self.mfa.into()))
+            .merge(routes::oauth2::router(self.oauth2.into()))
     }
 }
