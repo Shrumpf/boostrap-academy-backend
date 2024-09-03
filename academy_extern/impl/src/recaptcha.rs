@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use academy_di::Build;
 use academy_extern_contracts::recaptcha::{RecaptchaApiService, RecaptchaSiteverifyResponse};
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use url::Url;
+
+use crate::http::HttpClient;
 
 const SITEVERIFY_ENDPOINT: &str = "https://www.google.com/recaptcha/api/siteverify";
 
@@ -12,7 +13,7 @@ const SITEVERIFY_ENDPOINT: &str = "https://www.google.com/recaptcha/api/siteveri
 pub struct RecaptchaApiServiceImpl {
     config: Arc<RecaptchaApiServiceConfig>,
     #[state]
-    client: Arc<Client>,
+    client: HttpClient,
 }
 
 #[derive(Debug)]

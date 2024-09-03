@@ -25,6 +25,8 @@ members = [
 version = "0.0.0"
 edition = "2021"
 publish = false
+homepage = "https://bootstrap.academy/"
+repository = "https://github.com/Bootstrap-Academy/Bootstrap-Academy"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

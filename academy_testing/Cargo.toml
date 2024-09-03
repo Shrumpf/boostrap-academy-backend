@@ -3,6 +3,8 @@ name = "academy_testing"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [[bin]]
 name = "academy-testing"
