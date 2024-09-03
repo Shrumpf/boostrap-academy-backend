@@ -59,4 +59,25 @@
 in {
   default = cargoNix.workspaceMembers.academy.build;
   testing = cargoNix.workspaceMembers.academy_testing.build;
+
+  allWithDeps = let
+    collect = lib.flip lib.pipe [
+      (builtins.filter lib.isDerivation)
+      (map (crate: [crate crate.src] ++ (collect crate.dependencies or [])))
+      lib.flatten
+      lib.unique
+    ];
+  in
+    lib.pipe cargoNix.allWorkspaceMembers.paths [
+      collect
+      (map (crate:
+        lib.nameValuePair (
+          if crate ? crateName
+          then "${crate.crateName}-${crate.crateVersion}"
+          else crate.name
+        )
+        crate))
+      builtins.listToAttrs
+      (pkgs.linkFarm "academy-all-with-deps")
+    ];
 }
