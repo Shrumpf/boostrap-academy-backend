@@ -17,7 +17,7 @@ academy_templates_contracts.workspace = true
 academy_utils.workspace = true
 anyhow.workspace = true
 email_address.workspace = true
-lettre = { version = "0.11.7", default-features = false, features = ["builder", "hostname", "pool", "rustls-tls", "serde", "smtp-transport", "tokio1", "tokio1-rustls-tls", "tracing"] }
+lettre = { version = "0.11.8", default-features = false, features = ["builder", "hostname", "pool", "rustls-tls", "serde", "smtp-transport", "tokio1", "tokio1-rustls-tls", "tracing"] }
 
 [dev-dependencies]
 academy_config.workspace = true
