@@ -4,6 +4,13 @@ pub mod serde;
 
 pub trait Apply {
     /// Applies the function `f` with a mutable reference to `self`.
+    ///
+    /// #### Example
+    /// ```rust
+    /// # use academy_utils::Apply;
+    /// let x = 1.with(|x| *x += 2);
+    /// assert_eq!(x, 3);
+    /// ```
     fn with<X>(mut self, f: impl FnOnce(&mut Self) -> X) -> Self
     where
         Self: Sized,
@@ -30,6 +37,28 @@ pub trait Apply {
     {
         if let Some(value) = value {
             f(self, value)
+        } else {
+            self
+        }
+    }
+
+    /// Applies the function `f` only if `apply` is `true`.
+    ///
+    /// #### Example
+    /// ```rust
+    /// # use academy_utils::Apply;
+    /// fn maybe_add_two(a: i32, add: bool) -> i32 {
+    ///     a.apply_if(add, |slf| slf + 2)
+    /// }
+    /// assert_eq!(maybe_add_two(1, false), 1);
+    /// assert_eq!(maybe_add_two(1, true), 3);
+    /// ```
+    fn apply_if(self, apply: bool, f: impl FnOnce(Self) -> Self) -> Self
+    where
+        Self: Sized,
+    {
+        if apply {
+            f(self)
         } else {
             self
         }

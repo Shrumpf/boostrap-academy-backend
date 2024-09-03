@@ -12,11 +12,15 @@ workspace = true
 [dependencies]
 academy_di.workspace = true
 academy_extern_contracts.workspace = true
+academy_utils.workspace = true
 anyhow.workspace = true
+oauth2.workspace = true
 reqwest.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 url.workspace = true
 
 [dev-dependencies]
 academy_config.workspace = true
+academy_utils.workspace = true
 tokio.workspace = true

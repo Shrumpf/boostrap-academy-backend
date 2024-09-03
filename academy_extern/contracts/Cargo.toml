@@ -15,3 +15,5 @@ mock = ["dep:mockall"]
 [dependencies]
 anyhow.workspace = true
 mockall = { workspace = true, optional = true }
+thiserror.workspace = true
+url.workspace = true

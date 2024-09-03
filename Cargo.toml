@@ -82,7 +82,7 @@ email_address = { version = "0.2.9", default-features = false, features = ["serd
 hex = { version = "0.4.3", default-features = false, features = ["std"] }
 mockall = { version = "0.13.0", default-features = false }
 nutype = { version = "0.5.0", default-features = false, features = ["std", "regex", "serde"] }
-oauth2 = { version = "4.4.2", default-features = false }
+oauth2 = { version = "4.4.2", default-features = false, features = ["reqwest"] }
 pretty_assertions = { version = "1.4.0", default-features = false, features = ["std"] }
 quote = { version = "1.0.37", default-features = false, features = ["proc-macro"] }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
