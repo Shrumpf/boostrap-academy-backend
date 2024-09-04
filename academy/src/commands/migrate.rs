@@ -1,8 +1,9 @@
 use academy_config::Config;
 use academy_persistence_contracts::{Database, Transaction};
 use academy_persistence_postgres::{
-    mfa::PostgresMfaRepository, session::PostgresSessionRepository, user::PostgresUserRepository,
-    MigrationStatus, PostgresDatabase,
+    mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
+    session::PostgresSessionRepository, user::PostgresUserRepository, MigrationStatus,
+    PostgresDatabase,
 };
 use clap::Subcommand;
 
@@ -92,6 +93,7 @@ async fn demo(db: PostgresDatabase) -> anyhow::Result<()> {
         PostgresUserRepository,
         PostgresSessionRepository,
         PostgresMfaRepository,
+        PostgresOAuth2Repository,
     )
     .await?;
     txn.commit().await?;

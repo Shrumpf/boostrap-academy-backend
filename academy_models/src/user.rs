@@ -7,7 +7,10 @@ use nutype::nutype;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use crate::{macros::id, SearchTerm};
+use crate::{
+    macros::{id, nutype_string},
+    SearchTerm,
+};
 
 pub static USER_NAME_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^[a-zA-Z0-9_-]{1,32}$").unwrap());
@@ -70,24 +73,16 @@ pub struct UserDetails {
     pub mfa_enabled: bool,
 }
 
-#[nutype(
-    validate(regex = USER_NAME_REGEX),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct UserName(String);
+nutype_string!(UserName(validate(regex = USER_NAME_REGEX)));
+nutype_string!(UserDisplayName(validate(
+    len_char_min = 1,
+    len_char_max = 64
+)));
 
-#[nutype(
-    validate(len_char_min = 1, len_char_max = 64),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct UserDisplayName(String);
-
-#[nutype(
-    validate(len_char_min = 1, len_char_max = UserPassword::MAX_LENGTH),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct UserPassword(String);
-
+nutype_string!(UserPassword(validate(
+    len_char_min = 1,
+    len_char_max = UserPassword::MAX_LENGTH
+)));
 impl UserPassword {
     pub const MAX_LENGTH: usize = 4096;
 }
@@ -99,28 +94,13 @@ pub enum UserNameOrEmailAddress {
     Email(EmailAddress),
 }
 
-#[nutype(
+nutype_string!(UserBio(
     validate(len_char_max = 1024),
-    derive(
-        Debug,
-        Clone,
-        PartialEq,
-        Eq,
-        Deref,
-        Default,
-        TryFrom,
-        Serialize,
-        Deserialize
-    ),
+    derive(Default),
     default = ""
-)]
-pub struct UserBio(String);
+));
 
-#[nutype(
-    validate(len_char_max = 64),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct UserTag(String);
+nutype_string!(UserTag(validate(len_char_min = 1, len_char_max = 64)));
 
 #[nutype(
     validate(predicate = |x| x.len() <= 8),

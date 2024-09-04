@@ -3,8 +3,9 @@ use std::path::Path;
 use academy_config::DEFAULT_CONFIG_PATH;
 use academy_persistence_contracts::{Database, Transaction};
 use academy_persistence_postgres::{
-    mfa::PostgresMfaRepository, session::PostgresSessionRepository, user::PostgresUserRepository,
-    PostgresDatabase, PostgresDatabaseConfig,
+    mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
+    session::PostgresSessionRepository, user::PostgresUserRepository, PostgresDatabase,
+    PostgresDatabaseConfig,
 };
 
 pub type Db = PostgresDatabase;
@@ -21,6 +22,7 @@ pub async fn setup() -> Db {
         PostgresUserRepository,
         PostgresSessionRepository,
         PostgresMfaRepository,
+        PostgresOAuth2Repository,
     )
     .await
     .unwrap();

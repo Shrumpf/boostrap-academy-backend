@@ -1,6 +1,8 @@
 use email_address::EmailAddress;
 use nutype::nutype;
 
+use crate::macros::nutype_string;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContactMessage {
     pub author: ContactMessageAuthor,
@@ -14,20 +16,17 @@ pub struct ContactMessageAuthor {
     pub email: EmailAddress,
 }
 
-#[nutype(
-    validate(len_char_max = 256),
-    derive(Debug, Clone, PartialEq, Eq, TryFrom, Deref, Serialize, Deserialize)
-)]
-pub struct ContactMessageAuthorName(String);
+nutype_string!(ContactMessageAuthorName(validate(
+    len_char_min = 1,
+    len_char_max = 256
+)));
 
-#[nutype(
-    validate(len_char_max = 256),
-    derive(Debug, Clone, PartialEq, Eq, TryFrom, Deref, Serialize, Deserialize)
-)]
-pub struct ContactMessageSubject(String);
+nutype_string!(ContactMessageSubject(validate(
+    len_char_min = 1,
+    len_char_max = 256
+)));
 
-#[nutype(
-    validate(len_char_max = 4096),
-    derive(Debug, Clone, PartialEq, Eq, TryFrom, Deref, Serialize, Deserialize)
-)]
-pub struct ContactMessageContent(String);
+nutype_string!(ContactMessageContent(validate(
+    len_char_min = 1,
+    len_char_max = 4096
+)));

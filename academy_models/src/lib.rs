@@ -1,5 +1,6 @@
 use std::sync::LazyLock;
 
+use macros::nutype_string;
 use nutype::nutype;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -16,18 +17,12 @@ pub mod user;
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Sha256Hash(#[serde(with = "academy_utils::serde::hex")] pub [u8; 32]);
 
-#[nutype(
-    validate(len_char_max = 256),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct SearchTerm(String);
+nutype_string!(SearchTerm(validate(len_char_max = 256)));
 
-#[nutype(
+nutype_string!(VerificationCode(
     sanitize(uppercase),
     validate(regex = VERIFICATION_CODE_REGEX),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct VerificationCode(String);
+));
 
 pub static VERIFICATION_CODE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     hyphenated_code_regex(VerificationCode::CHUNK_COUNT, VerificationCode::CHUNK_SIZE)
@@ -47,8 +42,4 @@ fn hyphenated_code_regex(chunk_count: usize, chunk_size: usize) -> Regex {
     .unwrap()
 }
 
-#[nutype(
-    validate(len_char_max = 256),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct RecaptchaResponse(String);
+nutype_string!(RecaptchaResponse(validate(len_char_max = 256)));

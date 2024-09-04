@@ -1,0 +1,126 @@
+use academy_core_oauth2_contracts::create_link::{
+    OAuth2CreateLinkService, OAuth2CreateLinkServiceError,
+};
+use academy_di::Build;
+use academy_models::{
+    oauth2::{OAuth2Link, OAuth2ProviderId, OAuth2UserInfo},
+    user::UserId,
+};
+use academy_persistence_contracts::oauth2::{OAuth2RepoError, OAuth2Repository};
+use academy_shared_contracts::{id::IdService, time::TimeService};
+
+#[derive(Debug, Clone, Build)]
+pub struct OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo> {
+    id: Id,
+    time: Time,
+    oauth2_repo: OAuth2Repo,
+}
+
+impl<Txn, Id, Time, OAuth2Repo> OAuth2CreateLinkService<Txn>
+    for OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo>
+where
+    Txn: Send + Sync + 'static,
+    Id: IdService,
+    Time: TimeService,
+    OAuth2Repo: OAuth2Repository<Txn>,
+{
+    async fn invoke(
+        &self,
+        txn: &mut Txn,
+        user_id: UserId,
+        provider_id: OAuth2ProviderId,
+        remote_user: OAuth2UserInfo,
+    ) -> Result<OAuth2Link, OAuth2CreateLinkServiceError> {
+        let link = OAuth2Link {
+            id: self.id.generate(),
+            user_id,
+            provider_id,
+            created_at: self.time.now(),
+            remote_user,
+        };
+
+        self.oauth2_repo
+            .create_link(txn, &link)
+            .await
+            .map_err(|err| match err {
+                OAuth2RepoError::Conflict => OAuth2CreateLinkServiceError::RemoteAlreadyLinked,
+                OAuth2RepoError::Other(err) => err.into(),
+            })?;
+
+        Ok(link)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use academy_demo::{
+        oauth2::{FOO_OAUTH2_LINK_1, TEST_OAUTH2_PROVIDER_ID},
+        user::FOO,
+    };
+    use academy_persistence_contracts::oauth2::{MockOAuth2Repository, OAuth2RepoError};
+    use academy_shared_contracts::{id::MockIdService, time::MockTimeService};
+    use academy_utils::assert_matches;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn ok() {
+        // Arrange
+        let id = MockIdService::new().with_generate(FOO_OAUTH2_LINK_1.id);
+        let time = MockTimeService::new().with_now(FOO_OAUTH2_LINK_1.created_at);
+
+        let oauth2_repo =
+            MockOAuth2Repository::new().with_create(FOO_OAUTH2_LINK_1.clone(), Ok(()));
+
+        let sut = OAuth2CreateLinkServiceImpl {
+            id,
+            time,
+            oauth2_repo,
+        };
+
+        // Act
+        let result = sut
+            .invoke(
+                &mut (),
+                FOO.user.id,
+                TEST_OAUTH2_PROVIDER_ID.clone(),
+                FOO_OAUTH2_LINK_1.remote_user.clone(),
+            )
+            .await;
+
+        // Assert
+        assert_eq!(result.unwrap(), *FOO_OAUTH2_LINK_1);
+    }
+
+    #[tokio::test]
+    async fn conflict() {
+        // Arrange
+        let id = MockIdService::new().with_generate(FOO_OAUTH2_LINK_1.id);
+        let time = MockTimeService::new().with_now(FOO_OAUTH2_LINK_1.created_at);
+
+        let oauth2_repo = MockOAuth2Repository::new()
+            .with_create(FOO_OAUTH2_LINK_1.clone(), Err(OAuth2RepoError::Conflict));
+
+        let sut = OAuth2CreateLinkServiceImpl {
+            id,
+            time,
+            oauth2_repo,
+        };
+
+        // Act
+        let result = sut
+            .invoke(
+                &mut (),
+                FOO.user.id,
+                TEST_OAUTH2_PROVIDER_ID.clone(),
+                FOO_OAUTH2_LINK_1.remote_user.clone(),
+            )
+            .await;
+
+        // Assert
+        assert_matches!(
+            result,
+            Err(OAuth2CreateLinkServiceError::RemoteAlreadyLinked)
+        );
+    }
+}

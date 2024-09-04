@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError, OAuth2UserInfo};
+use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError};
 use academy_extern_impl::oauth2::OAuth2ApiServiceImpl;
-use academy_models::oauth2::OAuth2Provider;
+use academy_models::oauth2::{OAuth2Provider, OAuth2UserInfo};
 use academy_utils::assert_matches;
 use url::Url;
 
@@ -46,19 +46,23 @@ async fn oauth2() {
     let sut = OAuth2ApiServiceImpl::default();
 
     let result = sut
-        .resolve_code(provider.clone(), code.into(), redirect_url())
+        .resolve_code(
+            provider.clone(),
+            code.as_ref().try_into().unwrap(),
+            redirect_url(),
+        )
         .await
         .unwrap();
     assert_eq!(
         result,
         OAuth2UserInfo {
-            id: "userid123".into(),
-            name: "theremoteusername".into()
+            id: "userid123".try_into().unwrap(),
+            name: "theremoteusername".try_into().unwrap()
         }
     );
 
     let result = sut
-        .resolve_code(provider, "invalidcode".into(), redirect_url())
+        .resolve_code(provider, "invalidcode".try_into().unwrap(), redirect_url())
         .await;
     assert_matches!(result, Err(OAuth2ResolveCodeError::InvalidCode));
 }

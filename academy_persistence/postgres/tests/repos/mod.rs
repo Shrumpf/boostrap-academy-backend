@@ -1,6 +1,7 @@
 use academy_models::pagination::PaginationSlice;
 
 mod mfa;
+mod oauth2;
 mod session;
 mod user;
 

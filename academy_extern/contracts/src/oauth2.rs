@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use academy_models::oauth2::OAuth2Provider;
+use academy_models::oauth2::{OAuth2AuthorizationCode, OAuth2Provider, OAuth2UserInfo};
 use thiserror::Error;
 use url::Url;
 
@@ -11,15 +11,9 @@ pub trait OAuth2ApiService: Send + Sync + 'static {
     fn resolve_code(
         &self,
         provider: OAuth2Provider,
-        code: String,
+        code: OAuth2AuthorizationCode,
         redirect_url: Url,
     ) -> impl Future<Output = Result<OAuth2UserInfo, OAuth2ResolveCodeError>> + Send;
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OAuth2UserInfo {
-    pub id: String,
-    pub name: String,
 }
 
 #[derive(Debug, Error)]
@@ -32,10 +26,18 @@ pub enum OAuth2ResolveCodeError {
 
 #[cfg(feature = "mock")]
 impl MockOAuth2ApiService {
+    pub fn with_generate_auth_url(mut self, provider: OAuth2Provider, result: Url) -> Self {
+        self.expect_generate_auth_url()
+            .once()
+            .with(mockall::predicate::eq(provider))
+            .return_once(|_| result);
+        self
+    }
+
     pub fn with_resolve_code(
         mut self,
         provider: OAuth2Provider,
-        code: String,
+        code: OAuth2AuthorizationCode,
         redirect_url: Url,
         result: Result<OAuth2UserInfo, OAuth2ResolveCodeError>,
     ) -> Self {

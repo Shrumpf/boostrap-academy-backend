@@ -5,7 +5,12 @@ use chrono::{DateTime, Utc};
 use nutype::nutype;
 use regex::Regex;
 
-use crate::{hyphenated_code_regex, macros::id, user::UserId, Sha256Hash};
+use crate::{
+    hyphenated_code_regex,
+    macros::{id, nutype_string},
+    user::UserId,
+    Sha256Hash,
+};
 
 id!(TotpDeviceId);
 
@@ -20,12 +25,7 @@ pub struct TotpDevice {
     pub created_at: DateTime<Utc>,
 }
 
-#[nutype(
-    validate(regex = TOTP_CODE_REGEX),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct TotpCode(String);
-
+nutype_string!(TotpCode(validate(regex = TOTP_CODE_REGEX)));
 pub static TOTP_CODE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[0-9]{6}$").unwrap());
 
 #[nutype(validate(predicate = |x| x.len() >= 16), derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom))]
@@ -53,12 +53,10 @@ pub struct TotpSetup {
     pub secret: String,
 }
 
-#[nutype(
+nutype_string!(MfaRecoveryCode(
     sanitize(uppercase),
     validate(regex = MFA_RECOVERY_CODE_REGEX),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct MfaRecoveryCode(String);
+));
 
 pub static MFA_RECOVERY_CODE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     hyphenated_code_regex(MfaRecoveryCode::CHUNK_COUNT, MfaRecoveryCode::CHUNK_SIZE)

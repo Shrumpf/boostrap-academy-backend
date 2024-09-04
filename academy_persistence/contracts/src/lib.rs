@@ -1,6 +1,7 @@
 use std::future::Future;
 
 pub mod mfa;
+pub mod oauth2;
 pub mod session;
 pub mod user;
 

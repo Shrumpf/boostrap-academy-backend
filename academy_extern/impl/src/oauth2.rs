@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use academy_di::Build;
-use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError, OAuth2UserInfo};
-use academy_models::oauth2::OAuth2Provider;
+use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError};
+use academy_models::oauth2::{OAuth2AuthorizationCode, OAuth2Provider, OAuth2UserInfo};
 use academy_utils::Apply;
 use anyhow::anyhow;
 use oauth2::{
@@ -41,7 +41,7 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
     async fn resolve_code(
         &self,
         provider: OAuth2Provider,
-        code: String,
+        code: OAuth2AuthorizationCode,
         redirect_url: Url,
     ) -> Result<OAuth2UserInfo, OAuth2ResolveCodeError> {
         let client = BasicClient::new(
@@ -53,7 +53,7 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
         .set_redirect_uri(RedirectUrl::from_url(redirect_url));
 
         let response = client
-            .exchange_code(AuthorizationCode::new(code))
+            .exchange_code(AuthorizationCode::new(code.into_inner()))
             .request_async(http_client)
             .await
             .map_err(|err| match err {
@@ -90,6 +90,13 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
             Some(x) => return Err(anyhow!("Invalid username: {x}").into()),
             None => return Err(anyhow!("Username missing").into()),
         };
+
+        let id = id
+            .try_into()
+            .map_err(|id| anyhow!("Failed to deserialize remote user id {id:?}"))?;
+        let name = name
+            .try_into()
+            .map_err(|name| anyhow!("Failed to deserialize remote user name {name:?}"))?;
 
         Ok(OAuth2UserInfo { id, name })
     }

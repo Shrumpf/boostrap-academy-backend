@@ -223,6 +223,7 @@ version = "0.0.0"
 dependencies = [
  "academy_models",
  "anyhow",
+ "mockall",
  "thiserror",
  "url",
 ]
@@ -231,10 +232,17 @@ dependencies = [
 name = "academy_core_oauth2_impl"
 version = "0.0.0"
 dependencies = [
+ "academy_core_auth_contracts",
  "academy_core_oauth2_contracts",
+ "academy_demo",
  "academy_di",
  "academy_extern_contracts",
  "academy_models",
+ "academy_persistence_contracts",
+ "academy_shared_contracts",
+ "academy_utils",
+ "tokio",
+ "url",
 ]
 
 [[package]]

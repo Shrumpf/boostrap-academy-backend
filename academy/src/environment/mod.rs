@@ -141,9 +141,9 @@ impl ConfigProvider {
                 .flat_map(|oauth2| oauth2.providers.iter())
                 .map(|(id, provider)| {
                     (
-                        id.clone(),
+                        id.clone().into(),
                         OAuth2Provider {
-                            name: provider.name.clone(),
+                            name: provider.name.clone().into(),
                             client_id: provider.client_id.clone(),
                             client_secret: Some(provider.client_secret.clone()),
                             auth_url: provider.auth_url.clone(),

@@ -2,15 +2,17 @@ use std::sync::LazyLock;
 
 use academy_models::{Sha256Hash, VerificationCode};
 use academy_persistence_contracts::{
-    mfa::MfaRepository, session::SessionRepository, user::UserRepository,
+    mfa::MfaRepository, oauth2::OAuth2Repository, session::SessionRepository, user::UserRepository,
 };
 use uuid::{uuid, Uuid};
 
 pub mod mfa;
+pub mod oauth2;
 pub mod session;
 pub mod user;
 
 pub const UUID1: Uuid = uuid!("eb1cd87a-4475-4d68-a2c2-0216bdaac8f7");
+pub const UUID2: Uuid = uuid!("316c8e26-4b07-4795-ab40-b28d8bf8e493");
 
 pub const SHA256HASH1_HEX: &str =
     "4a1df3d808c2fe0882ec627549102fa62ca4357ac00874e2d9754b98b34e5ad6";
@@ -34,9 +36,11 @@ pub async fn create<Txn: Send + Sync + 'static>(
     user: impl UserRepository<Txn>,
     session: impl SessionRepository<Txn>,
     mfa: impl MfaRepository<Txn>,
+    oauth2: impl OAuth2Repository<Txn>,
 ) -> anyhow::Result<()> {
     user::create(txn, user).await?;
     session::create(txn, session).await?;
     mfa::create(txn, mfa).await?;
+    oauth2::create(txn, oauth2).await?;
     Ok(())
 }

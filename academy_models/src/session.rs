@@ -2,7 +2,11 @@ use academy_utils::patch::Patch;
 use chrono::{DateTime, Utc};
 use nutype::nutype;
 
-use crate::{macros::id, user::UserId, Sha256Hash};
+use crate::{
+    macros::{id, nutype_string},
+    user::UserId,
+    Sha256Hash,
+};
 
 id!(SessionId);
 
@@ -18,11 +22,7 @@ pub struct Session {
     pub updated_at: DateTime<Utc>,
 }
 
-#[nutype(
-    validate(len_char_max = DeviceName::MAX_LEN),
-    derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
-)]
-pub struct DeviceName(String);
+nutype_string!(DeviceName(validate(len_char_max = DeviceName::MAX_LEN)));
 
 impl DeviceName {
     const MAX_LEN: usize = 256;

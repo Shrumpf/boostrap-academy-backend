@@ -11,6 +11,7 @@ use bb8_postgres::{
 use ouroboros::self_referencing;
 
 pub mod mfa;
+pub mod oauth2;
 pub mod session;
 pub mod user;
 

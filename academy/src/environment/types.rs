@@ -16,7 +16,9 @@ use academy_core_mfa_impl::{
     },
     MfaServiceImpl,
 };
-use academy_core_oauth2_impl::OAuth2ServiceImpl;
+use academy_core_oauth2_impl::{
+    create_link::OAuth2CreateLinkServiceImpl, login::OAuth2LoginServiceImpl, OAuth2ServiceImpl,
+};
 use academy_core_session_impl::{
     commands::{
         create::SessionCreateCommandServiceImpl, delete::SessionDeleteCommandServiceImpl,
@@ -49,8 +51,8 @@ use academy_core_user_impl::{
 use academy_email_impl::{template::TemplateEmailServiceImpl, EmailServiceImpl};
 use academy_extern_impl::{oauth2::OAuth2ApiServiceImpl, recaptcha::RecaptchaApiServiceImpl};
 use academy_persistence_postgres::{
-    mfa::PostgresMfaRepository, session::PostgresSessionRepository, user::PostgresUserRepository,
-    PostgresDatabase,
+    mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
+    session::PostgresSessionRepository, user::PostgresUserRepository, PostgresDatabase,
 };
 use academy_shared_impl::{
     captcha::CaptchaServiceImpl, hash::HashServiceImpl, id::IdServiceImpl, jwt::JwtServiceImpl,
@@ -94,6 +96,7 @@ pub type Totp = TotpServiceImpl<Secret, Time, Hash, Cache>;
 pub type SessionRepo = PostgresSessionRepository;
 pub type UserRepo = PostgresUserRepository;
 pub type MfaRepo = PostgresMfaRepository;
+pub type OAuth2Repo = PostgresOAuth2Repository;
 
 // Core
 pub type Auth = AuthServiceImpl<
@@ -192,4 +195,14 @@ pub type MfaSetupRecovery = MfaSetupRecoveryCommandServiceImpl<Secret, Hash, Mfa
 pub type MfaAuthenticate = MfaAuthenticateCommandServiceImpl<Hash, Totp, MfaDisable, MfaRepo>;
 pub type MfaDisable = MfaDisableCommandServiceImpl<MfaRepo>;
 
-pub type OAuth2 = OAuth2ServiceImpl<OAuth2Api>;
+pub type OAuth2 = OAuth2ServiceImpl<
+    Database,
+    Auth,
+    OAuth2Api,
+    UserRepo,
+    OAuth2Repo,
+    OAuth2CreateLink,
+    OAuth2Login,
+>;
+pub type OAuth2CreateLink = OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo>;
+pub type OAuth2Login = OAuth2LoginServiceImpl<OAuth2Api>;
