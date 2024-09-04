@@ -40,6 +40,7 @@ assert login == {
         "last_name_change": None,
         "enabled": True,
         "admin": False,
+        "password": True,
         "mfa_enabled": False,
         "description": "",
         "tags": [],

@@ -66,7 +66,11 @@ where
             tags: Default::default(),
         };
 
-        let details = UserDetails { mfa_enabled: false };
+        let details = UserDetails {
+            mfa_enabled: false,
+            password_login: password_hash.is_some(),
+            oauth2_login: oauth2_registration.is_some(),
+        };
 
         self.user_repo
             .create(txn, &user, &profile)
@@ -140,7 +144,7 @@ mod tests {
         let user_password = UserPassword::try_new("secure password").unwrap();
         let user_password_hash = "password_hash".to_owned();
 
-        let expected = get_expected();
+        let expected = get_expected(true, false);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -181,7 +185,7 @@ mod tests {
     #[tokio::test]
     async fn ok_oauth2() {
         // Arrange
-        let expected = get_expected();
+        let expected = get_expected(false, true);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -233,7 +237,7 @@ mod tests {
         let user_password = UserPassword::try_new("secure password").unwrap();
         let user_password_hash = "password_hash".to_owned();
 
-        let expected = get_expected();
+        let expected = get_expected(true, false);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -279,7 +283,7 @@ mod tests {
         let user_password = UserPassword::try_new("secure password").unwrap();
         let user_password_hash = "password_hash".to_owned();
 
-        let expected = get_expected();
+        let expected = get_expected(true, false);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -322,7 +326,7 @@ mod tests {
     #[tokio::test]
     async fn oauth2_remote_already_linked() {
         // Arrange
-        let expected = get_expected();
+        let expected = get_expected(false, true);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -368,7 +372,7 @@ mod tests {
         assert_matches!(result, Err(UserCreateCommandError::RemoteAlreadyLinked));
     }
 
-    fn get_expected() -> UserComposite {
+    fn get_expected(password_login: bool, oauth2_login: bool) -> UserComposite {
         UserComposite {
             user: User {
                 id: FOO.user.id,
@@ -387,7 +391,11 @@ mod tests {
                 bio: Default::default(),
                 tags: Default::default(),
             },
-            details: UserDetails { mfa_enabled: false },
+            details: UserDetails {
+                mfa_enabled: false,
+                password_login,
+                oauth2_login,
+            },
         }
     }
 }

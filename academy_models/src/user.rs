@@ -71,6 +71,8 @@ pub struct UserProfile {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserDetails {
     pub mfa_enabled: bool,
+    pub password_login: bool,
+    pub oauth2_login: bool,
 }
 
 nutype_string!(UserName(validate(regex = USER_NAME_REGEX)));

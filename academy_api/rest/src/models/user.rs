@@ -20,6 +20,7 @@ pub struct ApiUser {
     pub last_name_change: Option<i64>,
     pub enabled: bool,
     pub admin: bool,
+    pub password: bool,
     pub mfa_enabled: bool,
     pub description: UserBio,
     pub tags: UserTags,
@@ -44,12 +45,14 @@ impl From<UserComposite> for ApiUser {
             last_name_change: user.last_name_change.map(|x| x.timestamp()),
             enabled: user.enabled,
             admin: user.admin,
-            mfa_enabled: details.mfa_enabled,
             newsletter: user.newsletter,
 
             display_name: profile.display_name,
             description: profile.bio,
             tags: profile.tags,
+
+            mfa_enabled: details.mfa_enabled,
+            password: details.password_login,
         }
     }
 }

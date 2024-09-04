@@ -25,7 +25,11 @@ pub static ADMIN: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
         bio: Default::default(),
         tags: Default::default(),
     },
-    details: UserDetails { mfa_enabled: true },
+    details: UserDetails {
+        mfa_enabled: true,
+        password_login: true,
+        oauth2_login: false,
+    },
 });
 
 pub static ADMIN_PASSWORD: LazyLock<UserPassword> =
@@ -55,7 +59,11 @@ pub static FOO: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
             .try_into()
             .unwrap(),
     },
-    details: UserDetails { mfa_enabled: false },
+    details: UserDetails {
+        mfa_enabled: false,
+        password_login: true,
+        oauth2_login: true,
+    },
 });
 
 pub static FOO_PASSWORD: LazyLock<UserPassword> =
@@ -85,7 +93,11 @@ pub static BAR: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
             .try_into()
             .unwrap(),
     },
-    details: UserDetails { mfa_enabled: false },
+    details: UserDetails {
+        mfa_enabled: false,
+        password_login: true,
+        oauth2_login: false,
+    },
 });
 
 pub static BAR_PASSWORD: LazyLock<UserPassword> =
@@ -98,5 +110,13 @@ pub async fn create<Txn: Send + Sync + 'static>(
     for &user in &*ALL_USERS {
         repo.create(txn, &user.user, &user.profile).await.unwrap();
     }
+
+    repo.save_password_hash(txn, ADMIN.user.id, ADMIN_PASSWORD.clone().into_inner())
+        .await?;
+    repo.save_password_hash(txn, FOO.user.id, FOO_PASSWORD.clone().into_inner())
+        .await?;
+    repo.save_password_hash(txn, BAR.user.id, BAR_PASSWORD.clone().into_inner())
+        .await?;
+
     Ok(())
 }

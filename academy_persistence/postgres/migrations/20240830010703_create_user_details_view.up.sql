@@ -1,3 +1,4 @@
+drop view if exists user_details;
 create view user_details as (
     select
         u.id as user_id,

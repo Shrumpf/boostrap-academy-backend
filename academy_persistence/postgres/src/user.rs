@@ -22,7 +22,7 @@ pub struct PostgresUserRepository;
 
 columns!(user as "u": "id", "name", "email", "email_verified", "created_at", "last_login", "last_name_change", "enabled", "admin", "newsletter");
 columns!(profile as "p": "user_id", "display_name", "bio", "tags");
-columns!(details as "d": "user_id", "mfa_enabled");
+columns!(details as "d": "user_id", "mfa_enabled", "password_login", "oauth2_login");
 
 impl UserRepository<PostgresTransaction> for PostgresUserRepository {
     async fn count(
@@ -439,6 +439,8 @@ fn decode_details(row: &Row, offset: &mut usize) -> anyhow::Result<UserDetails> 
     idx(); // user_id
     Ok(UserDetails {
         mfa_enabled: row.get(idx()),
+        password_login: row.get(idx()),
+        oauth2_login: row.get(idx()),
     })
 }
 

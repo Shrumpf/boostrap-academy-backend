@@ -80,6 +80,7 @@ login = resp.json()
 user = login["user"]
 save_auth(login)
 assert get_self() == user
+assert user["password"] is False
 
 resp = c.get("/auth/oauth/links/me")
 assert resp.status_code == 200

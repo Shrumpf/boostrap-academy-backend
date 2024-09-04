@@ -1,0 +1,1 @@
+20240830010703_create_user_details_view.up.sql

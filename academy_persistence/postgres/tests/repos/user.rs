@@ -5,7 +5,7 @@ use academy_demo::{
     user::{ADMIN, ALL_USERS, BAR, FOO},
     UUID1,
 };
-use academy_models::user::{User, UserComposite, UserFilter};
+use academy_models::user::{User, UserComposite, UserDetails, UserFilter};
 use academy_persistence_contracts::{
     user::{UserRepoError, UserRepository},
     Database, Transaction,
@@ -196,6 +196,11 @@ async fn create_success() {
             name: "test".try_into().unwrap(),
             email: Some("test@example.com".parse().unwrap()),
             ..FOO.user.clone()
+        },
+        details: UserDetails {
+            mfa_enabled: false,
+            password_login: false,
+            oauth2_login: false,
         },
         ..FOO.clone()
     };
