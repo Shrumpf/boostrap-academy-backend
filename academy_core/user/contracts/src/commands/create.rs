@@ -1,6 +1,9 @@
 use std::future::Future;
 
-use academy_models::user::{UserComposite, UserDisplayName, UserName, UserPassword};
+use academy_models::{
+    oauth2::OAuth2Registration,
+    user::{UserComposite, UserDisplayName, UserName, UserPassword},
+};
 use email_address::EmailAddress;
 use thiserror::Error;
 
@@ -19,10 +22,11 @@ pub struct UserCreateCommand {
     pub name: UserName,
     pub display_name: UserDisplayName,
     pub email: EmailAddress,
-    pub password: UserPassword,
+    pub password: Option<UserPassword>,
     pub admin: bool,
     pub enabled: bool,
     pub email_verified: bool,
+    pub oauth2_registration: Option<OAuth2Registration>,
 }
 
 #[derive(Debug, Error)]
@@ -31,6 +35,8 @@ pub enum UserCreateCommandError {
     NameConflict,
     #[error("A user with the same email address already exists.")]
     EmailConflict,
+    #[error("The remote user has already been linked.")]
+    RemoteAlreadyLinked,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

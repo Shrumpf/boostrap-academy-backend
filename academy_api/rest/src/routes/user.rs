@@ -8,6 +8,7 @@ use academy_core_user_contracts::{
     UserVerifyEmailError, UserVerifyNewsletterSubscriptionError,
 };
 use academy_models::{
+    oauth2::OAuth2RegistrationToken,
     session::DeviceName,
     user::{UserBio, UserDisplayName, UserName, UserPassword, UserProfilePatch, UserTags},
     RecaptchaResponse, VerificationCode,
@@ -106,7 +107,8 @@ struct CreateRequest {
     name: UserName,
     display_name: UserDisplayName,
     email: EmailAddress,
-    password: UserPassword,
+    password: Option<UserPassword>,
+    oauth_register_token: Option<OAuth2RegistrationToken>,
     recaptcha_response: Option<RecaptchaResponse>,
 }
 
@@ -118,6 +120,7 @@ async fn create(
         display_name,
         email,
         password,
+        oauth_register_token,
         recaptcha_response,
     }): Json<CreateRequest>,
 ) -> Response {
@@ -128,6 +131,7 @@ async fn create(
                 display_name,
                 email,
                 password,
+                oauth2_registration_token: oauth_register_token,
             },
             user_agent.0.map(DeviceName::from_string_truncated),
             recaptcha_response,
@@ -139,6 +143,15 @@ async fn create(
         Err(UserCreateError::EmailConflict) => error(StatusCode::CONFLICT, "Email already exists"),
         Err(UserCreateError::Recaptcha) => {
             error(StatusCode::PRECONDITION_FAILED, "Recaptcha failed")
+        }
+        Err(UserCreateError::NoLoginMethod) => {
+            error(StatusCode::PRECONDITION_FAILED, "No login method")
+        }
+        Err(UserCreateError::InvalidOAuthRegistrationToken) => {
+            error(StatusCode::UNAUTHORIZED, "Invalid OAuth token")
+        }
+        Err(UserCreateError::RemoteAlreadyLinked) => {
+            error(StatusCode::CONFLICT, "Remote already linked")
         }
         Err(UserCreateError::Other(err)) => internal_server_error(err),
     }

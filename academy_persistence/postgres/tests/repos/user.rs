@@ -1,6 +1,7 @@
 use std::sync::LazyLock;
 
 use academy_demo::{
+    oauth2::FOO_OAUTH2_LINK_1,
     user::{ADMIN, ALL_USERS, BAR, FOO},
     UUID1,
 };
@@ -153,6 +154,33 @@ async fn get_composite_by_email() {
 
     let result = REPO
         .get_composite_by_email(&mut txn, &"doesnotexist@example.com".parse().unwrap())
+        .await
+        .unwrap();
+    assert_eq!(result, None);
+}
+
+#[tokio::test]
+async fn get_composite_by_oauth2_provider_id_and_remote_user_id() {
+    let db = setup().await;
+    let mut txn = db.begin_transaction().await.unwrap();
+
+    let result = REPO
+        .get_composite_by_oauth2_provider_id_and_remote_user_id(
+            &mut txn,
+            &FOO_OAUTH2_LINK_1.provider_id,
+            &FOO_OAUTH2_LINK_1.remote_user.id,
+        )
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(result, *FOO);
+
+    let result = REPO
+        .get_composite_by_oauth2_provider_id_and_remote_user_id(
+            &mut txn,
+            &FOO_OAUTH2_LINK_1.provider_id,
+            &"some-other-id".try_into().unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(result, None);

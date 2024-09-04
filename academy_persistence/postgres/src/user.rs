@@ -2,6 +2,7 @@ use std::fmt::Write;
 
 use academy_di::Build;
 use academy_models::{
+    oauth2::{OAuth2ProviderId, OAuth2RemoteUserId},
     pagination::PaginationSlice,
     user::{
         User, UserComposite, UserDetails, UserFilter, UserId, UserName, UserPatchRef, UserProfile,
@@ -133,6 +134,27 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
                      u.id=d.user_id where lower(email)=lower($1)"
                 ),
                 &[&email.as_str()],
+            )
+            .await
+            .map_err(Into::into)
+            .and_then(|row| row.map(|row| decode_composite(&row, &mut 0)).transpose())
+    }
+
+    async fn get_composite_by_oauth2_provider_id_and_remote_user_id(
+        &self,
+        txn: &mut PostgresTransaction,
+        provider_id: &OAuth2ProviderId,
+        remote_user_id: &OAuth2RemoteUserId,
+    ) -> anyhow::Result<Option<UserComposite>> {
+        txn.txn()
+            .query_opt(
+                &format!(
+                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS} from users u inner join \
+                     user_profiles p on u.id=p.user_id inner join user_details d on \
+                     u.id=d.user_id inner join oauth2_links ol on u.id=ol.user_id where \
+                     ol.provider_id=$1 and ol.remote_user_id=$2"
+                ),
+                &[&**provider_id, &**remote_user_id],
             )
             .await
             .map_err(Into::into)

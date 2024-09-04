@@ -2,6 +2,7 @@ use std::future::Future;
 
 use academy_models::{
     auth::{AuthError, Login},
+    oauth2::OAuth2RegistrationToken,
     session::DeviceName,
     user::{
         UserComposite, UserDisplayName, UserIdOrSelf, UserName, UserPassword, UserProfilePatch,
@@ -140,7 +141,8 @@ pub struct UserCreateRequest {
     pub name: UserName,
     pub display_name: UserDisplayName,
     pub email: EmailAddress,
-    pub password: UserPassword,
+    pub password: Option<UserPassword>,
+    pub oauth2_registration_token: Option<OAuth2RegistrationToken>,
 }
 
 #[derive(Debug, Error)]
@@ -151,6 +153,12 @@ pub enum UserCreateError {
     EmailConflict,
     #[error("Invalid recaptcha response")]
     Recaptcha,
+    #[error("No login method has been provided.")]
+    NoLoginMethod,
+    #[error("The oauth registration token is invalid or has expired.")]
+    InvalidOAuthRegistrationToken,
+    #[error("The remote user has already been linked.")]
+    RemoteAlreadyLinked,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

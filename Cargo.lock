@@ -232,8 +232,10 @@ dependencies = [
 name = "academy_core_oauth2_impl"
 version = "0.0.0"
 dependencies = [
+ "academy_cache_contracts",
  "academy_core_auth_contracts",
  "academy_core_oauth2_contracts",
+ "academy_core_session_contracts",
  "academy_demo",
  "academy_di",
  "academy_extern_contracts",
@@ -295,6 +297,7 @@ version = "0.0.0"
 dependencies = [
  "academy_cache_contracts",
  "academy_core_auth_contracts",
+ "academy_core_oauth2_contracts",
  "academy_core_session_contracts",
  "academy_core_user_contracts",
  "academy_demo",

@@ -1,6 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
+    oauth2::{OAuth2ProviderId, OAuth2RemoteUserId},
     pagination::PaginationSlice,
     user::{
         User, UserComposite, UserFilter, UserId, UserName, UserPatchRef, UserProfile,
@@ -54,6 +55,14 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         &self,
         txn: &mut Txn,
         email: &EmailAddress,
+    ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send;
+
+    /// Returns the user linked to the given remote oauth2 user.
+    fn get_composite_by_oauth2_provider_id_and_remote_user_id(
+        &self,
+        txn: &mut Txn,
+        provider_id: &OAuth2ProviderId,
+        remote_user_id: &OAuth2RemoteUserId,
     ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send;
 
     /// Creates a new user.
@@ -183,6 +192,23 @@ impl<Txn: Send + Sync + 'static> MockUserRepository<Txn> {
             .once()
             .with(mockall::predicate::always(), mockall::predicate::eq(email))
             .return_once(|_, _| Box::pin(std::future::ready(Ok(result))));
+        self
+    }
+
+    pub fn with_get_composite_by_oauth2_provider_id_and_remote_user_id(
+        mut self,
+        provider_id: OAuth2ProviderId,
+        remote_user_id: OAuth2RemoteUserId,
+        result: Option<UserComposite>,
+    ) -> Self {
+        self.expect_get_composite_by_oauth2_provider_id_and_remote_user_id()
+            .once()
+            .with(
+                mockall::predicate::always(),
+                mockall::predicate::eq(provider_id),
+                mockall::predicate::eq(remote_user_id),
+            )
+            .return_once(|_, _, _| Box::pin(std::future::ready(Ok(result))));
         self
     }
 

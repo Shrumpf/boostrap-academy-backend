@@ -58,6 +58,7 @@ min_score = 0.5
 
 [oauth2]
 enable = true
+registration_token_ttl = "10m"
 
 [oauth2.providers.test]
 enable = true

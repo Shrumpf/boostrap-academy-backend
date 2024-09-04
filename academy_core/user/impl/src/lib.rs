@@ -1,4 +1,6 @@
+use academy_cache_contracts::CacheService;
 use academy_core_auth_contracts::{AuthResultExt, AuthService};
+use academy_core_oauth2_contracts::oauth2_registration_cache_key;
 use academy_core_session_contracts::commands::create::SessionCreateCommandService;
 use academy_core_user_contracts::{
     commands::{
@@ -29,6 +31,7 @@ use academy_core_user_contracts::{
 use academy_di::Build;
 use academy_models::{
     auth::Login,
+    oauth2::OAuth2Registration,
     session::DeviceName,
     user::{UserComposite, UserId, UserIdOrSelf, UserPassword, UserPatchRef},
     RecaptchaResponse, VerificationCode,
@@ -49,6 +52,7 @@ mod tests;
 pub struct UserServiceImpl<
     Db,
     Auth,
+    Cache,
     Captcha,
     UserList,
     UserCreate,
@@ -68,6 +72,7 @@ pub struct UserServiceImpl<
 > {
     db: Db,
     auth: Auth,
+    cache: Cache,
     captcha: Captcha,
     user_list: UserList,
     user_create: UserCreate,
@@ -89,6 +94,7 @@ pub struct UserServiceImpl<
 impl<
         Db,
         Auth,
+        Cache,
         Captcha,
         UserList,
         UserCreate,
@@ -109,6 +115,7 @@ impl<
     for UserServiceImpl<
         Db,
         Auth,
+        Cache,
         Captcha,
         UserList,
         UserCreate,
@@ -129,6 +136,7 @@ impl<
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
+    Cache: CacheService,
     Captcha: CaptchaService,
     UserList: UserListQueryService<Db::Transaction>,
     UserCreate: UserCreateCommandService<Db::Transaction>,
@@ -186,6 +194,10 @@ where
         device_name: Option<DeviceName>,
         recaptcha_response: Option<RecaptchaResponse>,
     ) -> Result<Login, UserCreateError> {
+        if request.password.is_none() && request.oauth2_registration_token.is_none() {
+            return Err(UserCreateError::NoLoginMethod);
+        }
+
         self.captcha
             .check(recaptcha_response.as_deref().map(String::as_str))
             .await
@@ -193,6 +205,18 @@ where
                 CaptchaCheckError::Failed => UserCreateError::Recaptcha,
                 CaptchaCheckError::Other(err) => err.into(),
             })?;
+
+        let oauth2_registration = match &request.oauth2_registration_token {
+            Some(oauth2_registration_token) => Some(
+                self.cache
+                    .get::<OAuth2Registration>(&oauth2_registration_cache_key(
+                        oauth2_registration_token,
+                    ))
+                    .await?
+                    .ok_or(UserCreateError::InvalidOAuthRegistrationToken)?,
+            ),
+            None => None,
+        };
 
         let mut txn = self.db.begin_transaction().await.unwrap();
 
@@ -204,6 +228,7 @@ where
             admin: false,
             enabled: true,
             email_verified: false,
+            oauth2_registration,
         };
 
         let user = self
@@ -213,6 +238,7 @@ where
             .map_err(|err| match err {
                 UserCreateCommandError::NameConflict => UserCreateError::NameConflict,
                 UserCreateCommandError::EmailConflict => UserCreateError::EmailConflict,
+                UserCreateCommandError::RemoteAlreadyLinked => UserCreateError::RemoteAlreadyLinked,
                 UserCreateCommandError::Other(err) => err.into(),
             })?;
 
@@ -221,6 +247,12 @@ where
             .invoke(&mut txn, user, device_name, true)
             .await
             .map_err(UserCreateError::Other)?;
+
+        if let Some(oauth2_registration_token) = request.oauth2_registration_token {
+            self.cache
+                .remove(&oauth2_registration_cache_key(&oauth2_registration_token))
+                .await?;
+        }
 
         txn.commit().await.unwrap();
 

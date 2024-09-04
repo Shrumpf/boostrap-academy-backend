@@ -70,10 +70,11 @@ async fn create(
                 name: name.clone().try_into()?,
                 display_name: name.try_into()?,
                 email: email.parse()?,
-                password: password.try_into()?,
+                password: Some(password.try_into()?),
                 admin,
                 enabled,
                 email_verified,
+                oauth2_registration: None,
             },
         )
         .await?;

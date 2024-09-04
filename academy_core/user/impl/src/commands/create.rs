@@ -1,3 +1,6 @@
+use academy_core_oauth2_contracts::create_link::{
+    OAuth2CreateLinkService, OAuth2CreateLinkServiceError,
+};
 use academy_core_user_contracts::commands::create::{
     UserCreateCommand, UserCreateCommandError, UserCreateCommandService,
 };
@@ -6,22 +9,24 @@ use academy_models::user::{User, UserComposite, UserDetails, UserProfile};
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_shared_contracts::{id::IdService, password::PasswordService, time::TimeService};
 
-#[derive(Debug, Clone, Copy, Build)]
-pub struct UserCreateCommandServiceImpl<Id, Time, Password, UserRepo> {
+#[derive(Debug, Clone, Copy, Build, Default)]
+pub struct UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink> {
     id: Id,
     time: Time,
     password: Password,
     user_repo: UserRepo,
+    oauth2_create_link: OAuth2CreateLink,
 }
 
-impl<Txn, Id, Time, Password, UserRepo> UserCreateCommandService<Txn>
-    for UserCreateCommandServiceImpl<Id, Time, Password, UserRepo>
+impl<Txn, Id, Time, Password, UserRepo, OAuth2CreateLink> UserCreateCommandService<Txn>
+    for UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>
 where
     Txn: Send + Sync + 'static,
     Id: IdService,
     Time: TimeService,
     Password: PasswordService,
     UserRepo: UserRepository<Txn>,
+    OAuth2CreateLink: OAuth2CreateLinkService<Txn>,
 {
     async fn invoke(
         &self,
@@ -34,9 +39,13 @@ where
             admin,
             enabled,
             email_verified,
+            oauth2_registration,
         }: UserCreateCommand,
     ) -> Result<UserComposite, UserCreateCommandError> {
-        let password_hash = self.password.hash(password.into_inner()).await?;
+        let password_hash = match password {
+            Some(password) => Some(self.password.hash(password.into_inner()).await?),
+            None => None,
+        };
 
         let user = User {
             id: self.id.generate(),
@@ -68,9 +77,28 @@ where
                 UserRepoError::Other(err) => UserCreateCommandError::Other(err),
             })?;
 
-        self.user_repo
-            .save_password_hash(txn, user.id, password_hash)
-            .await?;
+        if let Some(password_hash) = password_hash {
+            self.user_repo
+                .save_password_hash(txn, user.id, password_hash)
+                .await?;
+        }
+
+        if let Some(oauth2_registration) = oauth2_registration {
+            self.oauth2_create_link
+                .invoke(
+                    txn,
+                    user.id,
+                    oauth2_registration.provider_id,
+                    oauth2_registration.remote_user,
+                )
+                .await
+                .map_err(|err| match err {
+                    OAuth2CreateLinkServiceError::RemoteAlreadyLinked => {
+                        UserCreateCommandError::RemoteAlreadyLinked
+                    }
+                    OAuth2CreateLinkServiceError::Other(err) => err.into(),
+                })?;
+        }
 
         let user_composite = UserComposite {
             user,
@@ -84,8 +112,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_demo::user::FOO;
-    use academy_models::user::UserPassword;
+    use academy_core_oauth2_contracts::create_link::MockOAuth2CreateLinkService;
+    use academy_demo::{
+        oauth2::{FOO_OAUTH2_LINK_1, TEST_OAUTH2_PROVIDER_ID},
+        user::FOO,
+    };
+    use academy_models::{oauth2::OAuth2Registration, user::UserPassword};
     use academy_persistence_contracts::user::MockUserRepository;
     use academy_shared_contracts::{
         id::MockIdService, password::MockPasswordService, time::MockTimeService,
@@ -93,6 +125,14 @@ mod tests {
     use academy_utils::assert_matches;
 
     use super::*;
+
+    type Sut = UserCreateCommandServiceImpl<
+        MockIdService,
+        MockTimeService,
+        MockPasswordService,
+        MockUserRepository<()>,
+        MockOAuth2CreateLinkService<()>,
+    >;
 
     #[tokio::test]
     async fn ok() {
@@ -117,16 +157,67 @@ mod tests {
             time,
             password,
             user_repo,
+            ..Sut::default()
         };
 
         let command = UserCreateCommand {
             name: FOO.user.name.clone(),
             display_name: FOO.profile.display_name.clone(),
             email: FOO.user.email.clone().unwrap(),
-            password: user_password,
+            password: Some(user_password),
             admin: false,
             enabled: true,
             email_verified: false,
+            oauth2_registration: None,
+        };
+
+        // Act
+        let result = sut.invoke(&mut (), command).await;
+
+        // Assert
+        assert_eq!(result.unwrap(), expected);
+    }
+
+    #[tokio::test]
+    async fn ok_oauth2() {
+        // Arrange
+        let expected = get_expected();
+
+        let id = MockIdService::new().with_generate(FOO.user.id);
+        let time = MockTimeService::new().with_now(FOO.user.created_at);
+        let user_repo = MockUserRepository::new().with_create(
+            expected.user.clone(),
+            expected.profile.clone(),
+            Ok(()),
+        );
+
+        let oauth2_create_link = MockOAuth2CreateLinkService::new().with_invoke(
+            FOO.user.id,
+            TEST_OAUTH2_PROVIDER_ID.clone(),
+            FOO_OAUTH2_LINK_1.remote_user.clone(),
+            Ok(FOO_OAUTH2_LINK_1.clone()),
+        );
+
+        let sut = UserCreateCommandServiceImpl {
+            id,
+            time,
+            user_repo,
+            oauth2_create_link,
+            ..Sut::default()
+        };
+
+        let command = UserCreateCommand {
+            name: FOO.user.name.clone(),
+            display_name: FOO.profile.display_name.clone(),
+            email: FOO.user.email.clone().unwrap(),
+            password: None,
+            admin: false,
+            enabled: true,
+            email_verified: false,
+            oauth2_registration: Some(OAuth2Registration {
+                provider_id: TEST_OAUTH2_PROVIDER_ID.clone(),
+                remote_user: FOO_OAUTH2_LINK_1.remote_user.clone(),
+            }),
         };
 
         // Act
@@ -161,16 +252,18 @@ mod tests {
             time,
             password,
             user_repo,
+            ..Sut::default()
         };
 
         let command = UserCreateCommand {
             name: FOO.user.name.clone(),
             display_name: FOO.profile.display_name.clone(),
             email: FOO.user.email.clone().unwrap(),
-            password: user_password,
+            password: Some(user_password),
             admin: false,
             enabled: true,
             email_verified: false,
+            oauth2_registration: None,
         };
 
         // Act
@@ -205,16 +298,18 @@ mod tests {
             time,
             password,
             user_repo,
+            ..Sut::default()
         };
 
         let command = UserCreateCommand {
             name: FOO.user.name.clone(),
             display_name: FOO.profile.display_name.clone(),
             email: FOO.user.email.clone().unwrap(),
-            password: user_password,
+            password: Some(user_password),
             admin: false,
             enabled: true,
             email_verified: false,
+            oauth2_registration: None,
         };
 
         // Act
@@ -222,6 +317,55 @@ mod tests {
 
         // Assert
         assert_matches!(result, Err(UserCreateCommandError::EmailConflict));
+    }
+
+    #[tokio::test]
+    async fn oauth2_remote_already_linked() {
+        // Arrange
+        let expected = get_expected();
+
+        let id = MockIdService::new().with_generate(FOO.user.id);
+        let time = MockTimeService::new().with_now(FOO.user.created_at);
+        let user_repo = MockUserRepository::new().with_create(
+            expected.user.clone(),
+            expected.profile.clone(),
+            Ok(()),
+        );
+
+        let oauth2_create_link = MockOAuth2CreateLinkService::new().with_invoke(
+            FOO.user.id,
+            TEST_OAUTH2_PROVIDER_ID.clone(),
+            FOO_OAUTH2_LINK_1.remote_user.clone(),
+            Err(OAuth2CreateLinkServiceError::RemoteAlreadyLinked),
+        );
+
+        let sut = UserCreateCommandServiceImpl {
+            id,
+            time,
+            user_repo,
+            oauth2_create_link,
+            ..Sut::default()
+        };
+
+        let command = UserCreateCommand {
+            name: FOO.user.name.clone(),
+            display_name: FOO.profile.display_name.clone(),
+            email: FOO.user.email.clone().unwrap(),
+            password: None,
+            admin: false,
+            enabled: true,
+            email_verified: false,
+            oauth2_registration: Some(OAuth2Registration {
+                provider_id: TEST_OAUTH2_PROVIDER_ID.clone(),
+                remote_user: FOO_OAUTH2_LINK_1.remote_user.clone(),
+            }),
+        };
+
+        // Act
+        let result = sut.invoke(&mut (), command).await;
+
+        // Assert
+        assert_matches!(result, Err(UserCreateCommandError::RemoteAlreadyLinked));
     }
 
     fn get_expected() -> UserComposite {

@@ -1,21 +1,27 @@
 use std::sync::Arc;
 
 use academy_core_oauth2_contracts::{
-    OAuth2CreateLinkError, OAuth2DeleteLinkError, OAuth2ListLinksError, OAuth2Service,
+    OAuth2CreateLinkError, OAuth2CreateSessionError, OAuth2CreateSessionResponse,
+    OAuth2DeleteLinkError, OAuth2ListLinksError, OAuth2Service,
 };
-use academy_models::oauth2::OAuth2LinkId;
+use academy_models::{
+    oauth2::{OAuth2LinkId, OAuth2RegistrationToken},
+    session::DeviceName,
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing, Json, Router,
 };
+use serde::Serialize;
 
 use super::{auth_error, error, internal_server_error};
 use crate::{
-    extractors::auth::ApiToken,
+    extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
         oauth2::{ApiOAuth2Link, ApiOAuth2Login, ApiOAuth2ProviderSummary},
+        session::ApiLogin,
         user::ApiUserIdOrSelf,
     },
 };
@@ -31,6 +37,7 @@ pub fn router(service: Arc<impl OAuth2Service>) -> Router<()> {
             "/auth/oauth/links/:user_id/:link_id",
             routing::delete(delete_link),
         )
+        .route("/auth/sessions/oauth", routing::post(create_session))
         .with_state(service)
 }
 
@@ -100,5 +107,41 @@ async fn delete_link(
         }
         Err(OAuth2DeleteLinkError::Auth(err)) => auth_error(err),
         Err(OAuth2DeleteLinkError::Other(err)) => internal_server_error(err),
+    }
+}
+
+#[derive(Serialize)]
+struct CreateSessionRegisterTokenResponse {
+    register_token: OAuth2RegistrationToken,
+}
+
+async fn create_session(
+    service: State<Arc<impl OAuth2Service>>,
+    user_agent: UserAgent,
+    Json(login): Json<ApiOAuth2Login>,
+) -> Response {
+    match service
+        .create_session(
+            login.into(),
+            user_agent.0.map(DeviceName::from_string_truncated),
+        )
+        .await
+    {
+        Ok(OAuth2CreateSessionResponse::Login(login)) => {
+            (StatusCode::CREATED, Json(ApiLogin::from(*login))).into_response()
+        }
+        Ok(OAuth2CreateSessionResponse::RegistrationToken(register_token)) => {
+            Json(CreateSessionRegisterTokenResponse { register_token }).into_response()
+        }
+        Err(OAuth2CreateSessionError::InvalidProvider) => {
+            error(StatusCode::NOT_FOUND, "Provider not found")
+        }
+        Err(OAuth2CreateSessionError::InvalidCode) => {
+            error(StatusCode::UNAUTHORIZED, "Invalid code")
+        }
+        Err(OAuth2CreateSessionError::UserDisabled) => {
+            error(StatusCode::FORBIDDEN, "User disabled")
+        }
+        Err(OAuth2CreateSessionError::Other(err)) => internal_server_error(err),
     }
 }

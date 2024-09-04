@@ -119,6 +119,7 @@ pub type Config = ConfigServiceImpl<Captcha>;
 pub type User = UserServiceImpl<
     Database,
     Auth,
+    Cache,
     Captcha,
     UserList,
     UserCreate,
@@ -136,7 +137,7 @@ pub type User = UserServiceImpl<
     SessionCreate,
     UserRepo,
 >;
-pub type UserCreate = UserCreateCommandServiceImpl<Id, Time, Password, UserRepo>;
+pub type UserCreate = UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>;
 pub type UserRequestSubscribeNewsletterEmail =
     UserRequestSubscribeNewsletterEmailCommandServiceImpl<Secret, TemplateEmail, Cache>;
 pub type UserUpdateName = UserUpdateNameCommandServiceImpl<Time, UserRepo>;
@@ -198,11 +199,14 @@ pub type MfaDisable = MfaDisableCommandServiceImpl<MfaRepo>;
 pub type OAuth2 = OAuth2ServiceImpl<
     Database,
     Auth,
+    Cache,
+    Secret,
     OAuth2Api,
     UserRepo,
     OAuth2Repo,
     OAuth2CreateLink,
     OAuth2Login,
+    SessionCreate,
 >;
 pub type OAuth2CreateLink = OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo>;
 pub type OAuth2Login = OAuth2LoginServiceImpl<OAuth2Api>;

@@ -151,6 +151,7 @@ pub struct RecaptchaConfig {
 #[derive(Debug, Deserialize)]
 pub struct OAuth2Config {
     pub enable: Option<bool>,
+    pub registration_token_ttl: Duration,
     pub providers: HashMap<String, OAuth2ProviderConfig>,
 }
 

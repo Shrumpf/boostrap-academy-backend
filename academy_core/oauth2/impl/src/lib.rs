@@ -1,23 +1,28 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
+use academy_cache_contracts::CacheService;
 use academy_core_auth_contracts::{AuthResultExt, AuthService};
 use academy_core_oauth2_contracts::{
     create_link::{OAuth2CreateLinkService, OAuth2CreateLinkServiceError},
     login::{OAuth2LoginService, OAuth2LoginServiceError},
-    OAuth2CreateLinkError, OAuth2DeleteLinkError, OAuth2ListLinksError, OAuth2Service,
+    oauth2_registration_cache_key, OAuth2CreateLinkError, OAuth2CreateSessionError,
+    OAuth2CreateSessionResponse, OAuth2DeleteLinkError, OAuth2ListLinksError, OAuth2Service,
 };
+use academy_core_session_contracts::commands::create::SessionCreateCommandService;
 use academy_di::Build;
 use academy_extern_contracts::oauth2::OAuth2ApiService;
 use academy_models::{
     oauth2::{
         OAuth2Link, OAuth2LinkId, OAuth2Login, OAuth2Provider, OAuth2ProviderId,
-        OAuth2ProviderSummary,
+        OAuth2ProviderSummary, OAuth2Registration, OAuth2RegistrationToken,
     },
+    session::DeviceName,
     user::UserIdOrSelf,
 };
 use academy_persistence_contracts::{
     oauth2::OAuth2Repository, user::UserRepository, Database, Transaction,
 };
+use academy_shared_contracts::secret::SecretService;
 
 pub mod create_link;
 pub mod login;
@@ -30,37 +35,69 @@ mod tests;
 pub struct OAuth2ServiceImpl<
     Db,
     Auth,
+    Cache,
+    Secret,
     OAuth2Api,
     UserRepo,
     OAuth2Repo,
     OAuth2CreateLink,
     OAuth2Login,
+    SessionCreate,
 > {
     db: Db,
     auth: Auth,
+    cache: Cache,
+    secret: Secret,
     oauth2_api: OAuth2Api,
     user_repo: UserRepo,
     oauth2_repo: OAuth2Repo,
     oauth2_create_link: OAuth2CreateLink,
     oauth2_login: OAuth2Login,
+    session_create: SessionCreate,
     config: OAuth2ServiceConfig,
 }
 
 #[derive(Debug, Clone)]
 pub struct OAuth2ServiceConfig {
     pub providers: Arc<HashMap<OAuth2ProviderId, OAuth2Provider>>,
+    pub registration_token_ttl: Duration,
 }
 
-impl<Db, Auth, OAuth2Api, UserRepo, OAuth2Repo, OAuth2CreateLink, OAuth2LoginS> OAuth2Service
-    for OAuth2ServiceImpl<Db, Auth, OAuth2Api, UserRepo, OAuth2Repo, OAuth2CreateLink, OAuth2LoginS>
+impl<
+        Db,
+        Auth,
+        Cache,
+        Secret,
+        OAuth2Api,
+        UserRepo,
+        OAuth2Repo,
+        OAuth2CreateLink,
+        OAuth2LoginS,
+        SessionCreate,
+    > OAuth2Service
+    for OAuth2ServiceImpl<
+        Db,
+        Auth,
+        Cache,
+        Secret,
+        OAuth2Api,
+        UserRepo,
+        OAuth2Repo,
+        OAuth2CreateLink,
+        OAuth2LoginS,
+        SessionCreate,
+    >
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
+    Cache: CacheService,
+    Secret: SecretService,
     OAuth2Api: OAuth2ApiService,
     UserRepo: UserRepository<Db::Transaction>,
     OAuth2Repo: OAuth2Repository<Db::Transaction>,
     OAuth2CreateLink: OAuth2CreateLinkService<Db::Transaction>,
     OAuth2LoginS: OAuth2LoginService,
+    SessionCreate: SessionCreateCommandService<Db::Transaction>,
 {
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary> {
         self.config
@@ -167,5 +204,67 @@ where
         txn.commit().await?;
 
         Ok(())
+    }
+
+    async fn create_session(
+        &self,
+        login: OAuth2Login,
+        device_name: Option<DeviceName>,
+    ) -> Result<OAuth2CreateSessionResponse, OAuth2CreateSessionError> {
+        let provider_id = login.provider_id.clone();
+        let user_info = self
+            .oauth2_login
+            .invoke(login)
+            .await
+            .map_err(|err| match err {
+                OAuth2LoginServiceError::InvalidProvider => {
+                    OAuth2CreateSessionError::InvalidProvider
+                }
+                OAuth2LoginServiceError::InvalidCode => OAuth2CreateSessionError::InvalidCode,
+                OAuth2LoginServiceError::Other(err) => err.into(),
+            })?;
+
+        let mut txn = self.db.begin_transaction().await?;
+
+        let Some(user_composite) = self
+            .user_repo
+            .get_composite_by_oauth2_provider_id_and_remote_user_id(
+                &mut txn,
+                &provider_id,
+                &user_info.id,
+            )
+            .await?
+        else {
+            let registration_token = OAuth2RegistrationToken::try_new(
+                self.secret.generate(OAuth2RegistrationToken::LEN),
+            )
+            .unwrap();
+            self.cache
+                .set(
+                    &oauth2_registration_cache_key(&registration_token),
+                    &OAuth2Registration {
+                        provider_id,
+                        remote_user: user_info,
+                    },
+                    Some(self.config.registration_token_ttl),
+                )
+                .await?;
+            return Ok(OAuth2CreateSessionResponse::RegistrationToken(
+                registration_token,
+            ));
+        };
+
+        if !user_composite.user.enabled {
+            return Err(OAuth2CreateSessionError::UserDisabled);
+        }
+
+        let login = self
+            .session_create
+            .invoke(&mut txn, user_composite, device_name, true)
+            .await?;
+
+        txn.commit().await?;
+
+        Ok(OAuth2CreateSessionResponse::Login(login.into()))
     }
 }

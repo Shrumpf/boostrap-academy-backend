@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use nutype::nutype;
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
@@ -38,7 +39,7 @@ pub struct OAuth2Link {
     pub remote_user: OAuth2UserInfo,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OAuth2UserInfo {
     pub id: OAuth2RemoteUserId,
     pub name: OAuth2RemoteUserName,
@@ -58,3 +59,17 @@ nutype_string!(OAuth2AuthorizationCode(validate(len_char_max = 256)));
 
 nutype_string!(OAuth2RemoteUserId(validate(len_char_max = 256)));
 nutype_string!(OAuth2RemoteUserName(validate(len_char_max = 256)));
+
+nutype_string!(OAuth2RegistrationToken(validate(
+    len_char_min = OAuth2RegistrationToken::LEN,
+    len_char_max = OAuth2RegistrationToken::LEN
+)));
+impl OAuth2RegistrationToken {
+    pub const LEN: usize = 64;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OAuth2Registration {
+    pub provider_id: OAuth2ProviderId,
+    pub remote_user: OAuth2UserInfo,
+}

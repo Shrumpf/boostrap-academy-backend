@@ -135,6 +135,11 @@ impl ConfigProvider {
         };
 
         let oauth2_service_config = OAuth2ServiceConfig {
+            registration_token_ttl: config
+                .oauth2
+                .as_ref()
+                .map(|oauth2| oauth2.registration_token_ttl.0)
+                .unwrap_or_default(),
             providers: config
                 .oauth2
                 .iter()
