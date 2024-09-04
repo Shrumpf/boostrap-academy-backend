@@ -59,6 +59,20 @@
           secret = "test-secret";
           min_score = 0.5;
         };
+        oauth2 = {
+          enable = true;
+          providers.test = {
+            name = "Test OAuth2 Provider";
+            client_id = "client-id";
+            client_secret = "client-secret";
+            auth_url = "http://127.0.0.1:8002/oauth2/authorize";
+            token_url = "http://127.0.0.1:8002/oauth2/token";
+            userinfo_url = "http://127.0.0.1:8002/user";
+            userinfo_id_key = "id";
+            userinfo_name_key = "name";
+            scopes = [];
+          };
+        };
       };
     };
 
@@ -67,6 +81,14 @@
       before = ["academy-backend.service"];
       script = ''
         ${self.packages.${system}.testing}/bin/academy-testing recaptcha
+      '';
+    };
+
+    systemd.services."academy-testing-oauth2" = lib.mkIf config.services.academy.backend.settings.oauth2.enable {
+      wantedBy = ["academy-backend.service"];
+      before = ["academy-backend.service"];
+      script = ''
+        ${self.packages.${system}.testing}/bin/academy-testing oauth2
       '';
     };
 

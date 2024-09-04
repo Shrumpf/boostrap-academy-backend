@@ -9,7 +9,7 @@ use url::Url;
 pub struct ApiOAuth2ProviderSummary {
     pub id: OAuth2ProviderId,
     pub name: OAuth2ProviderName,
-    pub auth_url: Url,
+    pub authorize_url: Url,
 }
 
 impl From<OAuth2ProviderSummary> for ApiOAuth2ProviderSummary {
@@ -17,7 +17,7 @@ impl From<OAuth2ProviderSummary> for ApiOAuth2ProviderSummary {
         Self {
             id: value.id,
             name: value.name,
-            auth_url: value.auth_url,
+            authorize_url: value.auth_url,
         }
     }
 }
