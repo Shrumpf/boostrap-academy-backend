@@ -45,6 +45,7 @@ assert login == {
         "description": "",
         "tags": [],
         "newsletter": False,
+        "avatar_url": "https://gravatar.com/avatar/b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
     },
     "session": {
         "id": login["session"]["id"],
@@ -147,6 +148,7 @@ resp = c.patch("/auth/users/me", json={"email": "other@email"})
 assert resp.status_code == 200
 user["email"] = "other@email"
 user["email_verified"] = False
+user["avatar_url"] = "https://gravatar.com/avatar/f4336d1a8fd5b1720adc941152c0548ffd63ff90969f70054d77f50b32d64ad8"
 assert resp.json() == user
 assert_access_token_invalid()
 login = refresh_session()

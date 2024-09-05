@@ -60,6 +60,7 @@ dependencies = [
  "email_address",
  "serde",
  "serde_json",
+ "sha2",
  "tokio",
  "tracing",
  "url",
