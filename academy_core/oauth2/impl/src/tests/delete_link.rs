@@ -6,8 +6,10 @@ use academy_demo::{
     user::{ADMIN, BAR, FOO},
 };
 use academy_models::auth::{AuthError, AuthenticateError, AuthorizeError};
-use academy_persistence_contracts::{oauth2::MockOAuth2Repository, MockDatabase};
-use academy_utils::assert_matches;
+use academy_persistence_contracts::{
+    oauth2::MockOAuth2Repository, user::MockUserRepository, MockDatabase,
+};
+use academy_utils::{assert_matches, Apply};
 
 use crate::{tests::Sut, OAuth2ServiceImpl};
 
@@ -22,10 +24,16 @@ async fn ok() {
         .with_get_link(FOO_OAUTH2_LINK_1.id, Some(FOO_OAUTH2_LINK_1.clone()))
         .with_delete_link(FOO_OAUTH2_LINK_1.id, true);
 
+    let user_repo = MockUserRepository::new().with_get_composite(
+        FOO.user.id,
+        Some(FOO.clone().with(|u| u.details.oauth2_login = false)),
+    );
+
     let sut = OAuth2ServiceImpl {
         db,
         auth,
         oauth2_repo,
+        user_repo,
         ..Sut::default()
     };
 
@@ -137,4 +145,40 @@ async fn user_id_mismatch() {
 
     // Assert
     assert_matches!(result, Err(OAuth2DeleteLinkError::NotFound));
+}
+
+#[tokio::test]
+async fn last_login_method() {
+    // Arrange
+    let auth = MockAuthService::new().with_authenticate(Some((FOO.user.clone(), FOO_1.clone())));
+
+    let db = MockDatabase::build(false);
+
+    let oauth2_repo = MockOAuth2Repository::new()
+        .with_get_link(FOO_OAUTH2_LINK_1.id, Some(FOO_OAUTH2_LINK_1.clone()))
+        .with_delete_link(FOO_OAUTH2_LINK_1.id, true);
+
+    let user_repo = MockUserRepository::new().with_get_composite(
+        FOO.user.id,
+        Some(FOO.clone().with(|u| {
+            u.details.password_login = false;
+            u.details.oauth2_login = false;
+        })),
+    );
+
+    let sut = OAuth2ServiceImpl {
+        db,
+        auth,
+        oauth2_repo,
+        user_repo,
+        ..Sut::default()
+    };
+
+    // Act
+    let result = sut
+        .delete_link("token", FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
+        .await;
+
+    // Assert
+    assert_matches!(result, Err(OAuth2DeleteLinkError::CannotRemoveLink));
 }

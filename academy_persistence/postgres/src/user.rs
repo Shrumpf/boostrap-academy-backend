@@ -345,6 +345,18 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map(|row| row.map(|row| row.get(0)))
             .map_err(Into::into)
     }
+
+    async fn remove_password_hash(
+        &self,
+        txn: &mut PostgresTransaction,
+        user_id: UserId,
+    ) -> anyhow::Result<bool> {
+        txn.txn()
+            .execute("delete from user_passwords where user_id=$1", &[&*user_id])
+            .await
+            .map(|n| n != 0)
+            .map_err(Into::into)
+    }
 }
 
 fn make_filter<'a>(

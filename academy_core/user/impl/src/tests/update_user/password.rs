@@ -6,7 +6,7 @@ use academy_core_user_contracts::{
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::user::{UserIdOrSelf, UserPassword};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
-use academy_utils::{assert_matches, patch::PatchValue};
+use academy_utils::{assert_matches, patch::PatchValue, Apply};
 
 use crate::{tests::Sut, UserServiceImpl};
 
@@ -52,13 +52,56 @@ async fn update_password() {
 }
 
 #[tokio::test]
-async fn remove_password() {
+async fn remove_password_oauth() {
+    // Arrange
+    let auth = MockAuthService::new().with_authenticate(Some((FOO.user.clone(), FOO_1.clone())));
+
+    let db = MockDatabase::build(true);
+
+    let user_repo = MockUserRepository::new()
+        .with_get_composite(FOO.user.id, Some(FOO.clone()))
+        .with_remove_password_hash(FOO.user.id, true);
+
+    let sut = UserServiceImpl {
+        auth,
+        db,
+        user_repo,
+        ..Sut::default()
+    };
+
+    // Act
+    let result = sut
+        .update_user(
+            "token",
+            UserIdOrSelf::Slf,
+            UserUpdateRequest {
+                user: UserUpdateUserRequest {
+                    password: PatchValue::Update(PasswordUpdate::Remove),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        )
+        .await;
+
+    // Assert
+    assert_eq!(
+        result.unwrap(),
+        FOO.clone().with(|u| u.details.password_login = false)
+    );
+}
+
+#[tokio::test]
+async fn remove_password_no_oauth() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((FOO.user.clone(), FOO_1.clone())));
 
     let db = MockDatabase::build(false);
 
-    let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
+    let user_repo = MockUserRepository::new().with_get_composite(
+        FOO.user.id,
+        Some(FOO.clone().with(|u| u.details.oauth2_login = false)),
+    );
 
     let sut = UserServiceImpl {
         auth,

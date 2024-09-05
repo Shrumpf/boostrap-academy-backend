@@ -201,6 +201,15 @@ where
 
         self.oauth2_repo.delete_link(&mut txn, link.id).await?;
 
+        let user_composite = self
+            .user_repo
+            .get_composite(&mut txn, user_id)
+            .await?
+            .ok_or(OAuth2DeleteLinkError::NotFound)?;
+        if !user_composite.details.password_login && !user_composite.details.oauth2_login {
+            return Err(OAuth2DeleteLinkError::CannotRemoveLink);
+        }
+
         txn.commit().await?;
 
         Ok(())

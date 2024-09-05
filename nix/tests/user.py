@@ -153,6 +153,10 @@ login = refresh_session()
 assert c.get("/auth/users/me").json() == user
 
 ## password
+resp = c.patch("/auth/users/me", json={"password": ""})
+assert resp.status_code == 403
+assert resp.json() == {"detail": "Cannot delete last login method"}
+
 new_password = "otherpw"
 resp = c.patch("/auth/users/me", json={"password": new_password})
 assert resp.status_code == 200

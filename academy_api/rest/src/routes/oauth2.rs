@@ -105,6 +105,9 @@ async fn delete_link(
         Err(OAuth2DeleteLinkError::NotFound) => {
             error(StatusCode::NOT_FOUND, "Connection not found")
         }
+        Err(OAuth2DeleteLinkError::CannotRemoveLink) => {
+            error(StatusCode::FORBIDDEN, "Cannot delete last login method")
+        }
         Err(OAuth2DeleteLinkError::Auth(err)) => auth_error(err),
         Err(OAuth2DeleteLinkError::Other(err)) => internal_server_error(err),
     }

@@ -73,6 +73,10 @@ pub enum OAuth2CreateLinkError {
 pub enum OAuth2DeleteLinkError {
     #[error("The link does not exist.")]
     NotFound,
+    #[error(
+        "The link cannot be removed from the user because they don't have any other login methods."
+    )]
+    CannotRemoveLink,
     #[error(transparent)]
     Auth(#[from] AuthError),
     #[error(transparent)]

@@ -410,8 +410,13 @@ async fn password() {
     assert_eq!(result, "some other password hash");
 
     let result = REPO
-        .get_password_hash(&mut txn, UUID1.into())
+        .remove_password_hash(&mut txn, FOO.user.id)
         .await
         .unwrap();
+    assert!(result);
+    txn.commit().await.unwrap();
+
+    let mut txn = db.begin_transaction().await.unwrap();
+    let result = REPO.get_password_hash(&mut txn, FOO.user.id).await.unwrap();
     assert_eq!(result, None);
 }

@@ -50,6 +50,23 @@ user["last_login"] = login["user"]["last_login"]
 assert login["user"] == user
 save_auth(login)
 
+# remove password
+resp = c.patch("/auth/users/me", json={"password": ""})
+assert resp.status_code == 200
+user["password"] = False
+assert resp.json() == user
+assert get_self() == user
+
+resp = c.delete(f"/auth/oauth/links/me/{link['id']}")
+assert resp.status_code == 403
+assert resp.json() == {"detail": "Cannot delete last login method"}
+
+resp = c.patch("/auth/users/me", json={"password": "a"})
+assert resp.status_code == 200
+user["password"] = True
+assert resp.json() == user
+assert get_self() == user
+
 # delete link
 resp = c.delete(f"/auth/oauth/links/me/{link['id']}")
 assert resp.status_code == 200

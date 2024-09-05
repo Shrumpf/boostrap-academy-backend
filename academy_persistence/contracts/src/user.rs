@@ -110,6 +110,13 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Option<String>>> + Send;
+
+    /// Removes the password hash of a given user.
+    fn remove_password_hash(
+        &self,
+        txn: &mut Txn,
+        user_id: UserId,
+    ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 }
 
 #[derive(Debug, Error)]
@@ -290,6 +297,17 @@ impl<Txn: Send + Sync + 'static> MockUserRepository<Txn> {
                 mockall::predicate::eq(user_id),
             )
             .return_once(|_, _| Box::pin(std::future::ready(Ok(password_hash))));
+        self
+    }
+
+    pub fn with_remove_password_hash(mut self, user_id: UserId, result: bool) -> Self {
+        self.expect_remove_password_hash()
+            .once()
+            .with(
+                mockall::predicate::always(),
+                mockall::predicate::eq(user_id),
+            )
+            .return_once(move |_, _| Box::pin(std::future::ready(Ok(result))));
         self
     }
 }

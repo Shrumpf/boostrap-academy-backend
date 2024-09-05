@@ -286,7 +286,7 @@ where
         let UserComposite {
             mut user,
             mut profile,
-            details,
+            mut details,
         } = self
             .user_repo
             .get_composite(&mut txn, user_id)
@@ -377,12 +377,20 @@ where
 
         match password {
             PatchValue::Update(PasswordUpdate::Remove) => {
-                return Err(UserUpdateError::CannotRemovePassword)
+                if !details.oauth2_login {
+                    return Err(UserUpdateError::CannotRemovePassword);
+                }
+                self.user_repo
+                    .remove_password_hash(&mut txn, user.id)
+                    .await?;
+                details.password_login = false;
+                commit = true;
             }
             PatchValue::Update(PasswordUpdate::Change(password)) => {
                 self.user_update_password
                     .invoke(&mut txn, user_id, password)
                     .await?;
+                details.password_login = true;
                 commit = true;
             }
             PatchValue::Unchanged => (),
