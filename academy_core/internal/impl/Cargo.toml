@@ -1,0 +1,26 @@
+[package]
+name = "academy_core_internal_impl"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+academy_core_internal_contracts.workspace = true
+academy_di.workspace = true
+academy_models.workspace = true
+academy_persistence_contracts.workspace = true
+academy_shared_contracts.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+academy_core_internal_contracts = { workspace = true, features = ["mock"] }
+academy_demo.workspace = true
+academy_persistence_contracts = { workspace = true, features = ["mock"] }
+academy_shared_contracts = { workspace = true, features = ["mock"] }
+academy_utils.workspace = true
+tokio.workspace = true

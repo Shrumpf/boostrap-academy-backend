@@ -1,9 +1,9 @@
 use std::convert::Infallible;
 
-use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
-use axum_extra::{
-    headers::{authorization::Bearer, Authorization},
-    TypedHeader,
+use axum::{
+    async_trait,
+    extract::FromRequestParts,
+    http::{header::AUTHORIZATION, request::Parts},
 };
 
 pub struct ApiToken(pub String);
@@ -12,11 +12,13 @@ pub struct ApiToken(pub String);
 impl<S: Send + Sync> FromRequestParts<S> for ApiToken {
     type Rejection = Infallible;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         Ok(Self(
-            TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
-                .await
-                .map(|t| t.token().into())
+            parts
+                .headers
+                .get(AUTHORIZATION)
+                .and_then(|x| x.to_str().ok())
+                .map(|x| x.strip_prefix("Bearer ").unwrap_or(x).into())
                 .unwrap_or_default(),
         ))
     }

@@ -3,6 +3,7 @@ use std::net::IpAddr;
 use academy_core_config_contracts::ConfigService;
 use academy_core_contact_contracts::ContactService;
 use academy_core_health_contracts::HealthService;
+use academy_core_internal_contracts::InternalService;
 use academy_core_mfa_contracts::MfaService;
 use academy_core_oauth2_contracts::OAuth2Service;
 use academy_core_session_contracts::SessionService;
@@ -16,7 +17,7 @@ mod models;
 mod routes;
 
 #[derive(Debug, Clone, Build)]
-pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2> {
+pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal> {
     health: Health,
     config: Config,
     user: User,
@@ -24,10 +25,11 @@ pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2> {
     contact: Contact,
     mfa: Mfa,
     oauth2: OAuth2,
+    internal: Internal,
 }
 
-impl<Health, Config, User, Session, Contact, Mfa, OAuth2>
-    RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2>
+impl<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>
+    RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>
 where
     Health: HealthService,
     Config: ConfigService,
@@ -36,6 +38,7 @@ where
     Contact: ContactService,
     Mfa: MfaService,
     OAuth2: OAuth2Service,
+    Internal: InternalService,
 {
     pub async fn serve(self, host: IpAddr, port: u16) -> anyhow::Result<()> {
         let router = self.router();
@@ -52,5 +55,6 @@ where
             .merge(routes::contact::router(self.contact.into()))
             .merge(routes::mfa::router(self.mfa.into()))
             .merge(routes::oauth2::router(self.oauth2.into()))
+            .merge(routes::internal::router(self.internal.into()))
     }
 }

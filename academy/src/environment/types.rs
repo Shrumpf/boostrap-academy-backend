@@ -5,6 +5,7 @@ use academy_core_auth_impl::{
 use academy_core_config_impl::ConfigServiceImpl;
 use academy_core_contact_impl::ContactServiceImpl;
 use academy_core_health_impl::HealthServiceImpl;
+use academy_core_internal_impl::{auth::InternalAuthServiceImpl, InternalServiceImpl};
 use academy_core_mfa_impl::{
     commands::{
         authenticate::MfaAuthenticateCommandServiceImpl,
@@ -63,7 +64,7 @@ use academy_templates_impl::TemplateServiceImpl;
 
 // API
 pub type RestServer =
-    academy_api_rest::RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2>;
+    academy_api_rest::RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>;
 
 // Persistence
 pub type Database = PostgresDatabase;
@@ -210,3 +211,6 @@ pub type OAuth2 = OAuth2ServiceImpl<
 >;
 pub type OAuth2CreateLink = OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo>;
 pub type OAuth2Login = OAuth2LoginServiceImpl<OAuth2Api>;
+
+pub type Internal = InternalServiceImpl<Database, InternalAuth, UserRepo>;
+pub type InternalAuth = InternalAuthServiceImpl<Jwt>;
