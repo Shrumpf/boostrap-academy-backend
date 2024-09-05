@@ -20,7 +20,14 @@ async fn ok() {
         .with_get_composite_by_email(FOO.user.email.clone().unwrap(), Some(FOO.clone()));
 
     let user_request_password_reset_email = MockUserRequestPasswordResetEmailCommandService::new()
-        .with_invoke(FOO.user.id, FOO.user.email.clone().unwrap());
+        .with_invoke(
+            FOO.user.id,
+            FOO.user
+                .email
+                .clone()
+                .unwrap()
+                .with_name(FOO.profile.display_name.clone().into_inner()),
+        );
 
     let sut = UserServiceImpl {
         db,

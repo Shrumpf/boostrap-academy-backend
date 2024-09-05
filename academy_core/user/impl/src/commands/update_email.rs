@@ -3,9 +3,11 @@ use academy_core_user_contracts::commands::update_email::{
     UserUpdateEmailCommandError, UserUpdateEmailCommandService,
 };
 use academy_di::Build;
-use academy_models::user::{UserId, UserPatchRef};
+use academy_models::{
+    email_address::EmailAddress,
+    user::{UserId, UserPatchRef},
+};
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
-use email_address::EmailAddress;
 
 #[derive(Debug, Clone, Build)]
 pub struct UserUpdateEmailCommandServiceImpl<Auth, UserRepo> {

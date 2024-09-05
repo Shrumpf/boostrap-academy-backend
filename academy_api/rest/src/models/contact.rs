@@ -1,8 +1,10 @@
-use academy_models::contact::{
-    ContactMessage, ContactMessageAuthor, ContactMessageAuthorName, ContactMessageContent,
-    ContactMessageSubject,
+use academy_models::{
+    contact::{
+        ContactMessage, ContactMessageAuthor, ContactMessageAuthorName, ContactMessageContent,
+        ContactMessageSubject,
+    },
+    email_address::EmailAddress,
 };
-use email_address::EmailAddress;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]

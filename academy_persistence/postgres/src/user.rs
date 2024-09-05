@@ -2,6 +2,7 @@ use std::fmt::Write;
 
 use academy_di::Build;
 use academy_models::{
+    email_address::EmailAddress,
     oauth2::{OAuth2ProviderId, OAuth2RemoteUserId},
     pagination::PaginationSlice,
     user::{
@@ -12,7 +13,6 @@ use academy_models::{
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_utils::patch::PatchValue;
 use bb8_postgres::tokio_postgres::{self, types::ToSql, Row};
-use email_address::EmailAddress;
 use uuid::Uuid;
 
 use crate::{arg_indices, columns, PostgresTransaction};
@@ -179,7 +179,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
                 &[
                     &*user.id,
                     &user.name.as_str(),
-                    &user.email.as_ref().map(AsRef::as_ref),
+                    &user.email.as_ref().map(EmailAddress::as_str),
                     &user.email_verified,
                     &user.created_at,
                     &user.last_login,

@@ -31,8 +31,14 @@ async fn enable_self() {
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(foo.clone()));
 
     let user_request_subscribe_newsletter_email =
-        MockUserRequestSubscribeNewsletterEmailCommandService::new()
-            .with_invoke(FOO.user.id, FOO.user.email.clone().unwrap());
+        MockUserRequestSubscribeNewsletterEmailCommandService::new().with_invoke(
+            FOO.user.id,
+            FOO.user
+                .email
+                .clone()
+                .unwrap()
+                .with_name(FOO.profile.display_name.clone().into_inner()),
+        );
 
     let sut = UserServiceImpl {
         auth,

@@ -1,10 +1,10 @@
 use academy_di::Build;
 use academy_email_contracts::{template::TemplateEmailService, ContentType, Email, EmailService};
+use academy_models::email_address::EmailAddressWithName;
 use academy_templates_contracts::{
     ResetPasswordTemplate, SubscribeNewsletterTemplate, Template, TemplateService,
     VerifyEmailTemplate,
 };
-use email_address::EmailAddress;
 
 #[derive(Debug, Clone, Build)]
 pub struct TemplateEmailServiceImpl<Email, Template> {
@@ -19,7 +19,7 @@ where
 {
     async fn send_reset_password_email(
         &self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: &ResetPasswordTemplate,
     ) -> anyhow::Result<bool> {
         self.send_email(recipient, data, "Passwort zurücksetzen - Bootstrap Academy")
@@ -28,7 +28,7 @@ where
 
     async fn send_subscribe_newsletter_email(
         &self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: &SubscribeNewsletterTemplate,
     ) -> anyhow::Result<bool> {
         self.send_email(recipient, data, "Newsletter abonnieren - Bootstrap Academy")
@@ -37,7 +37,7 @@ where
 
     async fn send_verification_email(
         &self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: &VerifyEmailTemplate,
     ) -> anyhow::Result<bool> {
         self.send_email(recipient, data, "Willkommen bei der Bootstrap Academy!")
@@ -52,7 +52,7 @@ where
 {
     async fn send_email<T: Template + 'static>(
         &self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: &T,
         subject: impl Into<String>,
     ) -> anyhow::Result<bool> {

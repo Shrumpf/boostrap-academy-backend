@@ -1,7 +1,6 @@
-use email_address::EmailAddress;
 use nutype::nutype;
 
-use crate::macros::nutype_string;
+use crate::{email_address::EmailAddress, macros::nutype_string};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContactMessage {

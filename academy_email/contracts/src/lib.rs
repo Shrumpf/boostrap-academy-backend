@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use email_address::EmailAddress;
+use academy_models::email_address::EmailAddressWithName;
 
 pub mod template;
 
@@ -13,11 +13,11 @@ pub trait EmailService: Send + Sync + 'static {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Email {
-    pub recipient: EmailAddress,
+    pub recipient: EmailAddressWithName,
     pub subject: String,
     pub body: String,
     pub content_type: ContentType,
-    pub reply_to: Option<EmailAddress>,
+    pub reply_to: Option<EmailAddressWithName>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

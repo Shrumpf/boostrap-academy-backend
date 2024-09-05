@@ -1,14 +1,14 @@
 use academy_config::Config;
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_email_impl::EmailServiceImpl;
+use academy_models::email_address::EmailAddressWithName;
 use anyhow::ensure;
 use clap::Subcommand;
-use email_address::EmailAddress;
 
 #[derive(Debug, Subcommand)]
 pub enum EmailCommand {
     /// Test email deliverability
-    Test { recipient: EmailAddress },
+    Test { recipient: EmailAddressWithName },
 }
 
 impl EmailCommand {
@@ -19,7 +19,7 @@ impl EmailCommand {
     }
 }
 
-async fn test(config: Config, recipient: EmailAddress) -> anyhow::Result<()> {
+async fn test(config: Config, recipient: EmailAddressWithName) -> anyhow::Result<()> {
     let email_service = EmailServiceImpl::new(&config.email.smtp_url, config.email.from).await?;
 
     let ok = email_service

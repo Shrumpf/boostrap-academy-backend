@@ -1,10 +1,10 @@
 use std::future::Future;
 
 use academy_models::{
+    email_address::EmailAddress,
     oauth2::OAuth2Registration,
     user::{UserComposite, UserDisplayName, UserName, UserPassword},
 };
-use email_address::EmailAddress;
 use thiserror::Error;
 
 /// Creates a new user.

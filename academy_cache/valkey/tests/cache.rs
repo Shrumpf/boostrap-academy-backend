@@ -3,7 +3,7 @@ use std::time::Duration;
 use academy_cache_contracts::CacheService;
 use academy_cache_valkey::{ValkeyCache, ValkeyCacheConfig};
 use academy_demo::SHA256HASH1;
-use academy_models::Sha256Hash;
+use academy_models::{email_address::EmailAddress, Sha256Hash};
 use serde::{Deserialize, Serialize};
 
 #[tokio::test]
@@ -126,6 +126,8 @@ async fn types() {
         Option<i32>: None, Option<i32>: Some(7),
         String: "Lorem ipsum dolor sit amet",
         Struct: Struct { foo: 17, bar: "hi there".into(), baz: Enum::B },
+        EmailAddress: "foo@example.com",
+        serde_json::Value: serde_json::Value::Number(42.into()),
     };
 }
 

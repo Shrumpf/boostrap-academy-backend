@@ -1,27 +1,27 @@
 use std::future::Future;
 
+use academy_models::email_address::EmailAddressWithName;
 use academy_templates_contracts::{
     ResetPasswordTemplate, SubscribeNewsletterTemplate, VerifyEmailTemplate,
 };
-use email_address::EmailAddress;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait TemplateEmailService: Send + Sync + 'static {
     fn send_reset_password_email(
         &self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: &ResetPasswordTemplate,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
     fn send_subscribe_newsletter_email(
         &self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: &SubscribeNewsletterTemplate,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
     fn send_verification_email(
         &self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: &VerifyEmailTemplate,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 }
@@ -30,7 +30,7 @@ pub trait TemplateEmailService: Send + Sync + 'static {
 impl MockTemplateEmailService {
     pub fn with_send_reset_password_email(
         mut self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: ResetPasswordTemplate,
         result: bool,
     ) -> Self {
@@ -46,7 +46,7 @@ impl MockTemplateEmailService {
 
     pub fn with_send_subscribe_newsletter_email(
         mut self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: SubscribeNewsletterTemplate,
         result: bool,
     ) -> Self {
@@ -62,7 +62,7 @@ impl MockTemplateEmailService {
 
     pub fn with_send_verification_email(
         mut self,
-        recipient: EmailAddress,
+        recipient: EmailAddressWithName,
         data: VerifyEmailTemplate,
         result: bool,
     ) -> Self {

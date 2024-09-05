@@ -4,9 +4,9 @@ use academy_cache_contracts::CacheService;
 use academy_core_user_contracts::commands::request_verification_email::UserRequestVerificationEmailCommandService;
 use academy_di::Build;
 use academy_email_contracts::template::TemplateEmailService;
+use academy_models::email_address::EmailAddressWithName;
 use academy_shared_contracts::secret::SecretService;
 use academy_templates_contracts::VerifyEmailTemplate;
-use email_address::EmailAddress;
 
 use crate::verification_cache_key;
 
@@ -31,13 +31,13 @@ where
     TemplateEmail: TemplateEmailService,
     Cache: CacheService,
 {
-    async fn invoke(&self, email: EmailAddress) -> anyhow::Result<()> {
+    async fn invoke(&self, email: EmailAddressWithName) -> anyhow::Result<()> {
         let code = self.secret.generate_verification_code();
 
         self.cache
             .set(
                 &verification_cache_key(&code),
-                &email,
+                &email.clone().into_email_address(),
                 Some(self.config.verification_code_ttl),
             )
             .await?;
@@ -74,11 +74,18 @@ mod tests {
             verification_code_ttl: Duration::from_secs(1337),
         };
 
+        let recipient = FOO
+            .user
+            .email
+            .clone()
+            .unwrap()
+            .with_name(FOO.profile.display_name.clone().into_inner());
+
         let secret =
             MockSecretService::new().with_generate_verification_code(VERIFICATION_CODE_1.clone());
 
         let template_email = MockTemplateEmailService::new().with_send_verification_email(
-            FOO.user.email.clone().unwrap(),
+            recipient.clone(),
             VerifyEmailTemplate {
                 code: VERIFICATION_CODE_1.clone().into_inner(),
                 url: (*config.redirect_url).clone(),
@@ -100,7 +107,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(FOO.user.email.clone().unwrap()).await;
+        let result = sut.invoke(recipient).await;
 
         // Assert
         result.unwrap();

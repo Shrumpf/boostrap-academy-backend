@@ -2,6 +2,7 @@ use std::future::Future;
 
 use academy_models::{
     auth::{AuthError, Login},
+    email_address::EmailAddress,
     oauth2::OAuth2RegistrationToken,
     session::DeviceName,
     user::{
@@ -11,7 +12,6 @@ use academy_models::{
 };
 use academy_utils::patch::PatchValue;
 use chrono::{DateTime, Utc};
-use email_address::EmailAddress;
 use queries::list::{UserListQuery, UserListResult};
 use thiserror::Error;
 

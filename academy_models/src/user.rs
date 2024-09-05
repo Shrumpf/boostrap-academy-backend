@@ -2,12 +2,12 @@ use std::sync::LazyLock;
 
 use academy_utils::patch::Patch;
 use chrono::{DateTime, Utc};
-use email_address::EmailAddress;
 use nutype::nutype;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    email_address::EmailAddress,
     macros::{id, nutype_string},
     SearchTerm,
 };

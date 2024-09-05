@@ -4,10 +4,9 @@ use academy_cache_contracts::CacheService;
 use academy_core_user_contracts::commands::request_password_reset_email::UserRequestPasswordResetEmailCommandService;
 use academy_di::Build;
 use academy_email_contracts::template::TemplateEmailService;
-use academy_models::user::UserId;
+use academy_models::{email_address::EmailAddressWithName, user::UserId};
 use academy_shared_contracts::secret::SecretService;
 use academy_templates_contracts::ResetPasswordTemplate;
-use email_address::EmailAddress;
 
 use crate::reset_password_cache_key;
 
@@ -32,7 +31,7 @@ where
     TemplateEmail: TemplateEmailService,
     Cache: CacheService,
 {
-    async fn invoke(&self, user_id: UserId, email: EmailAddress) -> anyhow::Result<()> {
+    async fn invoke(&self, user_id: UserId, email: EmailAddressWithName) -> anyhow::Result<()> {
         let code = self.secret.generate_verification_code();
 
         self.cache
@@ -85,7 +84,11 @@ mod tests {
         };
 
         let template_email = MockTemplateEmailService::new().with_send_reset_password_email(
-            FOO.user.email.clone().unwrap(),
+            FOO.user
+                .email
+                .clone()
+                .unwrap()
+                .with_name(FOO.profile.display_name.clone().into_inner()),
             expected_email,
             true,
         );
@@ -105,7 +108,14 @@ mod tests {
 
         // Act
         let result = sut
-            .invoke(FOO.user.id, FOO.user.email.clone().unwrap())
+            .invoke(
+                FOO.user.id,
+                FOO.user
+                    .email
+                    .clone()
+                    .unwrap()
+                    .with_name(FOO.profile.display_name.clone().into_inner()),
+            )
             .await;
 
         // Assert

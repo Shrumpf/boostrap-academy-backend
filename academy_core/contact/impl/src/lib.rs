@@ -3,9 +3,10 @@ use std::sync::Arc;
 use academy_core_contact_contracts::{ContactSendMessageError, ContactService};
 use academy_di::Build;
 use academy_email_contracts::{ContentType, Email, EmailService};
-use academy_models::{contact::ContactMessage, RecaptchaResponse};
+use academy_models::{
+    contact::ContactMessage, email_address::EmailAddressWithName, RecaptchaResponse,
+};
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
-use email_address::EmailAddress;
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
@@ -17,7 +18,7 @@ pub struct ContactServiceImpl<Captcha, Email> {
 
 #[derive(Debug, Clone)]
 pub struct ContactServiceConfig {
-    pub email: Arc<EmailAddress>,
+    pub email: Arc<EmailAddressWithName>,
 }
 
 impl<Captcha, EmailS> ContactService for ContactServiceImpl<Captcha, EmailS>
@@ -43,10 +44,17 @@ where
             subject: format!("[Contact Form] {}", *message.subject),
             body: format!(
                 "Message from {} ({}):\n\n{}",
-                *message.author.name, message.author.email, *message.content
+                *message.author.name,
+                message.author.email.as_str(),
+                *message.content
             ),
             content_type: ContentType::Text,
-            reply_to: Some(message.author.email),
+            reply_to: Some(
+                message
+                    .author
+                    .email
+                    .with_name(message.author.name.into_inner()),
+            ),
         };
 
         if !self.email.send(email).await? {
@@ -155,7 +163,11 @@ mod tests {
             subject: "[Contact Form] Test".into(),
             body: "Message from Max Mustermann (max.mustermann@example.de):\n\nHello World!".into(),
             content_type: ContentType::Text,
-            reply_to: Some("max.mustermann@example.de".parse().unwrap()),
+            reply_to: Some(
+                "Max Mustermann <max.mustermann@example.de>"
+                    .parse()
+                    .unwrap(),
+            ),
         }
     }
 }

@@ -2,8 +2,8 @@ use std::time::{Duration, Instant};
 
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_email_impl::EmailServiceImpl;
+use academy_models::email_address::EmailAddressWithName;
 use anyhow::Context;
-use email_address::EmailAddress;
 use serde::Deserialize;
 use url::Url;
 use uuid::Uuid;
@@ -27,7 +27,7 @@ async fn send_email() {
     assert!(result);
 
     let mail = client.wait_for_mail().await;
-    assert_eq!(mail.from, client.from.as_str());
+    assert_eq!(mail.from, client.from.0.email.as_ref());
     assert_eq!(mail.to, "test@example.com");
     assert_eq!(mail.subject, "The Subject");
 
@@ -46,7 +46,7 @@ async fn send_email() {
 
 struct TestClient {
     email: EmailServiceImpl,
-    from: EmailAddress,
+    from: EmailAddressWithName,
     smtp4dev_url: Url,
 }
 

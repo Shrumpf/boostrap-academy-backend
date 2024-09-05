@@ -31,6 +31,7 @@ use academy_core_user_contracts::{
 use academy_di::Build;
 use academy_models::{
     auth::Login,
+    email_address::EmailAddress,
     oauth2::OAuth2Registration,
     session::DeviceName,
     user::{UserComposite, UserId, UserIdOrSelf, UserPassword, UserPatchRef},
@@ -40,7 +41,6 @@ use academy_persistence_contracts::{user::UserRepository, Database, Transaction}
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 use academy_utils::patch::{Patch, PatchValue};
 use anyhow::anyhow;
-use email_address::EmailAddress;
 
 pub mod commands;
 pub mod queries;
@@ -400,7 +400,10 @@ where
             if newsletter && !auth.admin {
                 let email = user.email.clone().ok_or(UserUpdateError::NoEmail)?;
                 self.user_request_subscribe_newsletter_email
-                    .invoke(user_id, email)
+                    .invoke(
+                        user_id,
+                        email.with_name(profile.display_name.clone().into_inner()),
+                    )
                     .await?;
             } else {
                 user.newsletter = newsletter;
@@ -473,7 +476,9 @@ where
             .email
             .ok_or(UserRequestVerificationEmailError::NoEmail)?;
 
-        self.user_request_verification_email.invoke(email).await?;
+        self.user_request_verification_email
+            .invoke(email.with_name(user_composite.profile.display_name.into_inner()))
+            .await?;
 
         Ok(())
     }
@@ -555,11 +560,14 @@ where
                 anyhow!(
                     "User {} fetched by email {} has no email address",
                     user_composite.user.id.hyphenated(),
-                    email
+                    email.as_str()
                 )
             })?;
             self.user_request_password_reset_email
-                .invoke(user_composite.user.id, email)
+                .invoke(
+                    user_composite.user.id,
+                    email.with_name(user_composite.profile.display_name.into_inner()),
+                )
                 .await?;
         }
 

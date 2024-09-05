@@ -13,7 +13,7 @@ workspace = true
 mock = ["dep:mockall"]
 
 [dependencies]
+academy_models.workspace = true
 academy_templates_contracts.workspace = true
 anyhow.workspace = true
-email_address.workspace = true
 mockall = { workspace = true, optional = true }

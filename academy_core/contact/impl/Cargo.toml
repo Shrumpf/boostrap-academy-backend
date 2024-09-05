@@ -16,7 +16,6 @@ academy_email_contracts.workspace = true
 academy_models.workspace = true
 academy_shared_contracts.workspace = true
 anyhow.workspace = true
-email_address.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

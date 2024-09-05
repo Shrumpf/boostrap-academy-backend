@@ -29,7 +29,13 @@ async fn ok_self() {
     );
 
     let user_request_verification_email = MockUserRequestVerificationEmailCommandService::new()
-        .with_invoke(FOO.user.email.clone().unwrap());
+        .with_invoke(
+            FOO.user
+                .email
+                .clone()
+                .unwrap()
+                .with_name(FOO.profile.display_name.clone().into_inner()),
+        );
 
     let sut = UserServiceImpl {
         auth,
@@ -62,7 +68,13 @@ async fn ok_admin() {
     );
 
     let user_request_verification_email = MockUserRequestVerificationEmailCommandService::new()
-        .with_invoke(FOO.user.email.clone().unwrap());
+        .with_invoke(
+            FOO.user
+                .email
+                .clone()
+                .unwrap()
+                .with_name(FOO.profile.display_name.clone().into_inner()),
+        );
 
     let sut = UserServiceImpl {
         auth,

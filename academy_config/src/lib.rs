@@ -1,10 +1,9 @@
 use std::{collections::HashMap, net::IpAddr, path::Path};
 
-use academy_models::mfa::TotpSecretLength;
+use academy_models::{email_address::EmailAddressWithName, mfa::TotpSecretLength};
 use anyhow::Context;
 use config::{File, FileFormat};
 use duration::Duration;
-use email_address::EmailAddress;
 use serde::Deserialize;
 use url::Url;
 
@@ -115,7 +114,7 @@ pub struct CacheConfig {
 #[derive(Debug, Deserialize)]
 pub struct EmailConfig {
     pub smtp_url: String,
-    pub from: EmailAddress,
+    pub from: EmailAddressWithName,
 }
 
 #[derive(Debug, Deserialize)]
@@ -154,7 +153,7 @@ pub struct TotpConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct ContactConfig {
-    pub email: EmailAddress,
+    pub email: EmailAddressWithName,
 }
 
 #[derive(Debug, Deserialize)]

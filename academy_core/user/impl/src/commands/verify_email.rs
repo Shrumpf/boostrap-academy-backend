@@ -75,10 +75,9 @@ mod tests {
     use academy_cache_contracts::MockCacheService;
     use academy_core_auth_contracts::MockAuthService;
     use academy_demo::{user::FOO, VERIFICATION_CODE_1};
-    use academy_models::user::UserPatch;
+    use academy_models::{email_address::EmailAddress, user::UserPatch};
     use academy_persistence_contracts::user::MockUserRepository;
     use academy_utils::{assert_matches, Apply};
-    use email_address::EmailAddress;
 
     use super::*;
 

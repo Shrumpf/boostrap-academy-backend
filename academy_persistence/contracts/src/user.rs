@@ -1,6 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
+    email_address::EmailAddress,
     oauth2::{OAuth2ProviderId, OAuth2RemoteUserId},
     pagination::PaginationSlice,
     user::{
@@ -8,7 +9,6 @@ use academy_models::{
         UserProfilePatchRef,
     },
 };
-use email_address::EmailAddress;
 use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]

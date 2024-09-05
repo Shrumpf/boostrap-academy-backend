@@ -8,6 +8,7 @@ use academy_core_user_contracts::{
     UserVerifyEmailError, UserVerifyNewsletterSubscriptionError,
 };
 use academy_models::{
+    email_address::EmailAddress,
     oauth2::OAuth2RegistrationToken,
     session::DeviceName,
     user::{UserBio, UserDisplayName, UserName, UserPassword, UserProfilePatch, UserTags},
@@ -19,7 +20,6 @@ use axum::{
     response::{IntoResponse, Response},
     routing, Json, Router,
 };
-use email_address::EmailAddress;
 use serde::{Deserialize, Serialize};
 
 use super::{auth_error, error, internal_server_error};

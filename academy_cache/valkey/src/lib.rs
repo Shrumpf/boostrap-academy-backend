@@ -63,7 +63,7 @@ impl CacheService for ValkeyCache {
             .map_err(Into::into)
             .and_then(|result| {
                 result
-                    .map(|data| postcard::from_bytes(&data))
+                    .map(|data| rmp_serde::from_slice(&data))
                     .transpose()
                     .map_err(Into::into)
             })
@@ -75,7 +75,7 @@ impl CacheService for ValkeyCache {
         value: &T,
         ttl: Option<Duration>,
     ) -> anyhow::Result<()> {
-        let value = postcard::to_stdvec(&value)?;
+        let value = rmp_serde::to_vec(&value)?;
         let mut conn = self.pool.get().await?;
         if let Some(ttl) = ttl {
             conn.pset_ex(key, value, ttl.as_millis().try_into()?).await

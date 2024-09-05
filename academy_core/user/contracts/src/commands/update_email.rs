@@ -1,7 +1,6 @@
 use std::future::Future;
 
-use academy_models::user::UserId;
-use email_address::EmailAddress;
+use academy_models::{email_address::EmailAddress, user::UserId};
 use thiserror::Error;
 
 /// Updates a user's email address and it's verification status.

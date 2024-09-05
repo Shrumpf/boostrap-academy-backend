@@ -1,11 +1,11 @@
 use academy_models::{
+    email_address::EmailAddress,
     user::{
         UserBio, UserComposite, UserDisplayName, UserFilter, UserId, UserIdOrSelf, UserName,
         UserPassword, UserTags,
     },
     SearchTerm,
 };
-use email_address::EmailAddress;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use url::Url;
