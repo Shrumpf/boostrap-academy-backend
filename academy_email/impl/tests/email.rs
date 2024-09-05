@@ -1,9 +1,5 @@
-use std::{
-    path::Path,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
-use academy_config::DEFAULT_CONFIG_PATH;
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_email_impl::EmailServiceImpl;
 use anyhow::Context;
@@ -126,12 +122,7 @@ impl TestClient {
 }
 
 async fn setup() -> TestClient {
-    let mut paths = vec![Path::new(DEFAULT_CONFIG_PATH)];
-    let extra = std::env::var("EXTRA_CONFIG");
-    if let Ok(extra) = &extra {
-        paths.push(Path::new(extra));
-    }
-    let config = academy_config::load(&paths).unwrap();
+    let config = academy_config::load().unwrap();
 
     let email = EmailServiceImpl::new(&config.email.smtp_url, config.email.from.clone())
         .await

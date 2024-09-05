@@ -1,9 +1,9 @@
 [http]
-host = "127.0.0.1"
-port = 8000
+# host = "0.0.0.0"
+# port = 80
 
 [database]
-url = "postgres://academy@127.0.0.1/academy" # https://docs.rs/tokio-postgres/latest/tokio_postgres/config/struct.Config.html
+# url = "" # https://docs.rs/tokio-postgres/latest/tokio_postgres/config/struct.Config.html
 max_connections = 10
 min_connections = 0
 acquire_timeout = "10s"
@@ -11,7 +11,7 @@ idle_timeout = "10m"
 max_lifetime = "30m"
 
 [cache]
-url = "redis://127.0.0.1:6379/0"
+# url = "" # https://docs.rs/redis/latest/redis/#connection-parameters
 max_connections = 10
 min_connections = 0
 acquire_timeout = "10s"
@@ -19,11 +19,11 @@ idle_timeout = "10m"
 max_lifetime = "30m"
 
 [email]
-smtp_url = "smtp://127.0.0.1:2525" # https://docs.rs/lettre/latest/lettre/transport/smtp/struct.AsyncSmtpTransport.html#method.from_url
-from = "dev@bootstrap.academy"
+# smtp_url = "" # https://docs.rs/lettre/latest/lettre/transport/smtp/struct.AsyncSmtpTransport.html#method.from_url
+# from = ""
 
 [jwt]
-secret = "changeme"
+# secret = ""
 
 [health]
 cache_ttl = "10s"
@@ -38,7 +38,7 @@ newsletter_code_ttl = "4h"
 newsletter_redirect_url = "https://bootstrap.academy/account/newsletter"
 
 [session]
-access_token_ttl = "1d"
+access_token_ttl = "5m"
 refresh_token_ttl = "30d"
 refresh_token_length = 64
 login_fails_before_captcha = 3
@@ -47,36 +47,24 @@ login_fails_before_captcha = 3
 secret_length = 32
 
 [contact]
-email = "contact@example.com"
+# email = ""
 
 [recaptcha]
-enable = false
-siteverify_endpoint_override = "http://127.0.0.1:8001/recaptcha/api/siteverify"
-sitekey = "test-sitekey"
-secret = "test-secret"
+enable = true
+# siteverify_endpoint_override = ""
+# sitekey = ""
+# secret = ""
 min_score = 0.5
 
 [oauth2]
 enable = true
 registration_token_ttl = "10m"
 
-[oauth2.providers.test]
-enable = true
-name = "Test"
-client_id = "client-id"
-client_secret = "client-secret"
-auth_url = "http://127.0.0.1:8002/oauth2/authorize"
-token_url = "http://127.0.0.1:8002/oauth2/token"
-userinfo_url = "http://127.0.0.1:8002/user"
-userinfo_id_key = "id"
-userinfo_name_key = "name"
-scopes = []
-
 [oauth2.providers.github]
-enable = false
+enable = true
 name = "GitHub"
-client_id = ""
-client_secret = ""
+# client_id = ""
+# client_secret = ""
 auth_url = "https://github.com/login/oauth/authorize"
 token_url = "https://github.com/login/oauth/access_token"
 userinfo_url = "https://api.github.com/user"
@@ -85,10 +73,10 @@ userinfo_name_key = "login"
 scopes = []
 
 [oauth2.providers.discord]
-enable = false
+enable = true
 name = "Discord"
-client_id = ""
-client_secret = ""
+# client_id = ""
+# client_secret = ""
 auth_url = "https://discord.com/oauth2/authorize"
 token_url = "https://discord.com/api/oauth2/token"
 userinfo_url = "https://discord.com/api/users/@me"
@@ -97,10 +85,10 @@ userinfo_name_key = "username"
 scopes = ["identify"]
 
 [oauth2.providers.google]
-enable = false
+enable = true
 name = "Google"
-client_id = ""
-client_secret = ""
+# client_id = ""
+# client_secret = ""
 auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
 token_url = "https://www.googleapis.com/oauth2/v3/token"
 userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"

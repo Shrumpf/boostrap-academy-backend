@@ -31,7 +31,7 @@ jobs:
       - run: echo 'database.url = "postgres://academy@postgres/academy"' > config.extra.toml
       - run: cargo test -p academy_persistence_postgres --no-fail-fast --all-features --test '*'
         env:
-          EXTRA_CONFIG: ${{ github.workspace }}/config.extra.toml
+          ACADEMY_CONFIG: ${{ github.workspace }}/config.extra.toml:${{ github.workspace }}/config.dev.toml
           RUST_TEST_THREADS: 1
     services:
       postgres:
@@ -52,7 +52,7 @@ jobs:
       - run: echo 'cache.url = "redis://valkey"' > config.extra.toml
       - run: cargo test -p academy_cache_valkey --no-fail-fast --all-features --test '*'
         env:
-          EXTRA_CONFIG: ${{ github.workspace }}/config.extra.toml
+          ACADEMY_CONFIG: ${{ github.workspace }}/config.extra.toml:${{ github.workspace }}/config.dev.toml
           RUST_TEST_THREADS: 1
     services:
       valkey:
@@ -69,7 +69,7 @@ jobs:
       - run: echo 'email.smtp_url = "smtp://smtp4dev:25"' > config.extra.toml
       - run: cargo test -p academy_email_impl --no-fail-fast --all-features --test '*'
         env:
-          EXTRA_CONFIG: ${{ github.workspace }}/config.extra.toml
+          ACADEMY_CONFIG: ${{ github.workspace }}/config.extra.toml:${{ github.workspace }}/config.dev.toml
           SMTP4DEV_URL: http://smtp4dev:8080
           RUST_TEST_THREADS: 1
     services:
@@ -90,8 +90,12 @@ jobs:
           cargo run --bin academy-testing -- recaptcha &
           while ! curl -s http://127.0.0.1:8001; do sleep .1; done
           cargo test -p academy_extern_impl --no-fail-fast --all-features --test recaptcha
+        env:
+          ACADEMY_CONFIG: ${{ github.workspace }}/config.dev.toml
       - name: test oauth2
         run: |
           cargo run --bin academy-testing -- oauth2 &
           while ! curl -s http://127.0.0.1:8002; do sleep .1; done
           cargo test -p academy_extern_impl --no-fail-fast --all-features --test oauth2
+        env:
+          ACADEMY_CONFIG: ${{ github.workspace }}/config.dev.toml

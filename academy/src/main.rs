@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use academy::commands::{
     admin::AdminCommand, email::EmailCommand, jwt::JwtCommand, migrate::MigrateCommand,
     serve::serve, tasks::TaskCommand,
@@ -15,31 +13,31 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Serve => {
-            let config = academy_config::load(&cli.config)?;
+            let config = academy_config::load()?;
             serve(config).await?
         }
         Command::Migrate { command } => {
-            let config = academy_config::load(&cli.config)?;
+            let config = academy_config::load()?;
             command.invoke(config).await?
         }
         Command::Admin { command } => {
-            let config = academy_config::load(&cli.config)?;
+            let config = academy_config::load()?;
             command.invoke(config).await?
         }
         Command::Jwt { command } => {
-            let config = academy_config::load(&cli.config)?;
+            let config = academy_config::load()?;
             command.invoke(config).await?
         }
         Command::Email { command } => {
-            let config = academy_config::load(&cli.config)?;
+            let config = academy_config::load()?;
             command.invoke(config).await?
         }
         Command::Task { command } => {
-            let config = academy_config::load(&cli.config)?;
+            let config = academy_config::load()?;
             command.invoke(config).await?
         }
         Command::CheckConfig { verbose } => {
-            let config = academy_config::load(&cli.config)?;
+            let config = academy_config::load()?;
             if verbose {
                 println!("{config:#?}");
             }
@@ -60,8 +58,6 @@ async fn main() -> anyhow::Result<()> {
 #[derive(Debug, Parser)]
 #[command(version)]
 struct Cli {
-    #[arg(short, long, env, default_value = "config.toml")]
-    config: Vec<PathBuf>,
     #[command(subcommand)]
     command: Command,
 }

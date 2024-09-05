@@ -1,6 +1,6 @@
-use std::{path::Path, sync::Arc};
+use std::sync::Arc;
 
-use academy_config::{RecaptchaConfig, DEFAULT_CONFIG_PATH};
+use academy_config::RecaptchaConfig;
 use academy_di::{provider, Provides};
 use academy_extern_contracts::recaptcha::{RecaptchaApiService, RecaptchaSiteverifyResponse};
 use academy_extern_impl::recaptcha::{RecaptchaApiServiceConfig, RecaptchaApiServiceImpl};
@@ -45,8 +45,7 @@ async fn failure() {
 }
 
 fn make_sut() -> (RecaptchaApiServiceImpl, String) {
-    let paths = vec![Path::new(DEFAULT_CONFIG_PATH)];
-    let config = academy_config::load_with_override(&paths, &["recaptcha.enable = true"]).unwrap();
+    let config = academy_config::load_with_overrides(&["recaptcha.enable = true"]).unwrap();
 
     let RecaptchaConfig {
         siteverify_endpoint_override,

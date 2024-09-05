@@ -41,6 +41,12 @@
   crateOverrides = {
     academy = generateShellCompletionOverride "academy";
     academy_testing = generateShellCompletionOverride "academy-testing";
+    academy_config = attrs: {
+      patchPhase = ''
+        sed -i 's|env!("CARGO_MANIFEST_DIR"), "/../config.toml"|"${../config.toml}"|' src/lib.rs
+        ${attrs.patchPhase or ""}
+      '';
+    };
   };
 
   generated = crate2nix.tools.${system}.generatedCargoNix {

@@ -1,8 +1,7 @@
-use std::{path::Path, time::Duration};
+use std::time::Duration;
 
 use academy_cache_contracts::CacheService;
 use academy_cache_valkey::{ValkeyCache, ValkeyCacheConfig};
-use academy_config::DEFAULT_CONFIG_PATH;
 use academy_demo::SHA256HASH1;
 use academy_models::Sha256Hash;
 use serde::{Deserialize, Serialize};
@@ -131,12 +130,7 @@ async fn types() {
 }
 
 async fn setup() -> ValkeyCache {
-    let mut paths = vec![Path::new(DEFAULT_CONFIG_PATH)];
-    let extra = std::env::var("EXTRA_CONFIG");
-    if let Ok(extra) = &extra {
-        paths.push(Path::new(extra));
-    }
-    let config = academy_config::load(&paths).unwrap();
+    let config = academy_config::load().unwrap();
 
     let cache = ValkeyCache::connect(&ValkeyCacheConfig {
         url: config.cache.url,

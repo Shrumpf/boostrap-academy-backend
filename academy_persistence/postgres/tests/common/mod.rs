@@ -1,6 +1,3 @@
-use std::path::Path;
-
-use academy_config::DEFAULT_CONFIG_PATH;
 use academy_persistence_contracts::{Database, Transaction};
 use academy_persistence_postgres::{
     mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
@@ -33,12 +30,7 @@ pub async fn setup() -> Db {
 }
 
 pub async fn setup_clean() -> Db {
-    let mut paths = vec![Path::new(DEFAULT_CONFIG_PATH)];
-    let extra = std::env::var("EXTRA_CONFIG");
-    if let Ok(extra) = &extra {
-        paths.push(Path::new(extra));
-    }
-    let config = academy_config::load(&paths).unwrap();
+    let config = academy_config::load().unwrap();
 
     let db = Db::connect(&PostgresDatabaseConfig {
         url: config.database.url,

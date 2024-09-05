@@ -3,21 +3,39 @@ use std::{collections::HashMap, net::IpAddr, path::Path};
 use academy_models::mfa::TotpSecretLength;
 use anyhow::Context;
 use config::{File, FileFormat};
+use duration::Duration;
 use email_address::EmailAddress;
 use serde::Deserialize;
 use url::Url;
 
-pub const DEFAULT_CONFIG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../config.toml");
+pub mod duration;
 
-pub fn load(paths: &[impl AsRef<Path>]) -> anyhow::Result<Config> {
-    load_with_override(paths, &[])
+const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../config.toml"));
+const DEV_CONFIG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../config.dev.toml");
+
+pub const ENVIRONMENT_VARIABLE: &str = "ACADEMY_CONFIG";
+
+pub fn load() -> anyhow::Result<Config> {
+    load_paths(&parse_env_var()?, &[])
 }
 
-pub fn load_with_override(
-    paths: &[impl AsRef<Path>],
-    overrides: &[&str],
-) -> anyhow::Result<Config> {
-    let mut builder = config::Config::builder();
+pub fn load_with_overrides(overrides: &[&str]) -> anyhow::Result<Config> {
+    load_paths(&parse_env_var()?, overrides)
+}
+
+pub fn load_dev_config() -> anyhow::Result<Config> {
+    load_paths(&[DEV_CONFIG_PATH], &[])
+}
+
+fn parse_env_var() -> anyhow::Result<Vec<String>> {
+    let env_var = std::env::var(ENVIRONMENT_VARIABLE)
+        .with_context(|| format!("Failed to load {ENVIRONMENT_VARIABLE} environment variable"))?;
+    Ok(env_var.split(':').rev().map(Into::into).collect())
+}
+
+fn load_paths(paths: &[impl AsRef<Path>], overrides: &[&str]) -> anyhow::Result<Config> {
+    let mut builder =
+        config::Config::builder().add_source(File::from_str(DEFAULT_CONFIG, FileFormat::Toml));
 
     for path in paths {
         let path = path.as_ref();
@@ -169,79 +187,10 @@ pub struct OAuth2ProviderConfig {
     pub scopes: Vec<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Duration(pub std::time::Duration);
-
-impl From<Duration> for std::time::Duration {
-    fn from(value: Duration) -> Self {
-        value.0
-    }
-}
-
-impl<'de> Deserialize<'de> for Duration {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let mut out = std::time::Duration::default();
-        for part in s.split_whitespace() {
-            let mut bytes = part.bytes();
-            let mut seconds = 0;
-            for b in bytes.by_ref() {
-                match b {
-                    b'0'..=b'9' => seconds = seconds * 10 + (b - b'0') as u64,
-                    b's' => break,
-                    b'm' => {
-                        seconds *= 60;
-                        break;
-                    }
-                    b'h' => {
-                        seconds *= 3600;
-                        break;
-                    }
-                    b'd' => {
-                        seconds *= 24 * 3600;
-                        break;
-                    }
-                    _ => return Err(serde::de::Error::custom("Invalid duration")),
-                }
-            }
-            if bytes.next().is_some() {
-                return Err(serde::de::Error::custom("Invalid duration"));
-            }
-            out += std::time::Duration::from_secs(seconds);
-        }
-        Ok(Self(out))
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
-    fn load_default_config() {
-        load(&[Path::new(DEFAULT_CONFIG_PATH)]).unwrap();
-    }
-
-    #[test]
-    fn parse_duration() {
-        for (input, expected) in [
-            ("13s", Some(13)),
-            ("42m", Some(42 * 60)),
-            ("7h", Some(7 * 60 * 60)),
-            ("20d", Some(20 * 24 * 60 * 60)),
-            ("", Some(0)),
-            ("1d 2h 3m 4s", Some(((24 + 2) * 60 + 3) * 60 + 4)),
-            ("xyz", None),
-            ("7dd", None),
-        ] {
-            let input = serde_json::Value::String(input.into());
-            let output = serde_json::from_value::<Duration>(input)
-                .ok()
-                .map(|x| x.0.as_secs());
-            assert_eq!(output, expected);
-        }
+    fn load_dev_config() {
+        super::load_dev_config().unwrap();
     }
 }

@@ -33,13 +33,13 @@ assert test(a)
 assert test(b)
 assert_sessions([al["session"]["id"], bl["session"]["id"]])
 
-for _ in range(7):
-    os.system("date -s '+2min'")
+for _ in range(5):
+    os.system("date -s '+10days'")
     time.sleep(0.5)
     assert test(a)
 
-os.system("systemctl start academy-task-prune-database")
-time.sleep(3)
+os.system("systemctl start academy-task-prune-database.service")
+time.sleep(1)
 
 assert_sessions([al["session"]["id"]])
 assert test(a)

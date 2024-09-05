@@ -46,37 +46,8 @@ in {
   config = let
     cfg = config.services.academy.backend;
 
-    updateDefaultConfig = settings:
-      (builtins.removeAttrs settings ["recaptcha"])
-      // {
-        http = builtins.removeAttrs settings.http ["host" "port"];
-        database = builtins.removeAttrs settings.database ["url"];
-        cache = builtins.removeAttrs settings.cache ["url"];
-        email = builtins.removeAttrs settings.email ["smtp_url" "from"];
-        jwt = builtins.removeAttrs settings.jwt ["secret"];
-        session =
-          settings.session
-          // {
-            access_token_ttl = "5m";
-          };
-        oauth2 =
-          settings.oauth2
-          // {
-            providers = builtins.removeAttrs settings.oauth2.providers ["test"];
-          };
-      };
-
     settings = settingsFormat.generate "config.toml" cfg.settings;
-    defaultConfig = lib.pipe ../config.toml [
-      builtins.readFile
-      builtins.fromTOML
-      updateDefaultConfig
-      (settingsFormat.generate "config.default.toml")
-    ];
-    configArgs = lib.pipe ([defaultConfig settings] ++ cfg.extraConfigFiles) [
-      (map (path: "--config=${lib.escapeShellArg path}"))
-      (builtins.concatStringsSep " ")
-    ];
+    ACADEMY_CONFIG = builtins.concatStringsSep ":" (cfg.extraConfigFiles ++ [settings]);
 
     wrapper = pkgs.stdenvNoCC.mkDerivation {
       inherit (package) pname version;
@@ -84,7 +55,7 @@ in {
       nativeBuildInputs = [pkgs.makeWrapper];
       installPhase = ''
         cp -r . $out
-        wrapProgram $out/bin/academy --run "[[ \$USER = academy ]] || exec ${pkgs.sudo}/bin/sudo -u academy \"\$0\" \"\$@\"" --add-flags "${configArgs}"
+        wrapProgram $out/bin/academy --run "[[ \$USER = academy ]] || exec ${pkgs.sudo}/bin/sudo -u academy \"\$0\" \"\$@\"" --set ACADEMY_CONFIG ${lib.escapeShellArg ACADEMY_CONFIG}
       '';
     };
   in
@@ -100,7 +71,10 @@ in {
             Group = "academy";
           };
 
-          environment.RUST_LOG = cfg.logLevel;
+          environment = {
+            inherit ACADEMY_CONFIG;
+            RUST_LOG = cfg.logLevel;
+          };
         };
       in
         {
@@ -109,7 +83,7 @@ in {
             // {
               wantedBy = ["multi-user.target"];
               script = ''
-                ${package}/bin/academy ${configArgs} serve
+                ${package}/bin/academy serve
               '';
             };
         }
@@ -121,7 +95,7 @@ in {
               // {
                 startAt = schedule;
                 script = ''
-                  ${package}/bin/academy ${configArgs} task ${task}
+                  ${package}/bin/academy task ${task}
                 '';
               };
           })

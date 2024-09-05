@@ -43,7 +43,7 @@
   '';
 
   env = {
-    RUST_LOG = "debug,backend=trace";
+    RUST_LOG = "debug,academy=trace";
 
     PGDATABASE = "academy";
 
@@ -51,8 +51,7 @@
 
     PYTHONPATH = "${config.env.DEVENV_ROOT}/nix/tests";
 
-    RECAPTCHA_SITEVERIFY_ENDPOINT = "http://127.0.0.1:8001/recaptcha/api/siteverify";
-    RECAPTCHA_SECRET = "test-secret";
+    ACADEMY_CONFIG = "${config.devenv.root}/config.dev.toml";
   };
 
   process.implementation = "hivemind";

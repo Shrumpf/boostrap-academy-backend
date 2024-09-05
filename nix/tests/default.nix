@@ -61,16 +61,27 @@
         };
         oauth2 = {
           enable = true;
-          providers.test = {
-            name = "Test OAuth2 Provider";
-            client_id = "client-id";
-            client_secret = "client-secret";
-            auth_url = "http://127.0.0.1:8002/oauth2/authorize";
-            token_url = "http://127.0.0.1:8002/oauth2/token";
-            userinfo_url = "http://127.0.0.1:8002/user";
-            userinfo_id_key = "id";
-            userinfo_name_key = "name";
-            scopes = [];
+          providers = let
+            disabled = {
+              enable = false;
+              client_id = "";
+              client_secret = "";
+            };
+          in {
+            github = disabled;
+            discord = disabled;
+            google = disabled;
+            test = {
+              name = "Test OAuth2 Provider";
+              client_id = "client-id";
+              client_secret = "client-secret";
+              auth_url = "http://127.0.0.1:8002/oauth2/authorize";
+              token_url = "http://127.0.0.1:8002/oauth2/token";
+              userinfo_url = "http://127.0.0.1:8002/user";
+              userinfo_id_key = "id";
+              userinfo_name_key = "name";
+              scopes = [];
+            };
           };
         };
       };
@@ -99,29 +110,23 @@
     };
   };
 
-  mkPythonTest = name: let
-    python = python3.withPackages (p: with p; [httpx pyotp]);
-    run-test = writeShellScriptBin "run-test" ''
-      export PYTHONPATH=${writeTextDir "utils.py" (builtins.readFile ./utils.py)}
-      ${python}/bin/python ${./${name}}
-    '';
-  in
+  mkPythonTest = name:
     testers.runNixOSTest {
       name = "academy-${removeSuffix name}";
 
       nodes.machine = {
         imports = [defaultModule];
-        environment.systemPackages = [run-test];
-        services.academy.backend.settings = {
-          session.refresh_token_ttl = lib.mkIf (name == "prune-database.py") "10m";
-        };
+        environment.systemPackages = [(python3.withPackages (p: with p; [httpx pyotp]))];
       };
 
       testScript = ''
         machine.start()
         machine.wait_for_unit("academy-backend.service")
         machine.wait_for_open_port(8000)
-        machine.succeed("run-test")
+
+        machine.copy_from_host("${./utils.py}", "/root/tests/utils.py")
+        machine.copy_from_host("${./${name}}", "/root/tests/${name}")
+        machine.succeed("python /root/tests/${name}")
       '';
     };
 

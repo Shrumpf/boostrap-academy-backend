@@ -186,7 +186,6 @@ impl ConfigProvider {
 #[cfg(test)]
 mod tests {
     use academy_cache_valkey::ValkeyCache;
-    use academy_config::DEFAULT_CONFIG_PATH;
     use academy_di::Provides;
     use academy_email_impl::EmailServiceImpl;
     use academy_persistence_postgres::PostgresDatabase;
@@ -196,7 +195,7 @@ mod tests {
 
     #[tokio::test]
     async fn provide_rest_server() {
-        let config = academy_config::load(&[DEFAULT_CONFIG_PATH]).unwrap();
+        let config = academy_config::load_dev_config().unwrap();
         let config_provider = ConfigProvider::new(&config).unwrap();
 
         let database = PostgresDatabase::dummy().await;
