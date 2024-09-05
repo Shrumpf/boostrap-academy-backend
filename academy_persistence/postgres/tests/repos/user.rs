@@ -46,6 +46,10 @@ static FILTER_TESTS: LazyLock<Vec<(UserFilter, Vec<&UserComposite>)>> = LazyLock
         (filter!(admin: false), vec![&FOO, &BAR]),
         (filter!(enabled: true), vec![&ADMIN, &FOO]),
         (filter!(enabled: false), vec![&BAR]),
+        (filter!(mfa_enabled: true), vec![&ADMIN]),
+        (filter!(mfa_enabled: false), vec![&FOO, &BAR]),
+        (filter!(newsletter: true), vec![&FOO]),
+        (filter!(newsletter: false), vec![&ADMIN, &BAR]),
         (filter!(admin: false, enabled: true), vec![&FOO]),
         (filter!(name: "A", admin: true), vec![&ADMIN]),
     ]

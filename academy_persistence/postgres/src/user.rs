@@ -30,12 +30,15 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         txn: &mut PostgresTransaction,
         filter: &UserFilter,
     ) -> anyhow::Result<u64> {
-        let mut query = if filter.name.is_some() {
-            "select count(*) from users u inner join user_profiles p on u.id=p.user_id where true"
-        } else {
-            "select count(*) from users where true"
+        let mut query = "select count(*) from users u ".to_owned();
+        if filter.name.is_some() {
+            query.push_str("inner join user_profiles p on u.id=p.user_id ")
         }
-        .to_owned();
+        if filter.mfa_enabled.is_some() {
+            query.push_str("inner join user_details d on u.id=d.user_id ")
+        }
+        query.push_str(" where true");
+
         let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
         make_filter(filter, &mut query, &mut params);
 
@@ -383,20 +386,18 @@ fn make_filter<'a>(
         params.push(admin);
         query.push_str(&format!(" and admin=${}", params.len()));
     }
-    // TODO
-    // if let Some(mfa_enabled) = &filter.mfa_enabled {
-    //     params.push(mfa_enabled);
-    //     query.push_str(&format!(" and mfa_enabled=${}", params.len()));
-    // }
+    if let Some(mfa_enabled) = &filter.mfa_enabled {
+        params.push(mfa_enabled);
+        query.push_str(&format!(" and mfa_enabled=${}", params.len()));
+    }
     if let Some(email_verified) = &filter.email_verified {
         params.push(email_verified);
         query.push_str(&format!(" and email_verified=${}", params.len()));
     }
-    // TODO
-    // if let Some(newsletter) = &filter.newsletter {
-    //     params.push(newsletter);
-    //     query.push_str(&format!(" and newsletter=${}", params.len()));
-    // }
+    if let Some(newsletter) = &filter.newsletter {
+        params.push(newsletter);
+        query.push_str(&format!(" and newsletter=${}", params.len()));
+    }
 }
 
 fn decode_user(row: &Row, offset: &mut usize) -> anyhow::Result<User> {
