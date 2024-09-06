@@ -1,6 +1,8 @@
 use std::sync::LazyLock;
 
-use academy_models::user::{User, UserComposite, UserDetails, UserPassword, UserProfile};
+use academy_models::user::{
+    User, UserComposite, UserDetails, UserInvoiceInfo, UserPassword, UserProfile,
+};
 use academy_persistence_contracts::user::UserRepository;
 use chrono::{TimeZone, Utc};
 use uuid::uuid;
@@ -30,6 +32,7 @@ pub static ADMIN: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
         password_login: true,
         oauth2_login: false,
     },
+    invoice_info: UserInvoiceInfo::default(),
 });
 
 pub static ADMIN_PASSWORD: LazyLock<UserPassword> =
@@ -63,6 +66,16 @@ pub static FOO: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
         mfa_enabled: false,
         password_login: true,
         oauth2_login: true,
+    },
+    invoice_info: UserInvoiceInfo {
+        business: Some(true),
+        first_name: Some("x".try_into().unwrap()),
+        last_name: Some("y".try_into().unwrap()),
+        street: Some("asdf".try_into().unwrap()),
+        zip_code: Some("1234".try_into().unwrap()),
+        city: Some("xyz".try_into().unwrap()),
+        country: Some("asdf".try_into().unwrap()),
+        vat_id: Some("1234".try_into().unwrap()),
     },
 });
 
@@ -98,6 +111,7 @@ pub static BAR: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
         password_login: true,
         oauth2_login: false,
     },
+    invoice_info: UserInvoiceInfo::default(),
 });
 
 pub static BAR_PASSWORD: LazyLock<UserPassword> =
@@ -108,7 +122,9 @@ pub async fn create<Txn: Send + Sync + 'static>(
     repo: impl UserRepository<Txn>,
 ) -> anyhow::Result<()> {
     for &user in &*ALL_USERS {
-        repo.create(txn, &user.user, &user.profile).await.unwrap();
+        repo.create(txn, &user.user, &user.profile, &user.invoice_info)
+            .await
+            .unwrap();
     }
 
     repo.save_password_hash(txn, ADMIN.user.id, ADMIN_PASSWORD.clone().into_inner())

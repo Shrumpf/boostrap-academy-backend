@@ -210,9 +210,14 @@ async fn create_success() {
     };
 
     let mut txn = db.begin_transaction().await.unwrap();
-    REPO.create(&mut txn, &user_composite.user, &user_composite.profile)
-        .await
-        .unwrap();
+    REPO.create(
+        &mut txn,
+        &user_composite.user,
+        &user_composite.profile,
+        &user_composite.invoice_info,
+    )
+    .await
+    .unwrap();
     txn.commit().await.unwrap();
 
     let mut txn = db.begin_transaction().await.unwrap();
@@ -240,7 +245,12 @@ async fn create_name_conflict() {
 
     let mut txn = db.begin_transaction().await.unwrap();
     let result = REPO
-        .create(&mut txn, &user_composite.user, &user_composite.profile)
+        .create(
+            &mut txn,
+            &user_composite.user,
+            &user_composite.profile,
+            &user_composite.invoice_info,
+        )
         .await
         .unwrap_err();
     assert_matches!(result, UserRepoError::NameConflict);
@@ -261,7 +271,12 @@ async fn create_email_conflict() {
 
     let mut txn = db.begin_transaction().await.unwrap();
     let result = REPO
-        .create(&mut txn, &user_composite.user, &user_composite.profile)
+        .create(
+            &mut txn,
+            &user_composite.user,
+            &user_composite.profile,
+            &user_composite.invoice_info,
+        )
         .await
         .unwrap_err();
     assert_matches!(result, UserRepoError::EmailConflict);
@@ -351,6 +366,32 @@ async fn update_profile() {
     let mut txn = db.begin_transaction().await.unwrap();
     let result = REPO
         .update_profile(&mut txn, BAR.user.id, expected.profile.as_patch_ref())
+        .await
+        .unwrap();
+    assert!(result);
+    txn.commit().await.unwrap();
+
+    let mut txn = db.begin_transaction().await.unwrap();
+    let result = REPO
+        .get_composite(&mut txn, BAR.user.id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(result, expected);
+}
+
+#[tokio::test]
+async fn update_invoice_info() {
+    let db = setup().await;
+
+    let expected = UserComposite {
+        invoice_info: FOO.invoice_info.clone(),
+        ..BAR.clone()
+    };
+
+    let mut txn = db.begin_transaction().await.unwrap();
+    let result = REPO
+        .update_invoice_info(&mut txn, BAR.user.id, expected.invoice_info.as_patch_ref())
         .await
         .unwrap();
     assert!(result);

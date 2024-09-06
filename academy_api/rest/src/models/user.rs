@@ -1,8 +1,9 @@
 use academy_models::{
     email_address::EmailAddress,
     user::{
-        UserBio, UserComposite, UserDisplayName, UserFilter, UserId, UserIdOrSelf, UserName,
-        UserPassword, UserTags,
+        UserBio, UserCity, UserComposite, UserCountry, UserDisplayName, UserFilter, UserFirstName,
+        UserId, UserIdOrSelf, UserLastName, UserName, UserPassword, UserStreet, UserTags,
+        UserVatId, UserZipCode,
     },
     SearchTerm,
 };
@@ -17,7 +18,7 @@ pub struct ApiUser {
     pub display_name: UserDisplayName,
     pub email: Option<EmailAddress>,
     pub email_verified: bool,
-    pub created_at: i64,
+    pub registration: i64,
     pub last_login: Option<i64>,
     pub last_name_change: Option<i64>,
     pub enabled: bool,
@@ -27,6 +28,14 @@ pub struct ApiUser {
     pub description: UserBio,
     pub tags: UserTags,
     pub newsletter: bool,
+    pub business: Option<bool>,
+    pub first_name: Option<UserFirstName>,
+    pub last_name: Option<UserLastName>,
+    pub street: Option<UserStreet>,
+    pub zip_code: Option<UserZipCode>,
+    pub city: Option<UserCity>,
+    pub country: Option<UserCountry>,
+    pub vat_id: Option<UserVatId>,
     pub avatar_url: Option<Url>,
 }
 
@@ -36,6 +45,7 @@ impl From<UserComposite> for ApiUser {
             user,
             profile,
             details,
+            invoice_info,
         }: UserComposite,
     ) -> Self {
         let avatar_url = user.email.as_ref().map(get_avatar_url);
@@ -45,7 +55,7 @@ impl From<UserComposite> for ApiUser {
             name: user.name,
             email: user.email,
             email_verified: user.email_verified,
-            created_at: user.created_at.timestamp(),
+            registration: user.created_at.timestamp(),
             last_login: user.last_login.map(|x| x.timestamp()),
             last_name_change: user.last_name_change.map(|x| x.timestamp()),
             enabled: user.enabled,
@@ -58,6 +68,15 @@ impl From<UserComposite> for ApiUser {
 
             mfa_enabled: details.mfa_enabled,
             password: details.password_login,
+
+            business: invoice_info.business,
+            first_name: invoice_info.first_name,
+            last_name: invoice_info.last_name,
+            street: invoice_info.street,
+            zip_code: invoice_info.zip_code,
+            city: invoice_info.city,
+            country: invoice_info.country,
+            vat_id: invoice_info.vat_id,
 
             avatar_url,
         }

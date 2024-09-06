@@ -5,7 +5,7 @@ use academy_core_user_contracts::commands::create::{
     UserCreateCommand, UserCreateCommandError, UserCreateCommandService,
 };
 use academy_di::Build;
-use academy_models::user::{User, UserComposite, UserDetails, UserProfile};
+use academy_models::user::{User, UserComposite, UserDetails, UserInvoiceInfo, UserProfile};
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_shared_contracts::{id::IdService, password::PasswordService, time::TimeService};
 
@@ -72,8 +72,10 @@ where
             oauth2_login: oauth2_registration.is_some(),
         };
 
+        let invoice_info = UserInvoiceInfo::default();
+
         self.user_repo
-            .create(txn, &user, &profile)
+            .create(txn, &user, &profile, &invoice_info)
             .await
             .map_err(|err| match err {
                 UserRepoError::NameConflict => UserCreateCommandError::NameConflict,
@@ -108,6 +110,7 @@ where
             user,
             profile,
             details,
+            invoice_info,
         };
 
         Ok(user_composite)
@@ -153,7 +156,12 @@ mod tests {
             user_password_hash.clone(),
         );
         let user_repo = MockUserRepository::new()
-            .with_create(expected.user.clone(), expected.profile.clone(), Ok(()))
+            .with_create(
+                expected.user.clone(),
+                expected.profile.clone(),
+                Default::default(),
+                Ok(()),
+            )
             .with_save_password_hash(FOO.user.id, user_password_hash);
 
         let sut = UserCreateCommandServiceImpl {
@@ -192,6 +200,7 @@ mod tests {
         let user_repo = MockUserRepository::new().with_create(
             expected.user.clone(),
             expected.profile.clone(),
+            Default::default(),
             Ok(()),
         );
 
@@ -248,6 +257,7 @@ mod tests {
         let user_repo = MockUserRepository::new().with_create(
             expected.user.clone(),
             expected.profile.clone(),
+            Default::default(),
             Err(UserRepoError::NameConflict),
         );
 
@@ -294,6 +304,7 @@ mod tests {
         let user_repo = MockUserRepository::new().with_create(
             expected.user.clone(),
             expected.profile.clone(),
+            Default::default(),
             Err(UserRepoError::EmailConflict),
         );
 
@@ -333,6 +344,7 @@ mod tests {
         let user_repo = MockUserRepository::new().with_create(
             expected.user.clone(),
             expected.profile.clone(),
+            Default::default(),
             Ok(()),
         );
 
@@ -396,6 +408,7 @@ mod tests {
                 password_login,
                 oauth2_login,
             },
+            invoice_info: Default::default(),
         }
     }
 }

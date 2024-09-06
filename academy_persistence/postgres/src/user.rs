@@ -6,8 +6,8 @@ use academy_models::{
     oauth2::{OAuth2ProviderId, OAuth2RemoteUserId},
     pagination::PaginationSlice,
     user::{
-        User, UserComposite, UserDetails, UserFilter, UserId, UserName, UserPatchRef, UserProfile,
-        UserProfilePatchRef,
+        User, UserComposite, UserDetails, UserFilter, UserId, UserInvoiceInfo,
+        UserInvoiceInfoPatchRef, UserName, UserPatchRef, UserProfile, UserProfilePatchRef,
     },
 };
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
@@ -23,6 +23,11 @@ pub struct PostgresUserRepository;
 columns!(user as "u": "id", "name", "email", "email_verified", "created_at", "last_login", "last_name_change", "enabled", "admin", "newsletter");
 columns!(profile as "p": "user_id", "display_name", "bio", "tags");
 columns!(details as "d": "user_id", "mfa_enabled", "password_login", "oauth2_login");
+columns!(invoice_info as "i": "user_id", "business", "first_name", "last_name", "street", "zip_code", "city", "country", "vat_id");
+
+const JOIN_PROFILE: &str = "inner join user_profiles p on u.id=p.user_id";
+const JOIN_DETAILS: &str = "inner join user_details d on u.id=d.user_id";
+const JOIN_INVOICE_INFO: &str = "inner join user_invoice_info i on u.id=i.user_id";
 
 impl UserRepository<PostgresTransaction> for PostgresUserRepository {
     async fn count(
@@ -32,10 +37,10 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
     ) -> anyhow::Result<u64> {
         let mut query = "select count(*) from users u ".to_owned();
         if filter.name.is_some() {
-            query.push_str("inner join user_profiles p on u.id=p.user_id ")
+            query.push_str(JOIN_PROFILE)
         }
         if filter.mfa_enabled.is_some() {
-            query.push_str("inner join user_details d on u.id=d.user_id ")
+            query.push_str(JOIN_DETAILS)
         }
         query.push_str(" where true");
 
@@ -56,9 +61,8 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         pagination: PaginationSlice,
     ) -> anyhow::Result<Vec<UserComposite>> {
         let mut query = format!(
-            "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS} from users u inner join \
-             user_profiles p on u.id=p.user_id inner join user_details d on u.id=d.user_id where \
-             true"
+            "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS}, {INVOICE_INFO_COLS} from users u \
+             {JOIN_PROFILE} {JOIN_DETAILS} {JOIN_INVOICE_INFO} where true"
         );
         let mut params: Vec<&(dyn ToSql + Sync)> = Vec::new();
         make_filter(filter, &mut query, &mut params);
@@ -94,9 +98,8 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         txn.txn()
             .query_opt(
                 &format!(
-                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS} from users u inner join \
-                     user_profiles p on u.id=p.user_id inner join user_details d on \
-                     u.id=d.user_id where id=$1"
+                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS}, {INVOICE_INFO_COLS} from \
+                     users u {JOIN_PROFILE} {JOIN_DETAILS} {JOIN_INVOICE_INFO} where id=$1"
                 ),
                 &[&*user_id],
             )
@@ -113,9 +116,9 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         txn.txn()
             .query_opt(
                 &format!(
-                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS} from users u inner join \
-                     user_profiles p on u.id=p.user_id inner join user_details d on \
-                     u.id=d.user_id where lower(name)=lower($1)"
+                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS}, {INVOICE_INFO_COLS} from \
+                     users u {JOIN_PROFILE} {JOIN_DETAILS} {JOIN_INVOICE_INFO} where \
+                     lower(name)=lower($1)"
                 ),
                 &[&name.as_str()],
             )
@@ -132,9 +135,9 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         txn.txn()
             .query_opt(
                 &format!(
-                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS} from users u inner join \
-                     user_profiles p on u.id=p.user_id inner join user_details d on \
-                     u.id=d.user_id where lower(email)=lower($1)"
+                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS}, {INVOICE_INFO_COLS} from \
+                     users u {JOIN_PROFILE} {JOIN_DETAILS} {JOIN_INVOICE_INFO} where \
+                     lower(email)=lower($1)"
                 ),
                 &[&email.as_str()],
             )
@@ -152,10 +155,10 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         txn.txn()
             .query_opt(
                 &format!(
-                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS} from users u inner join \
-                     user_profiles p on u.id=p.user_id inner join user_details d on \
-                     u.id=d.user_id inner join oauth2_links ol on u.id=ol.user_id where \
-                     ol.provider_id=$1 and ol.remote_user_id=$2"
+                    "select {USER_COLS}, {PROFILE_COLS}, {DETAILS_COLS}, {INVOICE_INFO_COLS} from \
+                     users u {JOIN_PROFILE} {JOIN_DETAILS} {JOIN_INVOICE_INFO} inner join \
+                     oauth2_links ol on u.id=ol.user_id where ol.provider_id=$1 and \
+                     ol.remote_user_id=$2"
                 ),
                 &[&**provider_id, &**remote_user_id],
             )
@@ -169,6 +172,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         txn: &mut PostgresTransaction,
         user: &User,
         profile: &UserProfile,
+        invoice_info: &UserInvoiceInfo,
     ) -> Result<(), UserRepoError> {
         txn.txn()
             .execute(
@@ -203,6 +207,27 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
                     &profile.display_name.as_str(),
                     &profile.bio.as_str(),
                     &profile.tags.iter().map(|x| x.as_str()).collect::<Vec<_>>(),
+                ],
+            )
+            .await
+            .map_err(|err| UserRepoError::Other(err.into()))?;
+
+        txn.txn()
+            .execute(
+                &format!(
+                    "insert into user_invoice_info ({INVOICE_INFO_COL_NAMES}) values ({})",
+                    arg_indices(1..=INVOICE_INFO_CNT)
+                ),
+                &[
+                    &*user.id,
+                    &invoice_info.business,
+                    &invoice_info.first_name.as_deref(),
+                    &invoice_info.last_name.as_deref(),
+                    &invoice_info.street.as_deref(),
+                    &invoice_info.zip_code.as_deref(),
+                    &invoice_info.city.as_deref(),
+                    &invoice_info.country.as_deref(),
+                    &invoice_info.vat_id.as_deref(),
                 ],
             )
             .await
@@ -299,6 +324,74 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         if let PatchValue::Update(tags) = &tags {
             params.push(tags);
             write!(&mut query, ", tags=${}", params.len()).unwrap();
+        }
+
+        query.push_str(" where user_id=$1");
+
+        txn.txn()
+            .execute(&query, &params)
+            .await
+            .map(|n| n != 0)
+            .map_err(Into::into)
+    }
+
+    async fn update_invoice_info<'a>(
+        &self,
+        txn: &mut PostgresTransaction,
+        user_id: UserId,
+        UserInvoiceInfoPatchRef {
+            business,
+            first_name,
+            last_name,
+            street,
+            zip_code,
+            city,
+            country,
+            vat_id,
+        }: UserInvoiceInfoPatchRef<'a>,
+    ) -> anyhow::Result<bool> {
+        let mut query = "update user_invoice_info set user_id=user_id".to_owned();
+        let mut params: Vec<&(dyn ToSql + Sync)> = vec![&*user_id];
+
+        let first_name = first_name.map(|x| x.as_deref());
+        let last_name = last_name.map(|x| x.as_deref());
+        let street = street.map(|x| x.as_deref());
+        let zip_code = zip_code.map(|x| x.as_deref());
+        let city = city.map(|x| x.as_deref());
+        let country = country.map(|x| x.as_deref());
+        let vat_id = vat_id.map(|x| x.as_deref());
+
+        if let PatchValue::Update(business) = &business {
+            params.push(business);
+            write!(&mut query, ", business=${}", params.len()).unwrap();
+        }
+        if let PatchValue::Update(first_name) = &first_name {
+            params.push(first_name);
+            write!(&mut query, ", first_name=${}", params.len()).unwrap();
+        }
+        if let PatchValue::Update(last_name) = &last_name {
+            params.push(last_name);
+            write!(&mut query, ", last_name=${}", params.len()).unwrap();
+        }
+        if let PatchValue::Update(street) = &street {
+            params.push(street);
+            write!(&mut query, ", street=${}", params.len()).unwrap();
+        }
+        if let PatchValue::Update(zip_code) = &zip_code {
+            params.push(zip_code);
+            write!(&mut query, ", zip_code=${}", params.len()).unwrap();
+        }
+        if let PatchValue::Update(city) = &city {
+            params.push(city);
+            write!(&mut query, ", city=${}", params.len()).unwrap();
+        }
+        if let PatchValue::Update(country) = &country {
+            params.push(country);
+            write!(&mut query, ", country=${}", params.len()).unwrap();
+        }
+        if let PatchValue::Update(vat_id) = &vat_id {
+            params.push(vat_id);
+            write!(&mut query, ", vat_id=${}", params.len()).unwrap();
         }
 
         query.push_str(" where user_id=$1");
@@ -457,11 +550,52 @@ fn decode_details(row: &Row, offset: &mut usize) -> anyhow::Result<UserDetails> 
     })
 }
 
+fn decode_invoice_info(row: &Row, offset: &mut usize) -> anyhow::Result<UserInvoiceInfo> {
+    let mut idx = || {
+        *offset += 1;
+        *offset - 1
+    };
+
+    idx(); // user_id
+    Ok(UserInvoiceInfo {
+        business: row.get(idx()),
+        first_name: row
+            .get::<_, Option<String>>(idx())
+            .map(TryInto::try_into)
+            .transpose()?,
+        last_name: row
+            .get::<_, Option<String>>(idx())
+            .map(TryInto::try_into)
+            .transpose()?,
+        street: row
+            .get::<_, Option<String>>(idx())
+            .map(TryInto::try_into)
+            .transpose()?,
+        zip_code: row
+            .get::<_, Option<String>>(idx())
+            .map(TryInto::try_into)
+            .transpose()?,
+        city: row
+            .get::<_, Option<String>>(idx())
+            .map(TryInto::try_into)
+            .transpose()?,
+        country: row
+            .get::<_, Option<String>>(idx())
+            .map(TryInto::try_into)
+            .transpose()?,
+        vat_id: row
+            .get::<_, Option<String>>(idx())
+            .map(TryInto::try_into)
+            .transpose()?,
+    })
+}
+
 fn decode_composite(row: &Row, offset: &mut usize) -> anyhow::Result<UserComposite> {
     Ok(UserComposite {
         user: decode_user(row, offset)?,
         profile: decode_profile(row, offset)?,
         details: decode_details(row, offset)?,
+        invoice_info: decode_invoice_info(row, offset)?,
     })
 }
 

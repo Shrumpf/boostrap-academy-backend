@@ -287,6 +287,7 @@ where
             mut user,
             mut profile,
             mut details,
+            invoice_info,
         } = self
             .user_repo
             .get_composite(&mut txn, user_id)
@@ -427,6 +428,7 @@ where
             user,
             profile,
             details,
+            invoice_info,
         })
     }
 

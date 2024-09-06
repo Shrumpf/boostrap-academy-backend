@@ -5,8 +5,8 @@ use academy_models::{
     oauth2::{OAuth2ProviderId, OAuth2RemoteUserId},
     pagination::PaginationSlice,
     user::{
-        User, UserComposite, UserFilter, UserId, UserName, UserPatchRef, UserProfile,
-        UserProfilePatchRef,
+        User, UserComposite, UserFilter, UserId, UserInvoiceInfo, UserInvoiceInfoPatchRef,
+        UserName, UserPatchRef, UserProfile, UserProfilePatchRef,
     },
 };
 use thiserror::Error;
@@ -74,6 +74,7 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         txn: &mut Txn,
         user: &User,
         profile: &UserProfile,
+        invoice_info: &UserInvoiceInfo,
     ) -> impl Future<Output = Result<(), UserRepoError>> + Send;
 
     fn update<'a>(
@@ -88,6 +89,13 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         txn: &mut Txn,
         user_id: UserId,
         patch: UserProfilePatchRef<'a>,
+    ) -> impl Future<Output = anyhow::Result<bool>> + Send;
+
+    fn update_invoice_info<'a>(
+        &self,
+        txn: &mut Txn,
+        user_id: UserId,
+        patch: UserInvoiceInfoPatchRef<'a>,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
     fn delete(
@@ -223,6 +231,7 @@ impl<Txn: Send + Sync + 'static> MockUserRepository<Txn> {
         mut self,
         user: User,
         profile: UserProfile,
+        invoice_info: UserInvoiceInfo,
         result: Result<(), UserRepoError>,
     ) -> Self {
         self.expect_create()
@@ -231,8 +240,9 @@ impl<Txn: Send + Sync + 'static> MockUserRepository<Txn> {
                 mockall::predicate::always(),
                 mockall::predicate::eq(user),
                 mockall::predicate::eq(profile),
+                mockall::predicate::eq(invoice_info),
             )
-            .return_once(|_, _, _| Box::pin(std::future::ready(result)));
+            .return_once(|_, _, _, _| Box::pin(std::future::ready(result)));
         self
     }
 

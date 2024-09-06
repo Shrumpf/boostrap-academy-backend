@@ -15,7 +15,7 @@ FOO = {
     "display_name": "Foo 42",
     "email": "foo@example.com",
     "email_verified": True,
-    "created_at": 1710423462,
+    "registration": 1710423462,
     "last_login": 1710509820,
     "last_name_change": 1710424200,
     "enabled": True,
@@ -25,6 +25,14 @@ FOO = {
     "description": "blubb",
     "tags": ["foo", "bar", "baz"],
     "newsletter": True,
+    "business": True,
+    "first_name": "x",
+    "last_name": "y",
+    "street": "asdf",
+    "zip_code": "1234",
+    "city": "xyz",
+    "country": "asdf",
+    "vat_id": "1234",
     "avatar_url": "https://gravatar.com/avatar/321ba197033e81286fedb719d60d4ed5cecaed170733cb4a92013811afc0e3b6",
 }
 

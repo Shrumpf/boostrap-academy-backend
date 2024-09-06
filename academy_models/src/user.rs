@@ -43,6 +43,7 @@ pub struct UserComposite {
     pub user: User,
     pub profile: UserProfile,
     pub details: UserDetails,
+    pub invoice_info: UserInvoiceInfo,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Patch)]
@@ -73,6 +74,18 @@ pub struct UserDetails {
     pub mfa_enabled: bool,
     pub password_login: bool,
     pub oauth2_login: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Patch, Default)]
+pub struct UserInvoiceInfo {
+    pub business: Option<bool>,
+    pub first_name: Option<UserFirstName>,
+    pub last_name: Option<UserLastName>,
+    pub street: Option<UserStreet>,
+    pub zip_code: Option<UserZipCode>,
+    pub city: Option<UserCity>,
+    pub country: Option<UserCountry>,
+    pub vat_id: Option<UserVatId>,
 }
 
 nutype_string!(UserName(validate(regex = USER_NAME_REGEX)));
@@ -110,6 +123,14 @@ nutype_string!(UserTag(validate(len_char_min = 1, len_char_max = 64)));
     default = Vec::new(),
 )]
 pub struct UserTags(Vec<UserTag>);
+
+nutype_string!(UserFirstName(validate(len_char_max = 128)));
+nutype_string!(UserLastName(validate(len_char_max = 128)));
+nutype_string!(UserStreet(validate(len_char_max = 256)));
+nutype_string!(UserZipCode(validate(len_char_max = 16)));
+nutype_string!(UserCity(validate(len_char_max = 64)));
+nutype_string!(UserCountry(validate(len_char_max = 64)));
+nutype_string!(UserVatId(validate(len_char_max = 64)));
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct UserFilter {

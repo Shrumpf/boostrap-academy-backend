@@ -35,7 +35,7 @@ assert login == {
         "display_name": "User 123",
         "email": "user@example.com",
         "email_verified": False,
-        "created_at": login["user"]["created_at"],
+        "registration": login["user"]["registration"],
         "last_login": login["user"]["last_login"],
         "last_name_change": None,
         "enabled": True,
@@ -45,6 +45,14 @@ assert login == {
         "description": "",
         "tags": [],
         "newsletter": False,
+        "business": None,
+        "first_name": None,
+        "last_name": None,
+        "street": None,
+        "zip_code": None,
+        "city": None,
+        "country": None,
+        "vat_id": None,
         "avatar_url": "https://gravatar.com/avatar/b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
     },
     "session": {
@@ -56,7 +64,7 @@ assert login == {
     "access_token": login["access_token"],
     "refresh_token": login["refresh_token"],
 }
-assert abs(time.time() - login["user"]["created_at"]) < 2
+assert abs(time.time() - login["user"]["registration"]) < 2
 assert abs(time.time() - login["user"]["last_login"]) < 2
 assert abs(time.time() - login["session"]["last_update"]) < 2
 
