@@ -36,6 +36,8 @@ pub struct ApiUser {
     pub city: Option<UserCity>,
     pub country: Option<UserCountry>,
     pub vat_id: Option<UserVatId>,
+    pub can_buy_coins: bool,
+    pub can_receive_coins: bool,
     pub avatar_url: Option<Url>,
 }
 
@@ -49,6 +51,19 @@ impl From<UserComposite> for ApiUser {
         }: UserComposite,
     ) -> Self {
         let avatar_url = user.email.as_ref().map(get_avatar_url);
+        let can_receive_coins = user.email_verified
+            && invoice_info.business.is_some()
+            && invoice_info.first_name.is_some()
+            && invoice_info.last_name.is_some()
+            && invoice_info.street.is_some()
+            && invoice_info.zip_code.is_some()
+            && invoice_info.city.is_some()
+            && invoice_info.country.is_some()
+            && (invoice_info.business != Some(true) || invoice_info.vat_id.is_some());
+        let can_buy_coins = can_receive_coins
+            || (user.email_verified
+                && invoice_info.business == Some(false)
+                && invoice_info.country.is_some());
 
         Self {
             id: user.id,
@@ -79,6 +94,8 @@ impl From<UserComposite> for ApiUser {
             vat_id: invoice_info.vat_id,
 
             avatar_url,
+            can_buy_coins,
+            can_receive_coins,
         }
     }
 }

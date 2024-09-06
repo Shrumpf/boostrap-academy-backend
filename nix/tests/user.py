@@ -53,6 +53,8 @@ assert login == {
         "city": None,
         "country": None,
         "vat_id": None,
+        "can_buy_coins": False,
+        "can_receive_coins": False,
         "avatar_url": "https://gravatar.com/avatar/b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
     },
     "session": {
