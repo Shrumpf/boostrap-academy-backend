@@ -42,7 +42,7 @@ pub trait UserService: Send + Sync + 'static {
     /// Creates a new user and logs them in.
     fn create_user(
         &self,
-        cmd: UserCreateRequest,
+        request: UserCreateRequest,
         device_name: Option<DeviceName>,
         recaptcha_response: Option<RecaptchaResponse>,
     ) -> impl Future<Output = Result<Login, UserCreateError>> + Send;

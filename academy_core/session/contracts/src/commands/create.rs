@@ -8,7 +8,7 @@ pub trait SessionCreateCommandService<Txn: Send + Sync + 'static>: Send + Sync +
     fn invoke(
         &self,
         txn: &mut Txn,
-        user: UserComposite,
+        user_composite: UserComposite,
         device_name: Option<DeviceName>,
         update_last_login: bool,
     ) -> impl Future<Output = anyhow::Result<Login>> + Send;
@@ -18,7 +18,7 @@ pub trait SessionCreateCommandService<Txn: Send + Sync + 'static>: Send + Sync +
 impl<Txn: Send + Sync + 'static> MockSessionCreateCommandService<Txn> {
     pub fn with_invoke(
         mut self,
-        user: UserComposite,
+        user_composite: UserComposite,
         device_name: Option<DeviceName>,
         update_last_login: bool,
         result: Login,
@@ -27,7 +27,7 @@ impl<Txn: Send + Sync + 'static> MockSessionCreateCommandService<Txn> {
             .once()
             .with(
                 mockall::predicate::always(),
-                mockall::predicate::eq(user),
+                mockall::predicate::eq(user_composite),
                 mockall::predicate::eq(device_name),
                 mockall::predicate::eq(update_last_login),
             )

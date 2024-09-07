@@ -4,7 +4,10 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait CaptchaService: Send + Sync + 'static {
-    #[allow(clippy::needless_lifetimes)]
+    #[allow(
+        clippy::needless_lifetimes,
+        reason = "explicit lifetime needed for automock"
+    )]
     fn get_recaptcha_sitekey<'a>(&'a self) -> Option<&'a str>;
 
     fn check<'a>(

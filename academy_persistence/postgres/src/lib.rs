@@ -231,10 +231,10 @@ fn decode_sha256hash(hash: Vec<u8>) -> anyhow::Result<Sha256Hash> {
 macro_rules! columns {
     ($vis:vis $ident:ident as $alias:literal: $fst:literal $(, $col:literal)* $(,)?) => {
         ::paste::paste! {
-            #[allow(unused)]
+            #[allow(unused, reason = "usually not needed for views")]
             $vis const [< $ident:snake:upper _CNT >]: usize = [ $fst $(, $col)* ].len();
             $vis const [< $ident:snake:upper _COLS >]: &str = ::core::concat!( '"', $alias, "\".\"", $fst, '"' $(, ", \"" , $alias, "\".\"", $col, '"' )* );
-            #[allow(unused)]
+            #[allow(unused, reason = "usually not needed for views")]
             $vis const [< $ident:snake:upper _COL_NAMES >]: &str = ::core::concat!( '"', $fst, '"' $(, ", \"", $col, '"' )* );
         }
     };

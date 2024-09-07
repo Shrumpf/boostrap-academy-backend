@@ -15,7 +15,7 @@ pub struct PasswordServiceImpl {
 
 impl PasswordService for PasswordServiceImpl {
     async fn hash(&self, password: String) -> anyhow::Result<String> {
-        let argon2 = self.argon2.clone();
+        let argon2 = Arc::clone(&self.argon2);
         let salt = SaltString::generate(&mut OsRng);
         tokio::task::spawn_blocking(move || {
             argon2
@@ -27,7 +27,7 @@ impl PasswordService for PasswordServiceImpl {
     }
 
     async fn verify(&self, password: String, hash: String) -> Result<(), PasswordVerifyError> {
-        let argon2 = self.argon2.clone();
+        let argon2 = Arc::clone(&self.argon2);
         tokio::task::spawn_blocking(move || {
             let hash =
                 PasswordHash::new(&hash).map_err(|err| PasswordVerifyError::Other(err.into()))?;

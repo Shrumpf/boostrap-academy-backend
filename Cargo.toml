@@ -32,7 +32,11 @@ repository = "https://github.com/Bootstrap-Academy/Bootstrap-Academy"
 unsafe_code = "forbid"
 
 [workspace.lints.clippy]
+allow_attributes_without_reason = "warn"
+clone_on_ref_ptr = "warn"
 dbg_macro = "warn"
+renamed_function_params = "warn"
+self_named_module_files = "warn"
 todo = "warn"
 
 [workspace.dependencies]
