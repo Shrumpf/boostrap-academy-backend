@@ -13,7 +13,10 @@ use academy_core_user_impl::commands::{
     update_name::UserUpdateNameCommandServiceConfig,
 };
 use academy_di::provider;
-use academy_extern_impl::recaptcha::RecaptchaApiServiceConfig;
+use academy_extern_impl::{
+    internal::InternalApiServiceConfig, recaptcha::RecaptchaApiServiceConfig,
+    vat::VatApiServiceConfig,
+};
 use academy_models::oauth2::OAuth2Provider;
 use academy_shared_impl::{
     captcha::{CaptchaServiceConfig, RecaptchaCaptchaServiceConfig},
@@ -43,6 +46,8 @@ provider! {
             Arc<RecaptchaApiServiceConfig>,
             SessionServiceConfig,
             OAuth2ServiceConfig,
+            InternalApiServiceConfig,
+            VatApiServiceConfig,
         }
     }
 }
@@ -74,6 +79,8 @@ provider! {
         recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>,
         session_service_config: SessionServiceConfig,
         oauth2_service_config: OAuth2ServiceConfig,
+        internal_api_service_config: InternalApiServiceConfig,
+        vat_api_service_config: VatApiServiceConfig,
     }
 }
 
@@ -164,6 +171,14 @@ impl ConfigProvider {
                 .into(),
         };
 
+        let internal_api_service_config = InternalApiServiceConfig {
+            jwt_ttl: config.internal.jwt_ttl.into(),
+            shop_url: config.internal.shop_url.clone(),
+        };
+
+        let vat_api_service_config =
+            VatApiServiceConfig::new(config.vat.validate_endpoint_override.clone());
+
         Ok(Self {
             _state: Default::default(),
             auth_service_config,
@@ -179,6 +194,8 @@ impl ConfigProvider {
             recaptcha_api_service_config,
             session_service_config,
             oauth2_service_config,
+            internal_api_service_config,
+            vat_api_service_config,
         })
     }
 }

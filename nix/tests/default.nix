@@ -50,6 +50,7 @@
           from = "test@bootstrap.academy";
         };
         jwt.secret = "changeme";
+        internal.shop_url = "http://127.0.0.1:8004/shop/";
         health.cache_ttl = "2s";
         contact.email = "contact@academy";
         recaptcha = {
@@ -59,6 +60,7 @@
           secret = "test-secret";
           min_score = 0.5;
         };
+        vat.validate_endpoint_override = "http://127.0.0.1:8003/validate/";
         oauth2 = {
           enable = true;
           providers = let
@@ -100,6 +102,22 @@
       before = ["academy-backend.service"];
       script = ''
         ${self.packages.${system}.testing}/bin/academy-testing oauth2
+      '';
+    };
+
+    systemd.services."academy-testing-vat" = {
+      wantedBy = ["academy-backend.service"];
+      before = ["academy-backend.service"];
+      script = ''
+        ${self.packages.${system}.testing}/bin/academy-testing vat
+      '';
+    };
+
+    systemd.services."academy-testing-internal" = {
+      wantedBy = ["academy-backend.service"];
+      before = ["academy-backend.service"];
+      script = ''
+        ${self.packages.${system}.testing}/bin/academy-testing internal
       '';
     };
 

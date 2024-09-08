@@ -17,7 +17,9 @@ use academy_core_user_contracts::{
         verify_newsletter_subscription::MockUserVerifyNewsletterSubscriptionCommandService,
     },
     queries::list::MockUserListQueryService,
+    update_invoice_info::MockUserUpdateInvoiceInfoService,
 };
+use academy_extern_contracts::{internal::MockInternalApiService, vat::MockVatApiService};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase, MockTransaction};
 use academy_shared_contracts::captcha::MockCaptchaService;
 
@@ -39,6 +41,8 @@ type Sut = UserServiceImpl<
     MockAuthService<MockTransaction>,
     MockCacheService,
     MockCaptchaService,
+    MockVatApiService,
+    MockInternalApiService,
     MockUserListQueryService<MockTransaction>,
     MockUserCreateCommandService<MockTransaction>,
     MockUserRequestSubscribeNewsletterEmailCommandService,
@@ -52,6 +56,7 @@ type Sut = UserServiceImpl<
     MockUserVerifyEmailCommandService<MockTransaction>,
     MockUserRequestPasswordResetEmailCommandService,
     MockUserResetPasswordCommandService<MockTransaction>,
+    MockUserUpdateInvoiceInfoService<MockTransaction>,
     MockSessionCreateCommandService<MockTransaction>,
     MockUserRepository<MockTransaction>,
 >;

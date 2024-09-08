@@ -143,6 +143,64 @@ user["tags"] = ["foo", "bar", "test"]
 assert resp.json() == user
 assert c.get("/auth/users/me").json() == user
 
+## invoice info
+resp = c.patch("/auth/users/me", json={"business": False, "country": "Germany"})
+assert resp.status_code == 200
+user = resp.json()
+user["business"] = False
+user["country"] = "Germany"
+user["can_buy_coins"] = True
+assert resp.json() == user
+assert c.get("/auth/users/me").json() == user
+assert c.get(f"http://127.0.0.1:8004/shop/_internal/coins/{user['id']}/withheld").json() == 0
+
+resp = c.patch("/auth/users/me", json={"business": True, "vat_id": "DE0192837465"})
+assert resp.status_code == 404
+assert resp.json() == {"detail": "Invalid VAT ID"}
+assert c.get("/auth/users/me").json() == user
+
+resp = c.patch("/auth/users/me", json={"business": True, "vat_id": "DE0123456789"})
+assert resp.status_code == 200
+user["business"] = True
+user["vat_id"] = "DE0123456789"
+user["can_buy_coins"] = False
+assert resp.json() == user
+assert c.get("/auth/users/me").json() == user
+
+assert c.get(f"http://127.0.0.1:8004/shop/_internal/coins/{user['id']}/withheld").json() == 0
+resp = c.patch(
+    "/auth/users/me", json={"first_name": "a", "last_name": "b", "street": "c", "zip_code": "d", "city": "e"}
+)
+assert resp.status_code == 200
+assert c.get(f"http://127.0.0.1:8004/shop/_internal/coins/{user['id']}/withheld").json() == 1
+user["first_name"] = "a"
+user["last_name"] = "b"
+user["street"] = "c"
+user["zip_code"] = "d"
+user["city"] = "e"
+user["can_buy_coins"] = True
+user["can_receive_coins"] = True
+assert resp.json() == user
+assert c.get("/auth/users/me").json() == user
+
+assert c.get(f"http://127.0.0.1:8004/shop/_internal/coins/{user['id']}/withheld").json() == 1
+resp = c.patch("/auth/users/me", json={"business": False})
+assert resp.status_code == 200
+assert c.get(f"http://127.0.0.1:8004/shop/_internal/coins/{user['id']}/withheld").json() == 2
+user["business"] = False
+user["vat_id"] = None
+assert resp.json() == user
+assert c.get("/auth/users/me").json() == user
+
+resp = c.patch("/auth/users/me", json={"business": True})
+assert resp.status_code == 200
+user["business"] = True
+user["can_buy_coins"] = False
+user["can_receive_coins"] = False
+assert resp.json() == user
+assert c.get("/auth/users/me").json() == user
+assert c.get(f"http://127.0.0.1:8004/shop/_internal/coins/{user['id']}/withheld").json() == 2
+
 ## name
 resp = c.patch("/auth/users/me", json={"name": "test"})
 assert resp.status_code == 200

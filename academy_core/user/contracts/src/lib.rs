@@ -6,7 +6,8 @@ use academy_models::{
     oauth2::OAuth2RegistrationToken,
     session::DeviceName,
     user::{
-        UserComposite, UserDisplayName, UserIdOrSelf, UserName, UserPassword, UserProfilePatch,
+        UserComposite, UserDisplayName, UserIdOrSelf, UserInvoiceInfo, UserName, UserPassword,
+        UserProfilePatch,
     },
     RecaptchaResponse, VerificationCode,
 };
@@ -17,6 +18,7 @@ use thiserror::Error;
 
 pub mod commands;
 pub mod queries;
+pub mod update_invoice_info;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait UserService: Send + Sync + 'static {
@@ -167,6 +169,7 @@ pub enum UserCreateError {
 pub struct UserUpdateRequest {
     pub user: UserUpdateUserRequest,
     pub profile: UserProfilePatch,
+    pub invoice_info: UserInvoiceInfo,
 }
 
 #[derive(Debug, Default)]
@@ -209,6 +212,8 @@ pub enum UserUpdateError {
     NameChangeRateLimit { until: DateTime<Utc> },
     #[error("The user does not have an email address.")]
     NoEmail,
+    #[error("The vat id is invalid.")]
+    InvalidVatId,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

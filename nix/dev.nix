@@ -42,6 +42,14 @@
     ${testing}/bin/academy-testing oauth2
   '';
 
+  processes.testing-vat.exec = ''
+    ${testing}/bin/academy-testing vat
+  '';
+
+  processes.testing-internal.exec = ''
+    ${testing}/bin/academy-testing internal
+  '';
+
   env = {
     RUST_LOG = "debug,academy=trace";
 

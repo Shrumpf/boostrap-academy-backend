@@ -76,12 +76,14 @@ pub struct Config {
     pub cache: CacheConfig,
     pub email: EmailConfig,
     pub jwt: JwtConfig,
+    pub internal: InternalConfig,
     pub health: HealthConfig,
     pub user: UserConfig,
     pub session: SessionConfig,
     pub totp: TotpConfig,
     pub contact: ContactConfig,
     pub recaptcha: Option<RecaptchaConfig>,
+    pub vat: VatConfig,
     pub oauth2: Option<OAuth2Config>,
 }
 
@@ -120,6 +122,12 @@ pub struct EmailConfig {
 #[derive(Debug, Deserialize)]
 pub struct JwtConfig {
     pub secret: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InternalConfig {
+    pub jwt_ttl: Duration,
+    pub shop_url: Url,
 }
 
 #[derive(Debug, Deserialize)]
@@ -163,6 +171,11 @@ pub struct RecaptchaConfig {
     pub sitekey: String,
     pub secret: String,
     pub min_score: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct VatConfig {
+    pub validate_endpoint_override: Option<Url>,
 }
 
 #[derive(Debug, Deserialize)]

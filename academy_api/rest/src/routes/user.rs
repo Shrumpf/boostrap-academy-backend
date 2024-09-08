@@ -11,7 +11,11 @@ use academy_models::{
     email_address::EmailAddress,
     oauth2::OAuth2RegistrationToken,
     session::DeviceName,
-    user::{UserBio, UserDisplayName, UserName, UserPassword, UserProfilePatch, UserTags},
+    user::{
+        UserBio, UserCity, UserCountry, UserDisplayName, UserFirstName, UserInvoiceInfo,
+        UserLastName, UserName, UserPassword, UserProfilePatch, UserStreet, UserTags, UserVatId,
+        UserZipCode,
+    },
     RecaptchaResponse, VerificationCode,
 };
 use axum::{
@@ -169,6 +173,14 @@ struct UpdateRequest {
     description: Option<UserBio>,
     tags: Option<UserTags>,
     newsletter: Option<bool>,
+    business: Option<bool>,
+    first_name: Option<UserFirstName>,
+    last_name: Option<UserLastName>,
+    street: Option<UserStreet>,
+    zip_code: Option<UserZipCode>,
+    city: Option<UserCity>,
+    country: Option<UserCountry>,
+    vat_id: Option<UserVatId>,
 }
 
 async fn update(
@@ -186,6 +198,14 @@ async fn update(
         description,
         tags,
         newsletter,
+        business,
+        first_name,
+        last_name,
+        street,
+        zip_code,
+        city,
+        country,
+        vat_id,
     }): Json<UpdateRequest>,
 ) -> Response {
     match user_service
@@ -212,6 +232,16 @@ async fn update(
                     bio: description.into(),
                     tags: tags.into(),
                 },
+                invoice_info: UserInvoiceInfo {
+                    business,
+                    first_name,
+                    last_name,
+                    street,
+                    zip_code,
+                    city,
+                    country,
+                    vat_id,
+                },
             },
         )
         .await
@@ -229,6 +259,7 @@ async fn update(
             | UserUpdateError::NameChangeRateLimit { .. },
         ) => error(StatusCode::FORBIDDEN, "Permission denied"),
         Err(UserUpdateError::NoEmail) => error(StatusCode::FORBIDDEN, "No email"),
+        Err(UserUpdateError::InvalidVatId) => error(StatusCode::NOT_FOUND, "Invalid VAT ID"),
         Err(UserUpdateError::Auth(err)) => auth_error(err),
         Err(UserUpdateError::Other(err)) => internal_server_error(err),
     }

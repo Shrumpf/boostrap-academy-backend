@@ -272,6 +272,19 @@ impl<Txn: Send + Sync + 'static> MockUserRepository<Txn> {
         self
     }
 
+    pub fn with_update_invoice_info(
+        mut self,
+        user_id: UserId,
+        patch: academy_models::user::UserInvoiceInfoPatch,
+        result: bool,
+    ) -> Self {
+        self.expect_update_invoice_info()
+            .once()
+            .withf(move |_, id, p| *id == user_id && p == &patch.as_ref())
+            .return_once(move |_, _, _| Box::pin(std::future::ready(Ok(result))));
+        self
+    }
+
     pub fn with_delete(mut self, user_id: UserId, result: bool) -> Self {
         self.expect_delete()
             .once()

@@ -42,28 +42,18 @@ pub struct ApiUser {
 }
 
 impl From<UserComposite> for ApiUser {
-    fn from(
-        UserComposite {
+    fn from(user_composite: UserComposite) -> Self {
+        let can_buy_coins = user_composite.can_buy_coins();
+        let can_receive_coins = user_composite.can_receive_coins();
+
+        let UserComposite {
             user,
             profile,
             details,
             invoice_info,
-        }: UserComposite,
-    ) -> Self {
+        } = user_composite;
+
         let avatar_url = user.email.as_ref().map(get_avatar_url);
-        let can_receive_coins = user.email_verified
-            && invoice_info.business.is_some()
-            && invoice_info.first_name.is_some()
-            && invoice_info.last_name.is_some()
-            && invoice_info.street.is_some()
-            && invoice_info.zip_code.is_some()
-            && invoice_info.city.is_some()
-            && invoice_info.country.is_some()
-            && (invoice_info.business != Some(true) || invoice_info.vat_id.is_some());
-        let can_buy_coins = can_receive_coins
-            || (user.email_verified
-                && invoice_info.business == Some(false)
-                && invoice_info.country.is_some());
 
         Self {
             id: user.id,

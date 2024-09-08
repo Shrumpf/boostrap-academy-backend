@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-use academy_testing::{oauth2, recaptcha};
+use academy_testing::{internal, oauth2, recaptcha, vat};
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use url::Url;
@@ -22,6 +22,8 @@ async fn main() -> anyhow::Result<()> {
             client_secret,
             redirect_url,
         } => oauth2::start_server(host, port, client_id, client_secret, redirect_url).await?,
+        Command::Vat { host, port } => vat::start_server(host, port).await?,
+        Command::Internal { host, port } => internal::start_server(host, port).await?,
         Command::Completion { shell } => {
             clap_complete::generate(
                 shell,
@@ -66,6 +68,20 @@ enum Command {
         client_secret: String,
         #[arg(long, default_value = "http://localhost/oauth2/callback")]
         redirect_url: Url,
+    },
+    /// Start the vat api testing server
+    Vat {
+        #[arg(long, default_value = "127.0.0.1")]
+        host: IpAddr,
+        #[arg(long, default_value = "8003")]
+        port: u16,
+    },
+    /// Start the internal api testing server
+    Internal {
+        #[arg(long, default_value = "127.0.0.1")]
+        host: IpAddr,
+        #[arg(long, default_value = "8004")]
+        port: u16,
     },
     /// Generate shell completions
     Completion {

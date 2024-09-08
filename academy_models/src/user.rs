@@ -88,6 +88,27 @@ pub struct UserInvoiceInfo {
     pub vat_id: Option<UserVatId>,
 }
 
+impl UserComposite {
+    pub fn can_receive_coins(&self) -> bool {
+        self.user.email_verified
+            && self.invoice_info.business.is_some()
+            && self.invoice_info.first_name.is_some()
+            && self.invoice_info.last_name.is_some()
+            && self.invoice_info.street.is_some()
+            && self.invoice_info.zip_code.is_some()
+            && self.invoice_info.city.is_some()
+            && self.invoice_info.country.is_some()
+            && (self.invoice_info.business != Some(true) || self.invoice_info.vat_id.is_some())
+    }
+
+    pub fn can_buy_coins(&self) -> bool {
+        self.can_receive_coins()
+            || (self.user.email_verified
+                && self.invoice_info.business == Some(false)
+                && self.invoice_info.country.is_some())
+    }
+}
+
 nutype_string!(UserName(validate(regex = USER_NAME_REGEX)));
 nutype_string!(UserDisplayName(validate(
     len_char_min = 1,

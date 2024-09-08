@@ -15,6 +15,9 @@ from = "Bootstrap Academy DEV <dev@bootstrap.academy>"
 [jwt]
 secret = "changeme"
 
+[internal]
+shop_url = "http://127.0.0.1:8004/shop/"
+
 [session]
 access_token_ttl = "1d"
 
@@ -26,6 +29,9 @@ enable = false
 siteverify_endpoint_override = "http://127.0.0.1:8001/recaptcha/api/siteverify"
 sitekey = "test-sitekey"
 secret = "test-secret"
+
+[vat]
+validate_endpoint_override = "http://127.0.0.1:8003/validate/"
 
 [oauth2.providers.test]
 enable = true

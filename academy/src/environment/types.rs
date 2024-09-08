@@ -47,10 +47,14 @@ use academy_core_user_impl::{
     queries::{
         get_by_name_or_email::UserGetByNameOrEmailQueryServiceImpl, list::UserListQueryServiceImpl,
     },
+    update_invoice_info::UserUpdateInvoiceInfoServiceImpl,
     UserServiceImpl,
 };
 use academy_email_impl::{template::TemplateEmailServiceImpl, EmailServiceImpl};
-use academy_extern_impl::{oauth2::OAuth2ApiServiceImpl, recaptcha::RecaptchaApiServiceImpl};
+use academy_extern_impl::{
+    internal::InternalApiServiceImpl, oauth2::OAuth2ApiServiceImpl,
+    recaptcha::RecaptchaApiServiceImpl, vat::VatApiServiceImpl,
+};
 use academy_persistence_postgres::{
     mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
     session::PostgresSessionRepository, user::PostgresUserRepository, PostgresDatabase,
@@ -79,6 +83,8 @@ pub type TemplateEmail = TemplateEmailServiceImpl<Email, Template>;
 // Extern
 pub type RecaptchaApi = RecaptchaApiServiceImpl;
 pub type OAuth2Api = OAuth2ApiServiceImpl;
+pub type InternalApi = InternalApiServiceImpl<Jwt>;
+pub type VatApi = VatApiServiceImpl;
 
 // Template
 pub type Template = TemplateServiceImpl;
@@ -122,6 +128,8 @@ pub type User = UserServiceImpl<
     Auth,
     Cache,
     Captcha,
+    VatApi,
+    InternalApi,
     UserList,
     UserCreate,
     UserRequestSubscribeNewsletterEmail,
@@ -135,6 +143,7 @@ pub type User = UserServiceImpl<
     UserVerifyEmail,
     UserRequestPasswordResetEmail,
     UserResetPassword,
+    UserUpdateInvoiceInfo,
     SessionCreate,
     UserRepo,
 >;
@@ -155,6 +164,7 @@ pub type UserRequestPasswordResetEmail =
     UserRequestPasswordResetEmailCommandServiceImpl<Secret, TemplateEmail, Cache>;
 pub type UserResetPassword = UserResetPasswordCommandServiceImpl<Cache, Password, UserRepo>;
 pub type UserVerifyEmail = UserVerifyEmailCommandServiceImpl<Auth, Cache, UserRepo>;
+pub type UserUpdateInvoiceInfo = UserUpdateInvoiceInfoServiceImpl<UserRepo>;
 pub type UserList = UserListQueryServiceImpl<UserRepo>;
 
 pub type Session = SessionServiceImpl<

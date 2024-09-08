@@ -25,6 +25,10 @@ max_lifetime = "30m"
 [jwt]
 # secret = ""
 
+[internal]
+jwt_ttl = "10s"
+# shop_url = ""
+
 [health]
 cache_ttl = "10s"
 
@@ -55,6 +59,9 @@ enable = true
 # sitekey = ""
 # secret = ""
 min_score = 0.5
+
+[vat]
+# validate_endpoint_override = ""
 
 [oauth2]
 enable = true

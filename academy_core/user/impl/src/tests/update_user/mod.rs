@@ -15,6 +15,7 @@ use crate::{tests::Sut, UserServiceImpl};
 mod admin;
 mod email;
 mod enabled;
+mod invoice_info;
 mod name;
 mod newsletter;
 mod no_op;

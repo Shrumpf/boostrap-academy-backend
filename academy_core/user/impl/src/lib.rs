@@ -23,18 +23,20 @@ use academy_core_user_contracts::{
         },
     },
     queries::list::{UserListQuery, UserListQueryService, UserListResult},
+    update_invoice_info::UserUpdateInvoiceInfoService,
     PasswordUpdate, UserCreateError, UserCreateRequest, UserDeleteError, UserGetError,
     UserListError, UserRequestPasswordResetError, UserRequestVerificationEmailError,
     UserResetPasswordError, UserService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
     UserVerifyEmailError, UserVerifyNewsletterSubscriptionError,
 };
 use academy_di::Build;
+use academy_extern_contracts::{internal::InternalApiService, vat::VatApiService};
 use academy_models::{
     auth::Login,
     email_address::EmailAddress,
     oauth2::OAuth2Registration,
     session::DeviceName,
-    user::{UserComposite, UserId, UserIdOrSelf, UserPassword, UserPatchRef},
+    user::{UserComposite, UserId, UserIdOrSelf, UserInvoiceInfoPatch, UserPassword, UserPatchRef},
     RecaptchaResponse, VerificationCode,
 };
 use academy_persistence_contracts::{user::UserRepository, Database, Transaction};
@@ -44,6 +46,7 @@ use anyhow::anyhow;
 
 pub mod commands;
 pub mod queries;
+pub mod update_invoice_info;
 
 #[cfg(test)]
 mod tests;
@@ -54,6 +57,8 @@ pub struct UserServiceImpl<
     Auth,
     Cache,
     Captcha,
+    VatApi,
+    InternalApi,
     UserList,
     UserCreate,
     UserRequestSubscribeNewsletterEmail,
@@ -67,6 +72,7 @@ pub struct UserServiceImpl<
     UserVerifyEmail,
     UserRequestPasswordResetEmail,
     UserResetPassword,
+    UserUpdateInvoiceInfo,
     SessionCreate,
     UserRepo,
 > {
@@ -74,6 +80,8 @@ pub struct UserServiceImpl<
     auth: Auth,
     cache: Cache,
     captcha: Captcha,
+    vat_api: VatApi,
+    internal_api: InternalApi,
     user_list: UserList,
     user_create: UserCreate,
     user_request_subscribe_newsletter_email: UserRequestSubscribeNewsletterEmail,
@@ -87,6 +95,7 @@ pub struct UserServiceImpl<
     user_verify_email: UserVerifyEmail,
     user_request_password_reset_email: UserRequestPasswordResetEmail,
     user_reset_password: UserResetPassword,
+    user_update_invoice_info: UserUpdateInvoiceInfo,
     session_create: SessionCreate,
     user_repo: UserRepo,
 }
@@ -96,6 +105,8 @@ impl<
         Auth,
         Cache,
         Captcha,
+        VatApi,
+        InternalApi,
         UserList,
         UserCreate,
         UserRequestSubscribeNewsletterEmail,
@@ -109,6 +120,7 @@ impl<
         UserVerifyEmail,
         UserRequestPasswordResetEmail,
         UserResetPassword,
+        UserUpdateInvoiceInfo,
         SessionCreate,
         UserRepo,
     > UserService
@@ -117,6 +129,8 @@ impl<
         Auth,
         Cache,
         Captcha,
+        VatApi,
+        InternalApi,
         UserList,
         UserCreate,
         UserRequestSubscribeNewsletterEmail,
@@ -130,6 +144,7 @@ impl<
         UserVerifyEmail,
         UserRequestPasswordResetEmail,
         UserResetPassword,
+        UserUpdateInvoiceInfo,
         SessionCreate,
         UserRepo,
     >
@@ -138,6 +153,8 @@ where
     Auth: AuthService<Db::Transaction>,
     Cache: CacheService,
     Captcha: CaptchaService,
+    VatApi: VatApiService,
+    InternalApi: InternalApiService,
     UserList: UserListQueryService<Db::Transaction>,
     UserCreate: UserCreateCommandService<Db::Transaction>,
     UserRequestSubscribeNewsletterEmail: UserRequestSubscribeNewsletterEmailCommandService,
@@ -152,6 +169,7 @@ where
     UserVerifyEmail: UserVerifyEmailCommandService<Db::Transaction>,
     UserRequestPasswordResetEmail: UserRequestPasswordResetEmailCommandService,
     UserResetPassword: UserResetPasswordCommandService<Db::Transaction>,
+    UserUpdateInvoiceInfo: UserUpdateInvoiceInfoService<Db::Transaction>,
     SessionCreate: SessionCreateCommandService<Db::Transaction>,
     UserRepo: UserRepository<Db::Transaction>,
 {
@@ -275,6 +293,7 @@ where
                     newsletter,
                 },
             profile: profile_update,
+            invoice_info: invoice_info_update,
         }: UserUpdateRequest,
     ) -> Result<UserComposite, UserUpdateError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -283,11 +302,12 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
+        // Fetch current user
         let UserComposite {
             mut user,
             mut profile,
             mut details,
-            invoice_info,
+            mut invoice_info,
         } = self
             .user_repo
             .get_composite(&mut txn, user_id)
@@ -296,6 +316,7 @@ where
 
         let mut commit = false;
 
+        // Minimize patch
         let name = name.minimize(&user.name);
         let email = email.map(Some).minimize(&user.email);
         let email_verified =
@@ -306,6 +327,19 @@ where
 
         let profile_update = profile_update.minimize(&profile);
 
+        let invoice_info_update = UserInvoiceInfoPatch {
+            business: invoice_info_update.business.map(Some).into(),
+            first_name: invoice_info_update.first_name.map(Some).into(),
+            last_name: invoice_info_update.last_name.map(Some).into(),
+            street: invoice_info_update.street.map(Some).into(),
+            zip_code: invoice_info_update.zip_code.map(Some).into(),
+            city: invoice_info_update.city.map(Some).into(),
+            country: invoice_info_update.country.map(Some).into(),
+            vat_id: invoice_info_update.vat_id.map(Some).into(),
+        }
+        .minimize(&invoice_info);
+
+        // Validate patch
         if email_verified.is_update() || enabled.is_update() || admin.is_update() {
             auth.ensure_admin().map_auth_err()?;
         }
@@ -318,6 +352,13 @@ where
             return Err(UserUpdateError::CannotDemoteSelf);
         }
 
+        if let PatchValue::Update(Some(vat_id)) = &invoice_info_update.vat_id {
+            if !self.vat_api.is_vat_id_valid(vat_id.as_str()).await? {
+                return Err(UserUpdateError::InvalidVatId);
+            }
+        }
+
+        // Apply patch
         if profile_update.is_update() {
             self.user_repo
                 .update_profile(&mut txn, user_id, profile_update.as_ref())
@@ -420,16 +461,33 @@ where
             }
         }
 
+        let invoice_info_updated = invoice_info_update.is_update();
+        if invoice_info_updated {
+            invoice_info = self
+                .user_update_invoice_info
+                .invoke(&mut txn, user.id, invoice_info, invoice_info_update)
+                .await?;
+            commit = true;
+        }
+
         if commit {
             txn.commit().await?;
         }
 
-        Ok(UserComposite {
+        let user_composite = UserComposite {
             user,
             profile,
             details,
             invoice_info,
-        })
+        };
+
+        if invoice_info_updated && user_composite.can_receive_coins() {
+            self.internal_api
+                .release_coins(user_composite.user.id)
+                .await?;
+        }
+
+        Ok(user_composite)
     }
 
     async fn delete_user(&self, token: &str, user_id: UserIdOrSelf) -> Result<(), UserDeleteError> {

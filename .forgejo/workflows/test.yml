@@ -99,3 +99,10 @@ jobs:
           cargo test -p academy_extern_impl --no-fail-fast --all-features --test oauth2
         env:
           ACADEMY_CONFIG: ${{ github.workspace }}/config.dev.toml
+      - name: test vat
+        run: |
+          cargo run --bin academy-testing -- vat &
+          while ! curl -s http://127.0.0.1:8003; do sleep .1; done
+          cargo test -p academy_extern_impl --no-fail-fast --all-features --test vat
+        env:
+          ACADEMY_CONFIG: ${{ github.workspace }}/config.dev.toml
