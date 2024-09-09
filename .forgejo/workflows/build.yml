@@ -13,6 +13,6 @@ jobs:
     runs-on: debian-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: https://github.com/DeterminateSystems/nix-installer-action@v13
+      - uses: https://github.com/DeterminateSystems/nix-installer-action@v14
       - run: nix build -L
       - run: nix build -L .#tests.composite
