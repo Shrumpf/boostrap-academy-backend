@@ -6,8 +6,11 @@ use academy_persistence_postgres::{
     PostgresDatabase,
 };
 use clap::Subcommand;
+use load::LoadCommand;
 
 use crate::database;
+
+mod load;
 
 #[derive(Debug, Subcommand)]
 pub enum MigrateCommand {
@@ -38,6 +41,10 @@ pub enum MigrateCommand {
         #[arg(short, long, required = true)]
         force: bool,
     },
+    Load {
+        #[command(subcommand)]
+        command: LoadCommand,
+    },
 }
 
 impl MigrateCommand {
@@ -49,6 +56,7 @@ impl MigrateCommand {
             Self::Down { count, force: _ } => down(db, count).await,
             Self::Reset { force: _ } => reset(db).await,
             Self::Demo { force: _ } => demo(db).await,
+            Self::Load { command } => command.invoke(db).await,
         }
     }
 }
