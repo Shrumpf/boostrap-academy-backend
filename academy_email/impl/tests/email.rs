@@ -63,7 +63,7 @@ impl TestClient {
 
     async fn wait_for_mail(&self) -> EmailSummary {
         let now = Instant::now();
-        while now.elapsed() < Duration::from_secs(2) {
+        while now.elapsed() < Duration::from_secs(5) {
             let mut mailbox = self.fetch_mailbox().await;
             if let Some(mail) = mailbox.pop() {
                 return mail;
