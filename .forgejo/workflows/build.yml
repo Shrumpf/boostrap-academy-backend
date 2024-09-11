@@ -11,8 +11,19 @@ permissions:
 jobs:
   build:
     runs-on: debian-latest
+    env:
+      USER: root
     steps:
       - uses: actions/checkout@v4
-      - uses: https://github.com/DeterminateSystems/nix-installer-action@v14
+      - run: apt update && apt install -y sudo
+      - uses: https://github.com/cachix/install-nix-action@V27
+        with:
+          # newer versions result in different store paths
+          install_url: https://releases.nixos.org/nix/nix-2.18.5/install
+      - uses: https://github.com/cachix/cachix-action@v15
+        with:
+          name: academy-backend
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          useDaemon: false
       - run: nix build -L
       - run: nix build -L .#tests.composite
