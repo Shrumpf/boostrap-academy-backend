@@ -10,6 +10,12 @@ pub const USER_AGENT: &str = concat!(
     ")"
 );
 
+const _: () = {
+    assert!(!env!("CARGO_PKG_HOMEPAGE").is_empty());
+    assert!(!env!("CARGO_PKG_REPOSITORY").is_empty());
+    assert!(!env!("CARGO_PKG_VERSION").is_empty());
+};
+
 #[derive(Debug, Clone)]
 pub struct HttpClient(reqwest::Client);
 

@@ -5,6 +5,12 @@ use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use url::Url;
 
+const _: () = {
+    assert!(!env!("CARGO_PKG_HOMEPAGE").is_empty());
+    assert!(!env!("CARGO_PKG_REPOSITORY").is_empty());
+    assert!(!env!("CARGO_PKG_VERSION").is_empty());
+};
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
