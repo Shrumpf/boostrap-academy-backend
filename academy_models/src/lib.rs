@@ -43,4 +43,4 @@ fn hyphenated_code_regex(chunk_count: usize, chunk_size: usize) -> Regex {
     .unwrap()
 }
 
-nutype_string!(RecaptchaResponse(validate(len_char_max = 256)));
+nutype_string!(RecaptchaResponse(validate(len_char_max = 2048)));
