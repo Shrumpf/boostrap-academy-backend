@@ -25,6 +25,7 @@ use crate::{
     models::{
         session::{ApiLogin, ApiSession},
         user::ApiUserIdOrSelf,
+        StringOption,
     },
 };
 
@@ -83,9 +84,9 @@ async fn list_by_user(
 struct CreateRequest {
     name_or_email: UserNameOrEmailAddress,
     password: UserPassword,
-    mfa_code: Option<TotpCode>,
-    recovery_code: Option<MfaRecoveryCode>,
-    recaptcha_response: Option<RecaptchaResponse>,
+    mfa_code: StringOption<TotpCode>,
+    recovery_code: StringOption<MfaRecoveryCode>,
+    recaptcha_response: StringOption<RecaptchaResponse>,
 }
 
 async fn create(
@@ -106,11 +107,11 @@ async fn create(
                 password,
                 device_name: user_agent.0.map(DeviceName::from_string_truncated),
                 mfa: MfaAuthenticateCommand {
-                    totp_code: mfa_code,
-                    recovery_code,
+                    totp_code: mfa_code.into(),
+                    recovery_code: recovery_code.into(),
                 },
             },
-            recaptcha_response,
+            recaptcha_response.into(),
         )
         .await
     {

@@ -32,7 +32,7 @@ use crate::{
     models::{
         session::ApiLogin,
         user::{ApiUser, ApiUserFilter, ApiUserIdOrSelf, ApiUserPasswordOrEmpty},
-        ApiPaginationSlice,
+        ApiPaginationSlice, StringOption,
     },
 };
 
@@ -111,9 +111,9 @@ struct CreateRequest {
     name: UserName,
     display_name: UserDisplayName,
     email: EmailAddress,
-    password: Option<UserPassword>,
-    oauth_register_token: Option<OAuth2RegistrationToken>,
-    recaptcha_response: Option<RecaptchaResponse>,
+    password: StringOption<UserPassword>,
+    oauth_register_token: StringOption<OAuth2RegistrationToken>,
+    recaptcha_response: StringOption<RecaptchaResponse>,
 }
 
 async fn create(
@@ -134,11 +134,11 @@ async fn create(
                 name,
                 display_name,
                 email,
-                password,
-                oauth2_registration_token: oauth_register_token,
+                password: password.into(),
+                oauth2_registration_token: oauth_register_token.into(),
             },
             user_agent.0.map(DeviceName::from_string_truncated),
-            recaptcha_response,
+            recaptcha_response.into(),
         )
         .await
     {
@@ -163,24 +163,24 @@ async fn create(
 
 #[derive(Deserialize)]
 struct UpdateRequest {
-    name: Option<UserName>,
-    display_name: Option<UserDisplayName>,
-    email: Option<EmailAddress>,
+    name: StringOption<UserName>,
+    display_name: StringOption<UserDisplayName>,
+    email: StringOption<EmailAddress>,
     email_verified: Option<bool>,
     password: Option<ApiUserPasswordOrEmpty>,
     enabled: Option<bool>,
     admin: Option<bool>,
-    description: Option<UserBio>,
+    description: StringOption<UserBio>,
     tags: Option<UserTags>,
     newsletter: Option<bool>,
     business: Option<bool>,
-    first_name: Option<UserFirstName>,
-    last_name: Option<UserLastName>,
-    street: Option<UserStreet>,
-    zip_code: Option<UserZipCode>,
-    city: Option<UserCity>,
-    country: Option<UserCountry>,
-    vat_id: Option<UserVatId>,
+    first_name: StringOption<UserFirstName>,
+    last_name: StringOption<UserLastName>,
+    street: StringOption<UserStreet>,
+    zip_code: StringOption<UserZipCode>,
+    city: StringOption<UserCity>,
+    country: StringOption<UserCountry>,
+    vat_id: StringOption<UserVatId>,
 }
 
 async fn update(
@@ -214,8 +214,8 @@ async fn update(
             user_id.into(),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
-                    name: name.into(),
-                    email: email.into(),
+                    name: Option::from(name).into(),
+                    email: Option::from(email).into(),
                     email_verified: email_verified.into(),
                     password: password
                         .map(|pw| match pw {
@@ -228,19 +228,19 @@ async fn update(
                     newsletter: newsletter.into(),
                 },
                 profile: UserProfilePatch {
-                    display_name: display_name.into(),
-                    bio: description.into(),
+                    display_name: Option::from(display_name).into(),
+                    bio: Option::from(description).into(),
                     tags: tags.into(),
                 },
                 invoice_info: UserInvoiceInfo {
                     business,
-                    first_name,
-                    last_name,
-                    street,
-                    zip_code,
-                    city,
-                    country,
-                    vat_id,
+                    first_name: first_name.into(),
+                    last_name: last_name.into(),
+                    street: street.into(),
+                    zip_code: zip_code.into(),
+                    city: city.into(),
+                    country: country.into(),
+                    vat_id: vat_id.into(),
                 },
             },
         )
@@ -358,7 +358,7 @@ async fn verify_newsletter_subscription(
 #[derive(Deserialize)]
 struct RequestPasswordResetRequest {
     email: EmailAddress,
-    recaptcha_response: Option<RecaptchaResponse>,
+    recaptcha_response: StringOption<RecaptchaResponse>,
 }
 
 async fn request_password_reset(
@@ -369,7 +369,7 @@ async fn request_password_reset(
     }): Json<RequestPasswordResetRequest>,
 ) -> Response {
     match service
-        .request_password_reset(email, recaptcha_response)
+        .request_password_reset(email, recaptcha_response.into())
         .await
     {
         Ok(()) => Json(true).into_response(),

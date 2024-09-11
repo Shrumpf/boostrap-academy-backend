@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 
 use super::{error, internal_server_error};
-use crate::models::contact::ApiContactMessage;
+use crate::models::{contact::ApiContactMessage, StringOption};
 
 pub fn router(service: Arc<impl ContactService>) -> Router<()> {
     Router::new()
@@ -23,7 +23,7 @@ pub fn router(service: Arc<impl ContactService>) -> Router<()> {
 struct SendMessageRequest {
     #[serde(flatten)]
     message: ApiContactMessage,
-    recaptcha_response: Option<RecaptchaResponse>,
+    recaptcha_response: StringOption<RecaptchaResponse>,
 }
 
 async fn send_message(
@@ -34,7 +34,7 @@ async fn send_message(
     }): Json<SendMessageRequest>,
 ) -> Response {
     match service
-        .send_message(message.into(), recaptcha_response)
+        .send_message(message.into(), recaptcha_response.into())
         .await
     {
         Ok(()) => Json(true).into_response(),
