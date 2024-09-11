@@ -45,7 +45,7 @@ assert resp.json() == [link]
 discard_auth()
 resp = c.post("/auth/sessions/oauth", json=authenticate(42, "foo"))
 assert resp.status_code == 200
-login = resp.json()
+login = resp.json()["login"]
 user["last_login"] = login["user"]["last_login"]
 assert login["user"] == user
 save_auth(login)
@@ -107,7 +107,7 @@ assert links == [{"id": links[0]["id"], "provider_id": "test", "display_name": "
 discard_auth()
 resp = c.post("/auth/sessions/oauth", json=authenticate(43, "bar"))
 assert resp.status_code == 200
-login = resp.json()
+login = resp.json()["login"]
 user["last_login"] = login["user"]["last_login"]
 assert login["user"] == user
 save_auth(login)

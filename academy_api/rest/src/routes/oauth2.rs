@@ -114,8 +114,11 @@ async fn delete_link(
 }
 
 #[derive(Serialize)]
-struct CreateSessionRegisterTokenResponse {
-    register_token: OAuth2RegistrationToken,
+enum CreateSessionResponse {
+    #[serde(rename = "login")]
+    Login(Box<ApiLogin>),
+    #[serde(rename = "register_token")]
+    RegisterToken(OAuth2RegistrationToken),
 }
 
 async fn create_session(
@@ -131,10 +134,10 @@ async fn create_session(
         .await
     {
         Ok(OAuth2CreateSessionResponse::Login(login)) => {
-            Json(ApiLogin::from(*login)).into_response()
+            Json(CreateSessionResponse::Login(ApiLogin::from(*login).into())).into_response()
         }
         Ok(OAuth2CreateSessionResponse::RegistrationToken(register_token)) => {
-            Json(CreateSessionRegisterTokenResponse { register_token }).into_response()
+            Json(CreateSessionResponse::RegisterToken(register_token)).into_response()
         }
         Err(OAuth2CreateSessionError::InvalidProvider) => {
             error(StatusCode::NOT_FOUND, "Provider not found")
