@@ -86,7 +86,7 @@ assert resp.json() == {"detail": "Invalid code"}
 os.system("date -s '+30sec'")
 code = totp.now()
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a", "mfa_code": code})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 assert login["user"]["mfa_enabled"] is True
 
@@ -111,7 +111,7 @@ resp = c.post(
     "/auth/sessions",
     json={"name_or_email": "a", "password": "a", "recovery_code": recovery_code, "recaptcha_response": "success-1.0"},
 )
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 assert login["user"]["mfa_enabled"] is False
 save_auth(login)

@@ -115,7 +115,7 @@ async fn create(
         )
         .await
     {
-        Ok(result) => (StatusCode::CREATED, Json(ApiLogin::from(result))).into_response(),
+        Ok(result) => Json(ApiLogin::from(result)).into_response(),
         Err(SessionCreateError::InvalidCredentials) => {
             error(StatusCode::UNAUTHORIZED, "Invalid credentials")
         }
@@ -136,7 +136,7 @@ async fn impersonate(
     Path(user_id): Path<UserId>,
 ) -> Response {
     match session_service.impersonate(&token.0, user_id).await {
-        Ok(login) => (StatusCode::CREATED, Json(ApiLogin::from(login))).into_response(),
+        Ok(login) => Json(ApiLogin::from(login)).into_response(),
         Err(SessionImpersonateError::NotFound) => error(StatusCode::NOT_FOUND, "User not found"),
         Err(SessionImpersonateError::Auth(err)) => auth_error(err),
         Err(SessionImpersonateError::Other(err)) => internal_server_error(err),

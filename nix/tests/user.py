@@ -26,7 +26,7 @@ assert resp.json() == {"detail": "Recaptcha failed"}
 
 ## success
 resp = c.post("/auth/users", json={**req, "recaptcha_response": "success-0.7"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 assert login == {
     "user": {
@@ -239,7 +239,7 @@ assert resp.json() == {"detail": "Invalid credentials"}
 
 password = new_password
 resp = c.post("/auth/sessions", json={"name_or_email": user["name"], "password": password})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 save_auth(login)
 
@@ -325,7 +325,7 @@ assert resp.status_code == 200
 assert resp.json() == user
 
 resp = c.post("/auth/sessions", json={"name_or_email": user["name"], "password": password})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 save_auth(login)
 
@@ -355,7 +355,7 @@ status, _ = subprocess.getstatusoutput(
 assert status == 0
 
 resp = c.post("/auth/sessions", json={"name_or_email": "admin", "password": "supersecureadminpassword"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 save_auth(login)
 assert login["user"]["admin"] is True

@@ -81,7 +81,7 @@ async fn create_link(
         .create_link(&token.0, user_id.into(), login.into())
         .await
     {
-        Ok(link) => (StatusCode::CREATED, Json(ApiOAuth2Link::from(link))).into_response(),
+        Ok(link) => Json(ApiOAuth2Link::from(link)).into_response(),
         Err(OAuth2CreateLinkError::InvalidProvider) => {
             error(StatusCode::NOT_FOUND, "Provider not found")
         }
@@ -131,7 +131,7 @@ async fn create_session(
         .await
     {
         Ok(OAuth2CreateSessionResponse::Login(login)) => {
-            (StatusCode::CREATED, Json(ApiLogin::from(*login))).into_response()
+            Json(ApiLogin::from(*login)).into_response()
         }
         Ok(OAuth2CreateSessionResponse::RegistrationToken(register_token)) => {
             Json(CreateSessionRegisterTokenResponse { register_token }).into_response()

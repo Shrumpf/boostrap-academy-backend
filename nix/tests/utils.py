@@ -72,7 +72,7 @@ def create_account(name, email, password, client=None):
             "recaptcha_response": "success-1.0",
         },
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 200
     login = resp.json()
     save_auth(login, client)
     return login

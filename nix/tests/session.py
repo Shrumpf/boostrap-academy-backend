@@ -12,13 +12,13 @@ assert resp.json() == login["session"]
 
 # login by username
 resp = c.post("/auth/sessions", json={"name_or_email": "A", "password": "a"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 sessions.append(login["session"])
 
 # login by email
 resp = c.post("/auth/sessions", json={"name_or_email": "A@a", "password": "a"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 sessions.append(login["session"])
 
@@ -63,7 +63,7 @@ assert resp.status_code == 412
 assert resp.json() == {"detail": "Recaptcha failed"}
 
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a", "recaptcha_response": "success-0.7"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 sessions.append(login["session"])
 
@@ -77,7 +77,7 @@ assert resp.status_code == 412
 assert resp.json() == {"detail": "Recaptcha failed"}
 
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a", "recaptcha_response": "success-0.7"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 sessions.append(login["session"])
 
@@ -95,15 +95,15 @@ assert resp.json() == sessions
 # impersonate
 os.system("academy admin user create --admin admin admin@admin admin")
 resp = c.post("/auth/sessions", json={"name_or_email": "admin", "password": "admin"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 save_auth(resp.json())
 
 resp = c.post(f"/auth/sessions/{login['user']['id']}")
-assert resp.status_code == 201
+assert resp.status_code == 200
 
 # refresh
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 user = login["user"]
 refresh_token = login["refresh_token"]
@@ -135,7 +135,7 @@ assert resp.json() == {"detail": "Invalid refresh token"}
 
 # logout all
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 save_auth(login := resp.json())
 
 resp = c.delete("/auth/sessions/me")
@@ -148,7 +148,7 @@ assert resp.status_code == 401
 assert resp.json() == {"detail": "Invalid refresh token"}
 
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 save_auth(login := resp.json())
 
 resp = c.get("/auth/sessions/me")
@@ -157,12 +157,12 @@ assert resp.json() == [login["session"]]
 
 # logout other
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 save_auth(login := resp.json())
 
 x = make_client()
 resp = c.post("/auth/sessions", json={"name_or_email": "a", "password": "a"})
-assert resp.status_code == 201
+assert resp.status_code == 200
 save_auth(resp.json(), x)
 
 resp = x.delete(f"/auth/sessions/{login['user']['id']}/{login['session']['id']}")

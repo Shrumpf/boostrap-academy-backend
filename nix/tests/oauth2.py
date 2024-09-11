@@ -32,7 +32,7 @@ assert resp.json() == [
 login = create_account("a", "a@a", "a")
 user = login["user"]
 resp = c.post("/auth/oauth/links/me", json=authenticate(42, "foo"))
-assert resp.status_code == 201
+assert resp.status_code == 200
 link = resp.json()
 assert link == {"id": link["id"], "provider_id": "test", "display_name": "foo"}
 
@@ -44,7 +44,7 @@ assert resp.json() == [link]
 # login
 discard_auth()
 resp = c.post("/auth/sessions/oauth", json=authenticate(42, "foo"))
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 user["last_login"] = login["user"]["last_login"]
 assert login["user"] == user
@@ -92,7 +92,7 @@ resp = c.post(
         "recaptcha_response": "success-1.0",
     },
 )
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 user = login["user"]
 save_auth(login)
@@ -106,7 +106,7 @@ assert links == [{"id": links[0]["id"], "provider_id": "test", "display_name": "
 
 discard_auth()
 resp = c.post("/auth/sessions/oauth", json=authenticate(43, "bar"))
-assert resp.status_code == 201
+assert resp.status_code == 200
 login = resp.json()
 user["last_login"] = login["user"]["last_login"]
 assert login["user"] == user

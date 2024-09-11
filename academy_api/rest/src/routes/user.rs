@@ -142,7 +142,7 @@ async fn create(
         )
         .await
     {
-        Ok(result) => (StatusCode::CREATED, Json(ApiLogin::from(result))).into_response(),
+        Ok(result) => Json(ApiLogin::from(result)).into_response(),
         Err(UserCreateError::NameConflict) => error(StatusCode::CONFLICT, "User already exists"),
         Err(UserCreateError::EmailConflict) => error(StatusCode::CONFLICT, "Email already exists"),
         Err(UserCreateError::Recaptcha) => {
