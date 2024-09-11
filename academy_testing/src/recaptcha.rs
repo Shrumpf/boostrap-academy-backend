@@ -1,6 +1,6 @@
 use std::{net::IpAddr, sync::Arc};
 
-use axum::{extract::State, routing, Json, Router};
+use axum::{extract::State, routing, Form, Json, Router};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tracing::info;
@@ -39,7 +39,7 @@ struct SiteverifyResponse {
 
 async fn siteverify(
     state: State<Arc<str>>,
-    Json(SiteverifyRequest { secret, response }): Json<SiteverifyRequest>,
+    Form(SiteverifyRequest { secret, response }): Form<SiteverifyRequest>,
 ) -> Json<SiteverifyResponse> {
     let mut parts = response.split('-');
     let success = *secret == **state && parts.next() == Some("success");

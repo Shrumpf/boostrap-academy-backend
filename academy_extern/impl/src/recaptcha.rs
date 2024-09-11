@@ -38,7 +38,7 @@ impl RecaptchaApiService for RecaptchaApiServiceImpl {
     ) -> anyhow::Result<RecaptchaSiteverifyResponse> {
         self.client
             .post(self.config.siteverify_endpoint.clone())
-            .json(&SiteverifyRequest { response, secret })
+            .form(&SiteverifyRequest { response, secret })
             .send()
             .await?
             .error_for_status()?
