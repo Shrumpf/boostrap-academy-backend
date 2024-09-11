@@ -38,6 +38,7 @@
     services.academy.backend = {
       enable = true;
       logLevel = "debug,academy=trace";
+      extraConfigFiles = ["/run/academy-backend/secrets.toml"];
       settings = {
         http = {
           host = "127.0.0.1";
@@ -49,7 +50,6 @@
           smtp_url = "smtp://127.0.0.1:25";
           from = "test@bootstrap.academy";
         };
-        jwt.secret = "changeme";
         internal.shop_url = "http://127.0.0.1:8004/shop/";
         health.cache_ttl = "2s";
         contact.email = "contact@academy";
@@ -125,6 +125,15 @@
       enable = true;
       virtual = "/.*/ root";
       virtualMapType = "pcre";
+    };
+
+    systemd.tmpfiles.settings.academy-secrets."/run/academy-backend/secrets.toml".f = {
+      user = "academy";
+      group = "academy";
+      mode = "0400";
+      argument = ''
+        jwt.secret = "changeme"
+      '';
     };
   };
 
