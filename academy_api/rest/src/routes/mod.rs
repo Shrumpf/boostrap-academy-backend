@@ -16,7 +16,7 @@ pub mod oauth2;
 pub mod session;
 pub mod user;
 
-fn internal_server_error(err: impl Into<anyhow::Error>) -> Response {
+pub fn internal_server_error(err: impl Into<anyhow::Error>) -> Response {
     let err = err.into();
     tracing::error!("internal server error: {err}");
     error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")

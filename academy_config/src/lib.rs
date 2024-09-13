@@ -91,6 +91,13 @@ pub struct Config {
 pub struct HttpConfig {
     pub host: IpAddr,
     pub port: u16,
+    pub real_ip: Option<HttpRealIpConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct HttpRealIpConfig {
+    pub header: String,
+    pub set_from: IpAddr,
 }
 
 #[derive(Debug, Deserialize)]

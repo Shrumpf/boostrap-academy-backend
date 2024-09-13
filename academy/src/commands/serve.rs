@@ -1,3 +1,4 @@
+use academy_api_rest::RealIpConfig;
 use academy_cache_contracts::CacheService;
 use academy_config::Config;
 use academy_di::Provides;
@@ -40,5 +41,14 @@ pub async fn serve(config: Config) -> anyhow::Result<()> {
         "Starting http server on {}:{}",
         config.http.host, config.http.port
     );
-    server.serve(config.http.host, config.http.port).await
+    server
+        .serve(
+            config.http.host,
+            config.http.port,
+            config.http.real_ip.map(|x| RealIpConfig {
+                header: x.header,
+                set_from: x.set_from,
+            }),
+        )
+        .await
 }

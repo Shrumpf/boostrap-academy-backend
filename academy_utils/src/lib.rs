@@ -19,6 +19,23 @@ pub trait Apply {
         self
     }
 
+    /// Applies the function `f`.
+    ///
+    /// #### Example
+    /// ```rust
+    /// # use academy_utils::Apply;
+    /// fn inc(x: i32) -> i32 {
+    ///     x + 1
+    /// }
+    /// assert_eq!(1.apply(inc), 2);
+    /// ```
+    fn apply<T>(self, f: impl FnOnce(Self) -> T) -> T
+    where
+        Self: Sized,
+    {
+        f(self)
+    }
+
     /// Applies the function `f` only if `value` is `Some(...)` and provides the
     /// contained value to `f`.
     ///

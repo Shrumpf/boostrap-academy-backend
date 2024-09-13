@@ -51,7 +51,7 @@
   '';
 
   env = {
-    RUST_LOG = "debug,academy=trace";
+    RUST_LOG = "info,academy=trace";
 
     PGDATABASE = "academy";
 
