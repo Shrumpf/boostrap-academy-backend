@@ -15,7 +15,7 @@ dummy = []
 [dependencies]
 anyhow.workspace = true
 academy_cache_contracts.workspace = true
-bb8-redis = { version = "0.16.0", default-features = false }
+bb8-redis = { version = "0.17.0", default-features = false }
 serde.workspace = true
 rmp-serde = { version = "1.3.0", default-features = false }
 
