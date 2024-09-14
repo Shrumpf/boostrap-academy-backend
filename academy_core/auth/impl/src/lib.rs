@@ -17,6 +17,7 @@ use academy_shared_contracts::{
 };
 
 pub mod access_token;
+pub mod internal;
 pub mod refresh_token;
 
 #[cfg(test)]
@@ -40,6 +41,7 @@ pub struct AuthServiceConfig {
     pub access_token_ttl: Duration,
     pub refresh_token_ttl: Duration,
     pub refresh_token_length: usize,
+    pub internal_token_ttl: Duration,
 }
 
 impl<Txn, Time, Password, UserRepo, SessionRepo, AuthAccessToken, AuthRefreshToken> AuthService<Txn>

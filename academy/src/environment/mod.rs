@@ -90,6 +90,7 @@ impl ConfigProvider {
             access_token_ttl: config.session.access_token_ttl.into(),
             refresh_token_ttl: config.session.refresh_token_ttl.into(),
             refresh_token_length: config.session.refresh_token_length,
+            internal_token_ttl: config.internal.jwt_ttl.into(),
         };
         let jwt_service_config = JwtServiceConfig::new(&config.jwt.secret)?;
         let user_update_name_command_service_config = UserUpdateNameCommandServiceConfig {
@@ -172,7 +173,6 @@ impl ConfigProvider {
         };
 
         let internal_api_service_config = InternalApiServiceConfig {
-            jwt_ttl: config.internal.jwt_ttl.into(),
             shop_url: config.internal.shop_url.clone(),
         };
 

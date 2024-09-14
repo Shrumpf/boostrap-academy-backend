@@ -1,12 +1,12 @@
 use academy_cache_valkey::ValkeyCache;
 use academy_core_auth_impl::{
-    access_token::AuthAccessTokenServiceImpl, refresh_token::AuthRefreshTokenServiceImpl,
-    AuthServiceImpl,
+    access_token::AuthAccessTokenServiceImpl, internal::AuthInternalServiceImpl,
+    refresh_token::AuthRefreshTokenServiceImpl, AuthServiceImpl,
 };
 use academy_core_config_impl::ConfigServiceImpl;
 use academy_core_contact_impl::ContactServiceImpl;
 use academy_core_health_impl::HealthServiceImpl;
-use academy_core_internal_impl::{auth::InternalAuthServiceImpl, InternalServiceImpl};
+use academy_core_internal_impl::InternalServiceImpl;
 use academy_core_mfa_impl::{
     commands::{
         authenticate::MfaAuthenticateCommandServiceImpl,
@@ -84,7 +84,7 @@ pub type TemplateEmail = TemplateEmailServiceImpl<Email, Template>;
 // Extern
 pub type RecaptchaApi = RecaptchaApiServiceImpl;
 pub type OAuth2Api = OAuth2ApiServiceImpl;
-pub type InternalApi = InternalApiServiceImpl<Jwt>;
+pub type InternalApi = InternalApiServiceImpl<AuthInternal>;
 pub type VatApi = VatApiServiceImpl;
 
 // Template
@@ -111,6 +111,7 @@ pub type Auth =
     AuthServiceImpl<Time, Password, UserRepo, SessionRepo, AuthAccessToken, AuthRefreshToken>;
 pub type AuthAccessToken = AuthAccessTokenServiceImpl<Jwt, Cache>;
 pub type AuthRefreshToken = AuthRefreshTokenServiceImpl<Secret, Hash>;
+pub type AuthInternal = AuthInternalServiceImpl<Jwt>;
 
 pub type Health = HealthServiceImpl<Time, Database, Cache, Email>;
 
@@ -216,5 +217,4 @@ pub type OAuth2 = OAuth2ServiceImpl<
 pub type OAuth2CreateLink = OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo>;
 pub type OAuth2Login = OAuth2LoginServiceImpl<OAuth2Api>;
 
-pub type Internal = InternalServiceImpl<Database, InternalAuth, UserRepo>;
-pub type InternalAuth = InternalAuthServiceImpl<Jwt>;
+pub type Internal = InternalServiceImpl<Database, AuthInternal, UserRepo>;

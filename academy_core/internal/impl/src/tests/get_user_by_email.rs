@@ -1,7 +1,7 @@
-use academy_core_internal_contracts::{
-    auth::{InternalAuthError, MockInternalAuthService},
-    InternalGetUserByEmailError, InternalService,
+use academy_core_auth_contracts::internal::{
+    AuthInternalAuthenticateError, MockAuthInternalService,
 };
+use academy_core_internal_contracts::{InternalGetUserByEmailError, InternalService};
 use academy_demo::user::FOO;
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
@@ -11,7 +11,7 @@ use crate::{tests::Sut, InternalServiceImpl};
 #[tokio::test]
 async fn ok() {
     // Arrange
-    let internal_auth = MockInternalAuthService::new().with_authenticate("auth", true);
+    let auth_internal = MockAuthInternalService::new().with_authenticate("auth", true);
 
     let db = MockDatabase::build(false);
 
@@ -20,13 +20,13 @@ async fn ok() {
 
     let sut = InternalServiceImpl {
         db,
-        internal_auth,
+        auth_internal,
         user_repo,
     };
 
     // Act
     let result = sut
-        .get_user_by_email("token", FOO.user.email.clone().unwrap())
+        .get_user_by_email("internal token", FOO.user.email.clone().unwrap())
         .await;
 
     // Assert
@@ -36,23 +36,23 @@ async fn ok() {
 #[tokio::test]
 async fn unauthenticated() {
     // Arrange
-    let internal_auth = MockInternalAuthService::new().with_authenticate("auth", false);
+    let auth_internal = MockAuthInternalService::new().with_authenticate("auth", false);
 
     let sut = InternalServiceImpl {
-        internal_auth,
+        auth_internal,
         ..Sut::default()
     };
 
     // Act
     let result = sut
-        .get_user_by_email("token", FOO.user.email.clone().unwrap())
+        .get_user_by_email("internal token", FOO.user.email.clone().unwrap())
         .await;
 
     // Assert
     assert_matches!(
         result,
         Err(InternalGetUserByEmailError::Auth(
-            InternalAuthError::InvalidToken
+            AuthInternalAuthenticateError::InvalidToken
         ))
     );
 }
@@ -60,7 +60,7 @@ async fn unauthenticated() {
 #[tokio::test]
 async fn not_found() {
     // Arrange
-    let internal_auth = MockInternalAuthService::new().with_authenticate("auth", true);
+    let auth_internal = MockAuthInternalService::new().with_authenticate("auth", true);
 
     let db = MockDatabase::build(false);
 
@@ -69,13 +69,13 @@ async fn not_found() {
 
     let sut = InternalServiceImpl {
         db,
-        internal_auth,
+        auth_internal,
         user_repo,
     };
 
     // Act
     let result = sut
-        .get_user_by_email("token", FOO.user.email.clone().unwrap())
+        .get_user_by_email("internal token", FOO.user.email.clone().unwrap())
         .await;
 
     // Assert

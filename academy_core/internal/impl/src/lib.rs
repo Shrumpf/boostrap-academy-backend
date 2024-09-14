@@ -1,5 +1,6 @@
+use academy_core_auth_contracts::internal::AuthInternalService;
 use academy_core_internal_contracts::{
-    auth::InternalAuthService, InternalGetUserByEmailError, InternalGetUserError, InternalService,
+    InternalGetUserByEmailError, InternalGetUserError, InternalService,
 };
 use academy_di::Build;
 use academy_models::{
@@ -8,22 +9,20 @@ use academy_models::{
 };
 use academy_persistence_contracts::{user::UserRepository, Database};
 
-pub mod auth;
-
 #[cfg(test)]
 mod tests;
 
 #[derive(Debug, Clone, Build, Default)]
-pub struct InternalServiceImpl<Db, InternalAuth, UserRepo> {
+pub struct InternalServiceImpl<Db, AuthInternal, UserRepo> {
     db: Db,
-    internal_auth: InternalAuth,
+    auth_internal: AuthInternal,
     user_repo: UserRepo,
 }
 
-impl<Db, InternalAuth, UserRepo> InternalService for InternalServiceImpl<Db, InternalAuth, UserRepo>
+impl<Db, AuthInternal, UserRepo> InternalService for InternalServiceImpl<Db, AuthInternal, UserRepo>
 where
     Db: Database,
-    InternalAuth: InternalAuthService,
+    AuthInternal: AuthInternalService,
     UserRepo: UserRepository<Db::Transaction>,
 {
     async fn get_user(
@@ -31,7 +30,7 @@ where
         token: &str,
         user_id: UserId,
     ) -> Result<UserComposite, InternalGetUserError> {
-        self.internal_auth.authenticate(token, "auth")?;
+        self.auth_internal.authenticate(token, "auth")?;
 
         let mut txn = self.db.begin_transaction().await?;
 
@@ -46,7 +45,7 @@ where
         token: &str,
         email: EmailAddress,
     ) -> Result<UserComposite, InternalGetUserByEmailError> {
-        self.internal_auth.authenticate(token, "auth")?;
+        self.auth_internal.authenticate(token, "auth")?;
 
         let mut txn = self.db.begin_transaction().await?;
 

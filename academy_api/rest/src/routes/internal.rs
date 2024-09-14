@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
+use academy_core_auth_contracts::internal::AuthInternalAuthenticateError;
 use academy_core_internal_contracts::{
-    auth::InternalAuthError, InternalGetUserByEmailError, InternalGetUserError, InternalService,
+    InternalGetUserByEmailError, InternalGetUserError, InternalService,
 };
 use academy_models::{email_address::EmailAddress, user::UserId};
 use axum::{
@@ -32,7 +33,7 @@ async fn get_user(
     match service.get_user(&token.0, user_id).await {
         Ok(user) => Json(ApiUser::from(user)).into_response(),
         Err(InternalGetUserError::NotFound) => error(StatusCode::NOT_FOUND, "User not found"),
-        Err(InternalGetUserError::Auth(InternalAuthError::InvalidToken)) => {
+        Err(InternalGetUserError::Auth(AuthInternalAuthenticateError::InvalidToken)) => {
             error(StatusCode::UNAUTHORIZED, "Invalid token")
         }
         Err(InternalGetUserError::Other(err)) => internal_server_error(err),
@@ -49,7 +50,7 @@ async fn get_user_by_email(
         Err(InternalGetUserByEmailError::NotFound) => {
             error(StatusCode::NOT_FOUND, "User not found")
         }
-        Err(InternalGetUserByEmailError::Auth(InternalAuthError::InvalidToken)) => {
+        Err(InternalGetUserByEmailError::Auth(AuthInternalAuthenticateError::InvalidToken)) => {
             error(StatusCode::UNAUTHORIZED, "Invalid token")
         }
         Err(InternalGetUserByEmailError::Other(err)) => internal_server_error(err),

@@ -8,6 +8,7 @@ use academy_models::{
 use thiserror::Error;
 
 pub mod access_token;
+pub mod internal;
 pub mod refresh_token;
 
 #[cfg_attr(feature = "mock", mockall::automock)]

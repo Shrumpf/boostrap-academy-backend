@@ -29,6 +29,7 @@ impl Default for AuthServiceConfig {
             access_token_ttl: Duration::from_secs(120),
             refresh_token_ttl: Duration::from_secs(30 * 24 * 3600),
             refresh_token_length: 64,
+            internal_token_ttl: Duration::from_secs(10),
         }
     }
 }

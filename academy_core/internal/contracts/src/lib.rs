@@ -1,13 +1,11 @@
 use std::future::Future;
 
+use academy_core_auth_contracts::internal::AuthInternalAuthenticateError;
 use academy_models::{
     email_address::EmailAddress,
     user::{UserComposite, UserId},
 };
-use auth::InternalAuthError;
 use thiserror::Error;
-
-pub mod auth;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait InternalService: Send + Sync + 'static {
@@ -29,7 +27,7 @@ pub enum InternalGetUserError {
     #[error("The user does not exist.")]
     NotFound,
     #[error(transparent)]
-    Auth(#[from] InternalAuthError),
+    Auth(#[from] AuthInternalAuthenticateError),
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
@@ -39,7 +37,7 @@ pub enum InternalGetUserByEmailError {
     #[error("The user does not exist.")]
     NotFound,
     #[error(transparent)]
-    Auth(#[from] InternalAuthError),
+    Auth(#[from] AuthInternalAuthenticateError),
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
