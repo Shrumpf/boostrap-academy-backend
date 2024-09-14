@@ -1,20 +1,20 @@
-use academy_core_auth_contracts::AuthService;
+use academy_core_auth_contracts::access_token::AuthAccessTokenService;
 use academy_core_session_contracts::commands::delete::SessionDeleteCommandService;
 use academy_di::Build;
 use academy_models::session::SessionId;
 use academy_persistence_contracts::session::SessionRepository;
 
 #[derive(Debug, Clone, Default, Build)]
-pub struct SessionDeleteCommandServiceImpl<Auth, SessionRepo> {
-    auth: Auth,
+pub struct SessionDeleteCommandServiceImpl<AuthAccessToken, SessionRepo> {
+    auth_access_token: AuthAccessToken,
     session_repo: SessionRepo,
 }
 
-impl<Txn, Auth, SessionRepo> SessionDeleteCommandService<Txn>
-    for SessionDeleteCommandServiceImpl<Auth, SessionRepo>
+impl<Txn, AuthAccessToken, SessionRepo> SessionDeleteCommandService<Txn>
+    for SessionDeleteCommandServiceImpl<AuthAccessToken, SessionRepo>
 where
     Txn: Send + Sync + 'static,
-    Auth: AuthService<Txn>,
+    AuthAccessToken: AuthAccessTokenService,
     SessionRepo: SessionRepository<Txn>,
 {
     async fn invoke(&self, txn: &mut Txn, session_id: SessionId) -> anyhow::Result<bool> {
@@ -23,8 +23,8 @@ where
             .get_refresh_token_hash(txn, session_id)
             .await?
         {
-            self.auth
-                .invalidate_access_token(refresh_token_hash)
+            self.auth_access_token
+                .invalidate(refresh_token_hash)
                 .await?;
         }
 
@@ -34,13 +34,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_auth_contracts::MockAuthService;
+    use academy_core_auth_contracts::access_token::MockAuthAccessTokenService;
     use academy_demo::{session::FOO_1, SHA256HASH1};
     use academy_persistence_contracts::session::MockSessionRepository;
 
     use super::*;
 
-    type Sut = SessionDeleteCommandServiceImpl<MockAuthService<()>, MockSessionRepository<()>>;
+    type Sut =
+        SessionDeleteCommandServiceImpl<MockAuthAccessTokenService, MockSessionRepository<()>>;
 
     #[tokio::test]
     async fn ok() {
@@ -49,9 +50,13 @@ mod tests {
             .with_get_refresh_token_hash(FOO_1.id, Some((*SHA256HASH1).into()))
             .with_delete(FOO_1.id, true);
 
-        let auth = MockAuthService::new().with_invalidate_access_token((*SHA256HASH1).into());
+        let auth_access_token =
+            MockAuthAccessTokenService::new().with_invalidate((*SHA256HASH1).into());
 
-        let sut = SessionDeleteCommandServiceImpl { auth, session_repo };
+        let sut = SessionDeleteCommandServiceImpl {
+            auth_access_token,
+            session_repo,
+        };
 
         // Act
         let result = sut.invoke(&mut (), FOO_1.id).await;

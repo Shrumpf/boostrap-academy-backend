@@ -1,53 +1,37 @@
 use std::time::Duration;
 
-use academy_cache_contracts::CacheService;
 use academy_core_auth_contracts::{
-    commands::invalidate_access_token::AuthInvalidateAccessTokenCommandService, AuthService,
+    access_token::AuthAccessTokenService, refresh_token::AuthRefreshTokenService, AuthService,
     AuthenticateByPasswordError, AuthenticateByRefreshTokenError, Authentication, Tokens,
 };
 use academy_di::Build;
 use academy_models::{
     auth::AuthenticateError,
-    session::{SessionId, SessionRefreshTokenHash},
+    session::SessionId,
     user::{User, UserId, UserPassword},
 };
 use academy_persistence_contracts::{session::SessionRepository, user::UserRepository};
 use academy_shared_contracts::{
-    hash::HashService,
-    jwt::JwtService,
     password::{PasswordService, PasswordVerifyError},
-    secret::SecretService,
     time::TimeService,
 };
-use serde::{Deserialize, Serialize};
 
-pub mod commands;
+pub mod access_token;
+pub mod refresh_token;
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
-pub struct AuthServiceImpl<
-    Jwt,
-    Secret,
-    Time,
-    Hash,
-    Password,
-    UserRepo,
-    SessionRepo,
-    Cache,
-    AuthInvalidateAccessToken,
-> {
-    jwt: Jwt,
-    secret: Secret,
+pub struct AuthServiceImpl<Time, Password, UserRepo, SessionRepo, AuthAccessToken, AuthRefreshToken>
+{
     time: Time,
-    hash: Hash,
     password: Password,
     user_repo: UserRepo,
     session_repo: SessionRepo,
-    cache: Cache,
-    auth_invalidate_access_token: AuthInvalidateAccessToken,
+    auth_access_token: AuthAccessToken,
+    auth_refresh_token: AuthRefreshToken,
     config: AuthServiceConfig,
 }
 
@@ -58,51 +42,26 @@ pub struct AuthServiceConfig {
     pub refresh_token_length: usize,
 }
 
-impl<
-        Txn,
-        Jwt,
-        Secret,
-        Time,
-        Hash,
-        Password,
-        UserRepo,
-        SessionRepo,
-        Cache,
-        AuthInvalidateAccessToken,
-    > AuthService<Txn>
-    for AuthServiceImpl<
-        Jwt,
-        Secret,
-        Time,
-        Hash,
-        Password,
-        UserRepo,
-        SessionRepo,
-        Cache,
-        AuthInvalidateAccessToken,
-    >
+impl<Txn, Time, Password, UserRepo, SessionRepo, AuthAccessToken, AuthRefreshToken> AuthService<Txn>
+    for AuthServiceImpl<Time, Password, UserRepo, SessionRepo, AuthAccessToken, AuthRefreshToken>
 where
     Txn: Send + Sync + 'static,
-    Jwt: JwtService,
-    Secret: SecretService,
     Time: TimeService,
-    Hash: HashService,
     Password: PasswordService,
     UserRepo: UserRepository<Txn>,
     SessionRepo: SessionRepository<Txn>,
-    Cache: CacheService,
-    AuthInvalidateAccessToken: AuthInvalidateAccessTokenCommandService,
+    AuthAccessToken: AuthAccessTokenService,
+    AuthRefreshToken: AuthRefreshTokenService,
 {
     async fn authenticate(&self, token: &str) -> Result<Authentication, AuthenticateError> {
         let auth = self
-            .jwt
-            .verify::<Token>(token)
-            .map(Authentication::from)
-            .map_err(|_| AuthenticateError::InvalidToken)?;
+            .auth_access_token
+            .verify(token)
+            .ok_or(AuthenticateError::InvalidToken)?;
 
-        if let Some(()) = self
-            .cache
-            .get(&access_token_invalidated_key(auth.refresh_token_hash))
+        if self
+            .auth_access_token
+            .is_invalidated(auth.refresh_token_hash)
             .await?
         {
             return Err(AuthenticateError::InvalidToken);
@@ -139,7 +98,7 @@ where
         txn: &mut Txn,
         refresh_token: &str,
     ) -> Result<SessionId, AuthenticateByRefreshTokenError> {
-        let refresh_token_hash = self.hash.sha256(refresh_token.as_bytes()).into();
+        let refresh_token_hash = self.auth_refresh_token.hash(refresh_token);
 
         let session = self
             .session_repo
@@ -156,19 +115,11 @@ where
     }
 
     fn issue_tokens(&self, user: &User, session_id: SessionId) -> anyhow::Result<Tokens> {
-        let refresh_token = self.secret.generate(self.config.refresh_token_length);
-        let refresh_token_hash = self.hash.sha256(refresh_token.as_bytes()).into();
+        let (refresh_token, refresh_token_hash) = self.auth_refresh_token.issue();
 
-        let auth = Authentication {
-            user_id: user.id,
-            session_id,
-            refresh_token_hash,
-            admin: user.admin,
-            email_verified: user.email_verified,
-        };
         let access_token = self
-            .jwt
-            .sign(Token::from(auth), self.config.access_token_ttl)?;
+            .auth_access_token
+            .issue(user, session_id, refresh_token_hash)?;
 
         Ok(Tokens {
             access_token,
@@ -177,73 +128,17 @@ where
         })
     }
 
-    async fn invalidate_access_token(
-        &self,
-        refresh_token_hash: SessionRefreshTokenHash,
-    ) -> anyhow::Result<()> {
-        self.auth_invalidate_access_token
-            .invoke(refresh_token_hash)
-            .await
-    }
-
     async fn invalidate_access_tokens(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<()> {
         for refresh_token_hash in self
             .session_repo
             .list_refresh_token_hashes_by_user(txn, user_id)
             .await?
         {
-            self.auth_invalidate_access_token
-                .invoke(refresh_token_hash)
+            self.auth_access_token
+                .invalidate(refresh_token_hash)
                 .await?;
         }
 
         Ok(())
-    }
-}
-
-fn access_token_invalidated_key(refresh_token_hash: SessionRefreshTokenHash) -> String {
-    format!(
-        "access_token_invalidated:{}",
-        hex::encode(refresh_token_hash.0)
-    )
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-struct Token {
-    uid: UserId,
-    sid: SessionId,
-    rt: SessionRefreshTokenHash,
-    data: Data,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-struct Data {
-    admin: bool,
-    email_verified: bool,
-}
-
-impl From<Token> for Authentication {
-    fn from(value: Token) -> Self {
-        Self {
-            user_id: value.uid,
-            session_id: value.sid,
-            refresh_token_hash: value.rt,
-            admin: value.data.admin,
-            email_verified: value.data.email_verified,
-        }
-    }
-}
-
-impl From<Authentication> for Token {
-    fn from(value: Authentication) -> Self {
-        Self {
-            uid: value.user_id,
-            sid: value.session_id,
-            rt: value.refresh_token_hash,
-            data: Data {
-                admin: value.admin,
-                email_verified: value.email_verified,
-            },
-        }
     }
 }

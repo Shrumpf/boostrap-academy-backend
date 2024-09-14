@@ -1,32 +1,26 @@
 use std::time::Duration;
 
-use academy_cache_contracts::MockCacheService;
-use academy_core_auth_contracts::commands::invalidate_access_token::MockAuthInvalidateAccessTokenCommandService;
-use academy_persistence_contracts::{session::MockSessionRepository, user::MockUserRepository};
-use academy_shared_contracts::{
-    hash::MockHashService, jwt::MockJwtService, password::MockPasswordService,
-    secret::MockSecretService, time::MockTimeService,
+use academy_core_auth_contracts::{
+    access_token::MockAuthAccessTokenService, refresh_token::MockAuthRefreshTokenService,
 };
+use academy_persistence_contracts::{session::MockSessionRepository, user::MockUserRepository};
+use academy_shared_contracts::{password::MockPasswordService, time::MockTimeService};
 
 use crate::{AuthServiceConfig, AuthServiceImpl};
 
 mod authenticate;
 mod authenticate_by_password;
 mod authenticate_by_refresh_token;
-mod invalidate_access_token;
 mod invalidate_access_tokens;
 mod issue_tokens;
 
 type Sut = AuthServiceImpl<
-    MockJwtService,
-    MockSecretService,
     MockTimeService,
-    MockHashService,
     MockPasswordService,
     MockUserRepository<()>,
     MockSessionRepository<()>,
-    MockCacheService,
-    MockAuthInvalidateAccessTokenCommandService,
+    MockAuthAccessTokenService,
+    MockAuthRefreshTokenService,
 >;
 
 impl Default for AuthServiceConfig {

@@ -1,11 +1,11 @@
-use academy_cache_contracts::MockCacheService;
-use academy_core_auth_contracts::{AuthService, Authentication};
-use academy_demo::{user::FOO, SHA256HASH1, SHA256HASH1_HEX, UUID1};
+use academy_core_auth_contracts::{
+    access_token::MockAuthAccessTokenService, AuthService, Authentication,
+};
+use academy_demo::{user::FOO, SHA256HASH1, UUID1};
 use academy_models::auth::AuthenticateError;
-use academy_shared_contracts::jwt::{MockJwtService, VerifyJwtError};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, AuthServiceImpl, Token};
+use crate::{tests::Sut, AuthServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -18,16 +18,12 @@ async fn ok() {
         email_verified: FOO.user.email_verified,
     };
 
-    let jwt = MockJwtService::new().with_verify("my auth token", Ok(Token::from(expected)));
-
-    let cache = MockCacheService::new().with_get(
-        format!("access_token_invalidated:{SHA256HASH1_HEX}"),
-        None::<()>,
-    );
+    let auth_access_token = MockAuthAccessTokenService::new()
+        .with_verify("my auth token".into(), Some(expected))
+        .with_is_invalidated(expected.refresh_token_hash, false);
 
     let sut = AuthServiceImpl {
-        jwt,
-        cache,
+        auth_access_token,
         ..Sut::default()
     };
 
@@ -41,11 +37,11 @@ async fn ok() {
 #[tokio::test]
 async fn invalid_token() {
     // Arrange
-    let jwt =
-        MockJwtService::new().with_verify("my auth token", Err(VerifyJwtError::<Token>::Invalid));
+    let auth_access_token =
+        MockAuthAccessTokenService::new().with_verify("my auth token".into(), None);
 
     let sut = AuthServiceImpl {
-        jwt,
+        auth_access_token,
         ..Sut::default()
     };
 
@@ -57,7 +53,7 @@ async fn invalid_token() {
 }
 
 #[tokio::test]
-async fn expired() {
+async fn access_token_invalidated() {
     // Arrange
     let expected = Authentication {
         user_id: FOO.user.id,
@@ -67,44 +63,12 @@ async fn expired() {
         email_verified: FOO.user.email_verified,
     };
 
-    let jwt = MockJwtService::new().with_verify(
-        "my auth token",
-        Err(VerifyJwtError::Expired(Token::from(expected))),
-    );
+    let auth_access_token = MockAuthAccessTokenService::new()
+        .with_verify("my auth token".into(), Some(expected))
+        .with_is_invalidated(expected.refresh_token_hash, true);
 
     let sut = AuthServiceImpl {
-        jwt,
-        ..Sut::default()
-    };
-
-    // Act
-    let result = sut.authenticate("my auth token").await;
-
-    // Assert
-    assert_matches!(result, Err(AuthenticateError::InvalidToken));
-}
-
-#[tokio::test]
-async fn access_token_revoked() {
-    // Arrange
-    let expected = Authentication {
-        user_id: FOO.user.id,
-        session_id: UUID1.into(),
-        refresh_token_hash: (*SHA256HASH1).into(),
-        admin: FOO.user.admin,
-        email_verified: FOO.user.email_verified,
-    };
-
-    let jwt = MockJwtService::new().with_verify("my auth token", Ok(Token::from(expected)));
-
-    let cache = MockCacheService::new().with_get(
-        format!("access_token_invalidated:{SHA256HASH1_HEX}"),
-        Some(()),
-    );
-
-    let sut = AuthServiceImpl {
-        jwt,
-        cache,
+        auth_access_token,
         ..Sut::default()
     };
 

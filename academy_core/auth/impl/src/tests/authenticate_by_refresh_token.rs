@@ -1,9 +1,11 @@
 use std::time::Duration;
 
-use academy_core_auth_contracts::{AuthService, AuthenticateByRefreshTokenError};
+use academy_core_auth_contracts::{
+    refresh_token::MockAuthRefreshTokenService, AuthService, AuthenticateByRefreshTokenError,
+};
 use academy_demo::{session::FOO_1, SHA256HASH1};
 use academy_persistence_contracts::session::MockSessionRepository;
-use academy_shared_contracts::{hash::MockHashService, time::MockTimeService};
+use academy_shared_contracts::time::MockTimeService;
 use academy_utils::assert_matches;
 
 use crate::{tests::Sut, AuthServiceConfig, AuthServiceImpl};
@@ -13,8 +15,8 @@ async fn authenticate_by_refresh_token_ok() {
     // Arrange
     let config = AuthServiceConfig::default();
 
-    let hash = MockHashService::new()
-        .with_sha256("the refresh token".to_owned().into_bytes(), *SHA256HASH1);
+    let auth_refresh_token = MockAuthRefreshTokenService::new()
+        .with_hash("the refresh token".into(), (*SHA256HASH1).into());
 
     let time = MockTimeService::new()
         .with_now(FOO_1.updated_at + config.refresh_token_ttl - Duration::from_secs(1));
@@ -23,7 +25,7 @@ async fn authenticate_by_refresh_token_ok() {
         .with_get_by_refresh_token_hash((*SHA256HASH1).into(), Some(FOO_1.clone()));
 
     let sut = AuthServiceImpl {
-        hash,
+        auth_refresh_token,
         time,
         session_repo,
         ..Sut::default()
@@ -41,14 +43,14 @@ async fn authenticate_by_refresh_token_ok() {
 #[tokio::test]
 async fn authenticate_by_refresh_token_invalid() {
     // Arrange
-    let hash = MockHashService::new()
-        .with_sha256("the refresh token".to_owned().into_bytes(), *SHA256HASH1);
+    let auth_refresh_token = MockAuthRefreshTokenService::new()
+        .with_hash("the refresh token".into(), (*SHA256HASH1).into());
 
     let session_repo =
         MockSessionRepository::new().with_get_by_refresh_token_hash((*SHA256HASH1).into(), None);
 
     let sut = AuthServiceImpl {
-        hash,
+        auth_refresh_token,
         session_repo,
         ..Sut::default()
     };
@@ -67,8 +69,8 @@ async fn authenticate_by_refresh_token_expired() {
     // Arrange
     let config = AuthServiceConfig::default();
 
-    let hash = MockHashService::new()
-        .with_sha256("the refresh token".to_owned().into_bytes(), *SHA256HASH1);
+    let auth_refresh_token = MockAuthRefreshTokenService::new()
+        .with_hash("the refresh token".into(), (*SHA256HASH1).into());
 
     let time = MockTimeService::new()
         .with_now(FOO_1.updated_at + config.refresh_token_ttl + Duration::from_secs(2));
@@ -77,7 +79,7 @@ async fn authenticate_by_refresh_token_expired() {
         .with_get_by_refresh_token_hash((*SHA256HASH1).into(), Some(FOO_1.clone()));
 
     let sut = AuthServiceImpl {
-        hash,
+        auth_refresh_token,
         time,
         session_repo,
         ..Sut::default()

@@ -1,10 +1,10 @@
-use academy_core_auth_contracts::{AuthService, Authentication, Tokens};
-use academy_demo::{user::FOO, SHA256HASH1, UUID1};
-use academy_shared_contracts::{
-    hash::MockHashService, jwt::MockJwtService, secret::MockSecretService,
+use academy_core_auth_contracts::{
+    access_token::MockAuthAccessTokenService, refresh_token::MockAuthRefreshTokenService,
+    AuthService, Tokens,
 };
+use academy_demo::{user::FOO, SHA256HASH1, UUID1};
 
-use crate::{tests::Sut, AuthServiceConfig, AuthServiceImpl, Token};
+use crate::{tests::Sut, AuthServiceConfig, AuthServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -17,31 +17,20 @@ async fn ok() {
         refresh_token_hash: (*SHA256HASH1).into(),
     };
 
-    let auth = Authentication {
-        user_id: FOO.user.id,
-        session_id: UUID1.into(),
-        refresh_token_hash: (*SHA256HASH1).into(),
-        admin: FOO.user.admin,
-        email_verified: FOO.user.email_verified,
-    };
+    let auth_access_token = MockAuthAccessTokenService::new().with_issue(
+        FOO.user.clone(),
+        UUID1.into(),
+        (*SHA256HASH1).into(),
+        expected.access_token.clone(),
+    );
 
-    let secret = MockSecretService::new()
-        .with_generate(config.refresh_token_length, expected.refresh_token.clone());
-    let hash = MockHashService::new().with_sha256(
-        expected.refresh_token.clone().into_bytes(),
-        *expected.refresh_token_hash,
-    );
-    let jwt = MockJwtService::new().with_sign(
-        Token::from(auth),
-        config.access_token_ttl,
-        Ok(expected.access_token.clone()),
-    );
+    let auth_refresh_token = MockAuthRefreshTokenService::new()
+        .with_issue(expected.refresh_token.clone(), expected.refresh_token_hash);
 
     let sut = AuthServiceImpl {
-        secret,
-        hash,
-        jwt,
         config,
+        auth_access_token,
+        auth_refresh_token,
         ..Sut::default()
     };
 

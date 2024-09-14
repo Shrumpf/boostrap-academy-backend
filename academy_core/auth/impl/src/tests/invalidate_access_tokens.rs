@@ -1,6 +1,4 @@
-use academy_core_auth_contracts::{
-    commands::invalidate_access_token::MockAuthInvalidateAccessTokenCommandService, AuthService,
-};
+use academy_core_auth_contracts::{access_token::MockAuthAccessTokenService, AuthService};
 use academy_demo::{user::FOO, SHA256HASH1, SHA256HASH2};
 use academy_models::session::SessionRefreshTokenHash;
 use academy_persistence_contracts::session::MockSessionRepository;
@@ -18,13 +16,13 @@ async fn ok() {
     let session_repo = MockSessionRepository::new()
         .with_list_refresh_token_hashes_by_user(FOO.user.id, hashes.into());
 
-    let auth_invalidate_access_token = MockAuthInvalidateAccessTokenCommandService::new()
-        .with_invoke(hashes[0])
-        .with_invoke(hashes[1]);
+    let auth_access_token = MockAuthAccessTokenService::new()
+        .with_invalidate(hashes[0])
+        .with_invalidate(hashes[1]);
 
     let sut = AuthServiceImpl {
         session_repo,
-        auth_invalidate_access_token,
+        auth_access_token,
         ..Sut::default()
     };
 

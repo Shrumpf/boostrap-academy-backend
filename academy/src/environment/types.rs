@@ -1,6 +1,7 @@
 use academy_cache_valkey::ValkeyCache;
 use academy_core_auth_impl::{
-    commands::invalidate_access_token::AuthInvalidateAccessTokenCommandServiceImpl, AuthServiceImpl,
+    access_token::AuthAccessTokenServiceImpl, refresh_token::AuthRefreshTokenServiceImpl,
+    AuthServiceImpl,
 };
 use academy_core_config_impl::ConfigServiceImpl;
 use academy_core_contact_impl::ContactServiceImpl;
@@ -106,18 +107,10 @@ pub type MfaRepo = PostgresMfaRepository;
 pub type OAuth2Repo = PostgresOAuth2Repository;
 
 // Core
-pub type Auth = AuthServiceImpl<
-    Jwt,
-    Secret,
-    Time,
-    Hash,
-    Password,
-    UserRepo,
-    SessionRepo,
-    Cache,
-    AuthInvalidateAccessToken,
->;
-pub type AuthInvalidateAccessToken = AuthInvalidateAccessTokenCommandServiceImpl<Cache>;
+pub type Auth =
+    AuthServiceImpl<Time, Password, UserRepo, SessionRepo, AuthAccessToken, AuthRefreshToken>;
+pub type AuthAccessToken = AuthAccessTokenServiceImpl<Jwt, Cache>;
+pub type AuthRefreshToken = AuthRefreshTokenServiceImpl<Secret, Hash>;
 
 pub type Health = HealthServiceImpl<Time, Database, Cache, Email>;
 
@@ -182,8 +175,9 @@ pub type Session = SessionServiceImpl<
     SessionRepo,
 >;
 pub type SessionCreate = SessionCreateCommandServiceImpl<Id, Time, Auth, SessionRepo, UserRepo>;
-pub type SessionRefresh = SessionRefreshCommandServiceImpl<Time, Auth, UserRepo, SessionRepo>;
-pub type SessionDelete = SessionDeleteCommandServiceImpl<Auth, SessionRepo>;
+pub type SessionRefresh =
+    SessionRefreshCommandServiceImpl<Time, Auth, AuthAccessToken, UserRepo, SessionRepo>;
+pub type SessionDelete = SessionDeleteCommandServiceImpl<AuthAccessToken, SessionRepo>;
 pub type SessionDeleteByUser = SessionDeleteByUserCommandServiceImpl<Auth, SessionRepo>;
 pub type SessionFailedAuthCount = SessionFailedAuthCountServiceImpl<Hash, Cache>;
 

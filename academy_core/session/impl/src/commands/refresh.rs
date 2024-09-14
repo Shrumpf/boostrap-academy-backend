@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::AuthService;
+use academy_core_auth_contracts::{access_token::AuthAccessTokenService, AuthService};
 use academy_core_session_contracts::commands::refresh::{
     SessionRefreshCommandError, SessionRefreshCommandService,
 };
@@ -12,19 +12,21 @@ use academy_shared_contracts::time::TimeService;
 use academy_utils::patch::Patch;
 
 #[derive(Debug, Clone, Default, Build)]
-pub struct SessionRefreshCommandServiceImpl<Time, Auth, UserRepo, SessionRepo> {
+pub struct SessionRefreshCommandServiceImpl<Time, Auth, AuthAccessToken, UserRepo, SessionRepo> {
     time: Time,
     auth: Auth,
+    auth_access_token: AuthAccessToken,
     user_repo: UserRepo,
     session_repo: SessionRepo,
 }
 
-impl<Txn, Time, Auth, UserRepo, SessionRepo> SessionRefreshCommandService<Txn>
-    for SessionRefreshCommandServiceImpl<Time, Auth, UserRepo, SessionRepo>
+impl<Txn, Time, Auth, AuthAccessToken, UserRepo, SessionRepo> SessionRefreshCommandService<Txn>
+    for SessionRefreshCommandServiceImpl<Time, Auth, AuthAccessToken, UserRepo, SessionRepo>
 where
     Txn: Send + Sync + 'static,
     Time: TimeService,
     Auth: AuthService<Txn>,
+    AuthAccessToken: AuthAccessTokenService,
     UserRepo: UserRepository<Txn>,
     SessionRepo: SessionRepository<Txn>,
 {
@@ -51,8 +53,8 @@ where
             .await?
             .ok_or(SessionRefreshCommandError::NotFound)?;
 
-        self.auth
-            .invalidate_access_token(refresh_token_hash)
+        self.auth_access_token
+            .invalidate(refresh_token_hash)
             .await?;
 
         let tokens = self.auth.issue_tokens(&user_composite.user, session_id)?;
@@ -82,7 +84,9 @@ where
 mod tests {
     use std::time::Duration;
 
-    use academy_core_auth_contracts::{MockAuthService, Tokens};
+    use academy_core_auth_contracts::{
+        access_token::MockAuthAccessTokenService, MockAuthService, Tokens,
+    };
     use academy_demo::{session::FOO_1, user::FOO, SHA256HASH1, SHA256HASH2};
     use academy_models::session::Session;
     use academy_persistence_contracts::{session::MockSessionRepository, user::MockUserRepository};
@@ -94,6 +98,7 @@ mod tests {
     type Sut = SessionRefreshCommandServiceImpl<
         MockTimeService,
         MockAuthService<()>,
+        MockAuthAccessTokenService,
         MockUserRepository<()>,
         MockSessionRepository<()>,
     >;
@@ -117,9 +122,10 @@ mod tests {
             refresh_token: tokens.refresh_token.clone(),
         };
 
-        let auth = MockAuthService::new()
-            .with_invalidate_access_token((*SHA256HASH1).into())
-            .with_issue_tokens(FOO.user.clone(), FOO_1.id, tokens);
+        let auth = MockAuthService::new().with_issue_tokens(FOO.user.clone(), FOO_1.id, tokens);
+
+        let auth_access_token =
+            MockAuthAccessTokenService::new().with_invalidate((*SHA256HASH1).into());
 
         let time = MockTimeService::new().with_now(expected.session.updated_at);
 
@@ -137,6 +143,7 @@ mod tests {
 
         let sut = SessionRefreshCommandServiceImpl {
             auth,
+            auth_access_token,
             time,
             session_repo,
             user_repo,

@@ -7,7 +7,8 @@ use academy_models::{
 };
 use thiserror::Error;
 
-pub mod commands;
+pub mod access_token;
+pub mod refresh_token;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait AuthService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
@@ -34,13 +35,6 @@ pub trait AuthService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
 
     /// Issues an access and refresh token for a given user and session.
     fn issue_tokens(&self, user: &User, session_id: SessionId) -> anyhow::Result<Tokens>;
-
-    /// Invalidates a previously issued access token using the corresponding
-    /// refresh token hash.
-    fn invalidate_access_token(
-        &self,
-        refresh_token_hash: SessionRefreshTokenHash,
-    ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
     /// Invalidates all previously issued access tokens of a user.
     fn invalidate_access_tokens(
@@ -182,17 +176,6 @@ impl<Txn: Send + Sync + 'static> MockAuthService<Txn> {
                 mockall::predicate::eq(session_id),
             )
             .return_once(|_, _| Ok(tokens));
-        self
-    }
-
-    pub fn with_invalidate_access_token(
-        mut self,
-        refresh_token_hash: SessionRefreshTokenHash,
-    ) -> Self {
-        self.expect_invalidate_access_token()
-            .once()
-            .with(mockall::predicate::eq(refresh_token_hash))
-            .return_once(|_| Box::pin(std::future::ready(Ok(()))));
         self
     }
 
