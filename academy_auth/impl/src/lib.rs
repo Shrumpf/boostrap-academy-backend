@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use academy_core_auth_contracts::{
+use academy_auth_contracts::{
     access_token::AuthAccessTokenService, refresh_token::AuthRefreshTokenService, AuthService,
     AuthenticateByPasswordError, AuthenticateByRefreshTokenError, Authentication, Tokens,
 };

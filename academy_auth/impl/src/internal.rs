@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::internal::{AuthInternalAuthenticateError, AuthInternalService};
+use academy_auth_contracts::internal::{AuthInternalAuthenticateError, AuthInternalService};
 use academy_di::Build;
 use academy_shared_contracts::jwt::JwtService;
 use serde::{Deserialize, Serialize};

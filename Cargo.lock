@@ -7,10 +7,10 @@ name = "academy"
 version = "0.0.0"
 dependencies = [
  "academy_api_rest",
+ "academy_auth_impl",
  "academy_cache_contracts",
  "academy_cache_valkey",
  "academy_config",
- "academy_core_auth_impl",
  "academy_core_config_impl",
  "academy_core_contact_impl",
  "academy_core_health_impl",
@@ -51,7 +51,7 @@ dependencies = [
 name = "academy_api_rest"
 version = "0.0.0"
 dependencies = [
- "academy_core_auth_contracts",
+ "academy_auth_contracts",
  "academy_core_config_contracts",
  "academy_core_contact_contracts",
  "academy_core_health_contracts",
@@ -76,6 +76,34 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "academy_auth_contracts"
+version = "0.0.0"
+dependencies = [
+ "academy_models",
+ "anyhow",
+ "mockall",
+ "thiserror",
+]
+
+[[package]]
+name = "academy_auth_impl"
+version = "0.0.0"
+dependencies = [
+ "academy_auth_contracts",
+ "academy_cache_contracts",
+ "academy_demo",
+ "academy_di",
+ "academy_models",
+ "academy_persistence_contracts",
+ "academy_shared_contracts",
+ "academy_utils",
+ "anyhow",
+ "hex",
+ "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -113,34 +141,6 @@ dependencies = [
  "serde",
  "serde_json",
  "url",
-]
-
-[[package]]
-name = "academy_core_auth_contracts"
-version = "0.0.0"
-dependencies = [
- "academy_models",
- "anyhow",
- "mockall",
- "thiserror",
-]
-
-[[package]]
-name = "academy_core_auth_impl"
-version = "0.0.0"
-dependencies = [
- "academy_cache_contracts",
- "academy_core_auth_contracts",
- "academy_demo",
- "academy_di",
- "academy_models",
- "academy_persistence_contracts",
- "academy_shared_contracts",
- "academy_utils",
- "anyhow",
- "hex",
- "serde",
- "tokio",
 ]
 
 [[package]]
@@ -207,7 +207,7 @@ dependencies = [
 name = "academy_core_internal_contracts"
 version = "0.0.0"
 dependencies = [
- "academy_core_auth_contracts",
+ "academy_auth_contracts",
  "academy_models",
  "anyhow",
  "mockall",
@@ -218,7 +218,7 @@ dependencies = [
 name = "academy_core_internal_impl"
 version = "0.0.0"
 dependencies = [
- "academy_core_auth_contracts",
+ "academy_auth_contracts",
  "academy_core_internal_contracts",
  "academy_demo",
  "academy_di",
@@ -244,7 +244,7 @@ dependencies = [
 name = "academy_core_mfa_impl"
 version = "0.0.0"
 dependencies = [
- "academy_core_auth_contracts",
+ "academy_auth_contracts",
  "academy_core_mfa_contracts",
  "academy_demo",
  "academy_di",
@@ -271,8 +271,8 @@ dependencies = [
 name = "academy_core_oauth2_impl"
 version = "0.0.0"
 dependencies = [
+ "academy_auth_contracts",
  "academy_cache_contracts",
- "academy_core_auth_contracts",
  "academy_core_oauth2_contracts",
  "academy_core_session_contracts",
  "academy_demo",
@@ -300,8 +300,8 @@ dependencies = [
 name = "academy_core_session_impl"
 version = "0.0.0"
 dependencies = [
+ "academy_auth_contracts",
  "academy_cache_contracts",
- "academy_core_auth_contracts",
  "academy_core_mfa_contracts",
  "academy_core_session_contracts",
  "academy_core_user_contracts",
@@ -333,8 +333,8 @@ dependencies = [
 name = "academy_core_user_impl"
 version = "0.0.0"
 dependencies = [
+ "academy_auth_contracts",
  "academy_cache_contracts",
- "academy_core_auth_contracts",
  "academy_core_oauth2_contracts",
  "academy_core_session_contracts",
  "academy_core_user_contracts",
@@ -424,8 +424,8 @@ dependencies = [
 name = "academy_extern_impl"
 version = "0.0.0"
 dependencies = [
+ "academy_auth_contracts",
  "academy_config",
- "academy_core_auth_contracts",
  "academy_di",
  "academy_extern_contracts",
  "academy_models",

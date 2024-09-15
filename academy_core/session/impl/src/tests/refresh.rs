@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use academy_core_auth_contracts::{AuthenticateByRefreshTokenError, MockAuthService};
+use academy_auth_contracts::{AuthenticateByRefreshTokenError, MockAuthService};
 use academy_core_session_contracts::{
     commands::{
         delete::MockSessionDeleteCommandService,

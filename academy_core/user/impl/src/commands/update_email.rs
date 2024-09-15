@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::AuthService;
+use academy_auth_contracts::AuthService;
 use academy_core_user_contracts::commands::update_email::{
     UserUpdateEmailCommandError, UserUpdateEmailCommandService,
 };
@@ -54,7 +54,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_auth_contracts::MockAuthService;
+    use academy_auth_contracts::MockAuthService;
     use academy_demo::user::{ADMIN, FOO};
     use academy_models::user::UserPatch;
     use academy_persistence_contracts::user::{MockUserRepository, UserRepoError};

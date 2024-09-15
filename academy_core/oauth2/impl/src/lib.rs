@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
+use academy_auth_contracts::{AuthResultExt, AuthService};
 use academy_cache_contracts::CacheService;
-use academy_core_auth_contracts::{AuthResultExt, AuthService};
 use academy_core_oauth2_contracts::{
     create_link::{OAuth2CreateLinkService, OAuth2CreateLinkServiceError},
     login::{OAuth2LoginService, OAuth2LoginServiceError},

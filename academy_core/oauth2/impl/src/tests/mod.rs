@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
+use academy_auth_contracts::MockAuthService;
 use academy_cache_contracts::MockCacheService;
-use academy_core_auth_contracts::MockAuthService;
 use academy_core_oauth2_contracts::{
     create_link::MockOAuth2CreateLinkService, login::MockOAuth2LoginService,
 };

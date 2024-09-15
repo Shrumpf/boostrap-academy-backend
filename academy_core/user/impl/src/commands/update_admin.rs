@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::AuthService;
+use academy_auth_contracts::AuthService;
 use academy_core_user_contracts::commands::update_admin::UserUpdateAdminCommandService;
 use academy_di::Build;
 use academy_models::user::{UserId, UserPatchRef};
@@ -28,7 +28,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_auth_contracts::MockAuthService;
+    use academy_auth_contracts::MockAuthService;
     use academy_demo::user::FOO;
     use academy_models::user::UserPatch;
     use academy_persistence_contracts::user::MockUserRepository;

@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use academy_core_auth_contracts::internal::AuthInternalAuthenticateError;
+use academy_auth_contracts::internal::AuthInternalAuthenticateError;
 use academy_models::{
     email_address::EmailAddress,
     user::{UserComposite, UserId},

@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_oauth2_contracts::{
     create_link::{MockOAuth2CreateLinkService, OAuth2CreateLinkServiceError},
     login::{MockOAuth2LoginService, OAuth2LoginServiceError},

@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::refresh_token::AuthRefreshTokenService;
+use academy_auth_contracts::refresh_token::AuthRefreshTokenService;
 use academy_di::Build;
 use academy_models::session::SessionRefreshTokenHash;
 use academy_shared_contracts::{hash::HashService, secret::SecretService};

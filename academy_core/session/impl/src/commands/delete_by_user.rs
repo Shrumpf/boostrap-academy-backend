@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::AuthService;
+use academy_auth_contracts::AuthService;
 use academy_core_session_contracts::commands::delete_by_user::SessionDeleteByUserCommandService;
 use academy_di::Build;
 use academy_models::user::UserId;
@@ -26,7 +26,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_auth_contracts::MockAuthService;
+    use academy_auth_contracts::MockAuthService;
     use academy_demo::user::FOO;
     use academy_persistence_contracts::session::MockSessionRepository;
 

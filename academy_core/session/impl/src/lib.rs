@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::{
+use academy_auth_contracts::{
     AuthResultExt, AuthService, AuthenticateByPasswordError, AuthenticateByRefreshTokenError,
 };
 use academy_core_mfa_contracts::authenticate::{

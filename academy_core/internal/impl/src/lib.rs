@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::internal::AuthInternalService;
+use academy_auth_contracts::internal::AuthInternalService;
 use academy_core_internal_contracts::{
     InternalGetUserByEmailError, InternalGetUserError, InternalService,
 };

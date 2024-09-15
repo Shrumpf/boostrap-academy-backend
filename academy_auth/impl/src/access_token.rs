@@ -1,5 +1,5 @@
+use academy_auth_contracts::{access_token::AuthAccessTokenService, Authentication};
 use academy_cache_contracts::CacheService;
-use academy_core_auth_contracts::{access_token::AuthAccessTokenService, Authentication};
 use academy_di::Build;
 use academy_models::{
     session::{SessionId, SessionRefreshTokenHash},

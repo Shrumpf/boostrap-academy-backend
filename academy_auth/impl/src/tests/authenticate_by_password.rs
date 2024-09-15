@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::{AuthService, AuthenticateByPasswordError};
+use academy_auth_contracts::{AuthService, AuthenticateByPasswordError};
 use academy_demo::user::{FOO, FOO_PASSWORD};
 use academy_persistence_contracts::user::MockUserRepository;
 use academy_shared_contracts::password::MockPasswordService;

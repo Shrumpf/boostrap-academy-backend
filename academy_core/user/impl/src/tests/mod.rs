@@ -1,5 +1,5 @@
+use academy_auth_contracts::MockAuthService;
 use academy_cache_contracts::MockCacheService;
-use academy_core_auth_contracts::MockAuthService;
 use academy_core_session_contracts::commands::create::MockSessionCreateCommandService;
 use academy_core_user_contracts::{
     commands::{

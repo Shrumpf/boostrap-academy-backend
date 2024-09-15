@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use academy_core_auth_contracts::internal::AuthInternalAuthenticateError;
+use academy_auth_contracts::internal::AuthInternalAuthenticateError;
 use academy_core_internal_contracts::{
     InternalGetUserByEmailError, InternalGetUserError, InternalService,
 };

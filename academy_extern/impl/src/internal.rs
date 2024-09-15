@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::internal::AuthInternalService;
+use academy_auth_contracts::internal::AuthInternalService;
 use academy_di::Build;
 use academy_extern_contracts::internal::InternalApiService;
 use academy_models::user::UserId;

@@ -1,5 +1,5 @@
 [package]
-name = "academy_core_auth_contracts"
+name = "academy_auth_contracts"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true

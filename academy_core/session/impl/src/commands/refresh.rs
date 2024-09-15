@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::{access_token::AuthAccessTokenService, AuthService};
+use academy_auth_contracts::{access_token::AuthAccessTokenService, AuthService};
 use academy_core_session_contracts::commands::refresh::{
     SessionRefreshCommandError, SessionRefreshCommandService,
 };
@@ -84,7 +84,7 @@ where
 mod tests {
     use std::time::Duration;
 
-    use academy_core_auth_contracts::{
+    use academy_auth_contracts::{
         access_token::MockAuthAccessTokenService, MockAuthService, Tokens,
     };
     use academy_demo::{session::FOO_1, user::FOO, SHA256HASH1, SHA256HASH2};

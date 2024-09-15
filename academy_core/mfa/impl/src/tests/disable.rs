@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_mfa_contracts::{disable::MockMfaDisableService, MfaDisableError, MfaService};
 use academy_demo::{
     mfa::FOO_TOTP_1,

@@ -1,5 +1,5 @@
+use academy_auth_contracts::AuthService;
 use academy_cache_contracts::CacheService;
-use academy_core_auth_contracts::AuthService;
 use academy_core_user_contracts::commands::verify_email::{
     UserVerifyEmailCommandError, UserVerifyEmailCommandService,
 };
@@ -72,8 +72,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use academy_auth_contracts::MockAuthService;
     use academy_cache_contracts::MockCacheService;
-    use academy_core_auth_contracts::MockAuthService;
     use academy_demo::{user::FOO, VERIFICATION_CODE_1};
     use academy_models::{email_address::EmailAddress, user::UserPatch};
     use academy_persistence_contracts::user::MockUserRepository;

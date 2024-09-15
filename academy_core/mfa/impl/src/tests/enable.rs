@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_mfa_contracts::{
     recovery::MockMfaRecoveryService,
     totp_device::{MfaTotpDeviceConfirmError, MockMfaTotpDeviceService},

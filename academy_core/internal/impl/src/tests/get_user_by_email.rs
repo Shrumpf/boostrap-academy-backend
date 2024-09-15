@@ -1,6 +1,4 @@
-use academy_core_auth_contracts::internal::{
-    AuthInternalAuthenticateError, MockAuthInternalService,
-};
+use academy_auth_contracts::internal::{AuthInternalAuthenticateError, MockAuthInternalService};
 use academy_core_internal_contracts::{InternalGetUserByEmailError, InternalService};
 use academy_demo::user::FOO;
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};

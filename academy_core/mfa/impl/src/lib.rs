@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::{AuthResultExt, AuthService};
+use academy_auth_contracts::{AuthResultExt, AuthService};
 use academy_core_mfa_contracts::{
     disable::MfaDisableService,
     recovery::MfaRecoveryService,

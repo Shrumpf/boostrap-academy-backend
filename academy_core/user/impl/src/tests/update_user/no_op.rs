@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::UserService;
 use academy_demo::{
     session::{ADMIN_1, FOO_1},

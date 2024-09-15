@@ -1,5 +1,5 @@
+use academy_auth_contracts::{AuthResultExt, AuthService};
 use academy_cache_contracts::CacheService;
-use academy_core_auth_contracts::{AuthResultExt, AuthService};
 use academy_core_oauth2_contracts::oauth2_registration_cache_key;
 use academy_core_session_contracts::commands::create::SessionCreateCommandService;
 use academy_core_user_contracts::{

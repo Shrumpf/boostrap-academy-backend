@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_mfa_contracts::authenticate::MockMfaAuthenticateService;
 use academy_core_session_contracts::{
     commands::{

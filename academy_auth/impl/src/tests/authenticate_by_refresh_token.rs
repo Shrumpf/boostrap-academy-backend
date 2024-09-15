@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use academy_core_auth_contracts::{
+use academy_auth_contracts::{
     refresh_token::MockAuthRefreshTokenService, AuthService, AuthenticateByRefreshTokenError,
 };
 use academy_demo::{session::FOO_1, SHA256HASH1};

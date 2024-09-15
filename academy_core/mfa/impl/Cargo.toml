@@ -10,7 +10,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-academy_core_auth_contracts.workspace = true
+academy_auth_contracts.workspace = true
 academy_core_mfa_contracts.workspace = true
 academy_di.workspace = true
 academy_models.workspace = true
@@ -20,7 +20,7 @@ academy_utils.workspace = true
 anyhow.workspace = true
 
 [dev-dependencies]
-academy_core_auth_contracts = { workspace = true, features = ["mock"] }
+academy_auth_contracts = { workspace = true, features = ["mock"] }
 academy_core_mfa_contracts = { workspace = true, features = ["mock"] }
 academy_demo.workspace = true
 academy_persistence_contracts = { workspace = true, features = ["mock"] }

@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::AuthService;
+use academy_auth_contracts::AuthService;
 use academy_core_session_contracts::commands::create::SessionCreateCommandService;
 use academy_di::Build;
 use academy_models::{
@@ -73,7 +73,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_auth_contracts::{MockAuthService, Tokens};
+    use academy_auth_contracts::{MockAuthService, Tokens};
     use academy_demo::{session::FOO_1, user::FOO, SHA256HASH1};
     use academy_models::user::{User, UserPatch};
     use academy_persistence_contracts::{session::MockSessionRepository, user::MockUserRepository};

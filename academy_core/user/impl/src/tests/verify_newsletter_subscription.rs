@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
     commands::verify_newsletter_subscription::{
         MockUserVerifyNewsletterSubscriptionCommandService,

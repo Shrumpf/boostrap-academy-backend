@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::{
+use academy_auth_contracts::{
     access_token::MockAuthAccessTokenService, refresh_token::MockAuthRefreshTokenService,
     AuthService, Tokens,
 };

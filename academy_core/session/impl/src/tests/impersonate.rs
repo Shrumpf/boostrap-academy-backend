@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
     commands::create::MockSessionCreateCommandService, SessionImpersonateError, SessionService,
 };

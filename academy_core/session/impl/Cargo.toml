@@ -11,7 +11,7 @@ workspace = true
 
 [dependencies]
 academy_cache_contracts.workspace = true
-academy_core_auth_contracts.workspace = true
+academy_auth_contracts.workspace = true
 academy_core_mfa_contracts.workspace = true
 academy_core_session_contracts.workspace = true
 academy_core_user_contracts.workspace = true
@@ -25,7 +25,7 @@ hex.workspace = true
 
 [dev-dependencies]
 academy_cache_contracts = { workspace = true, features = ["mock"] }
-academy_core_auth_contracts = { workspace = true, features = ["mock"] }
+academy_auth_contracts = { workspace = true, features = ["mock"] }
 academy_core_mfa_contracts = { workspace = true, features = ["mock"] }
 academy_core_session_contracts = { workspace = true, features = ["mock"] }
 academy_core_user_contracts = { workspace = true, features = ["mock"] }

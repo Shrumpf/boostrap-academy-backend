@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::internal::MockAuthInternalService;
+use academy_auth_contracts::internal::MockAuthInternalService;
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase, MockTransaction};
 
 use crate::InternalServiceImpl;

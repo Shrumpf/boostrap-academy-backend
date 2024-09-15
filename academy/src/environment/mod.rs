@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
+use academy_auth_impl::AuthServiceConfig;
 use academy_config::Config;
-use academy_core_auth_impl::AuthServiceConfig;
 use academy_core_contact_impl::ContactServiceConfig;
 use academy_core_health_impl::HealthServiceConfig;
 use academy_core_oauth2_impl::OAuth2ServiceConfig;

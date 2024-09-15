@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::access_token::AuthAccessTokenService;
+use academy_auth_contracts::access_token::AuthAccessTokenService;
 use academy_core_session_contracts::commands::delete::SessionDeleteCommandService;
 use academy_di::Build;
 use academy_models::session::SessionId;
@@ -34,7 +34,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_auth_contracts::access_token::MockAuthAccessTokenService;
+    use academy_auth_contracts::access_token::MockAuthAccessTokenService;
     use academy_demo::{session::FOO_1, SHA256HASH1};
     use academy_persistence_contracts::session::MockSessionRepository;
 

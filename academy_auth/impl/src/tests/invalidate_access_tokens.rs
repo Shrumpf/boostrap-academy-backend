@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::{access_token::MockAuthAccessTokenService, AuthService};
+use academy_auth_contracts::{access_token::MockAuthAccessTokenService, AuthService};
 use academy_demo::{user::FOO, SHA256HASH1, SHA256HASH2};
 use academy_models::session::SessionRefreshTokenHash;
 use academy_persistence_contracts::session::MockSessionRepository;

@@ -1,8 +1,8 @@
-use academy_cache_valkey::ValkeyCache;
-use academy_core_auth_impl::{
+use academy_auth_impl::{
     access_token::AuthAccessTokenServiceImpl, internal::AuthInternalServiceImpl,
     refresh_token::AuthRefreshTokenServiceImpl, AuthServiceImpl,
 };
+use academy_cache_valkey::ValkeyCache;
 use academy_core_config_impl::ConfigServiceImpl;
 use academy_core_contact_impl::ContactServiceImpl;
 use academy_core_health_impl::HealthServiceImpl;
@@ -99,13 +99,14 @@ pub type UserRepo = PostgresUserRepository;
 pub type MfaRepo = PostgresMfaRepository;
 pub type OAuth2Repo = PostgresOAuth2Repository;
 
-// Core
+// Auth
 pub type Auth =
     AuthServiceImpl<Time, Password, UserRepo, SessionRepo, AuthAccessToken, AuthRefreshToken>;
 pub type AuthAccessToken = AuthAccessTokenServiceImpl<Jwt, Cache>;
 pub type AuthRefreshToken = AuthRefreshTokenServiceImpl<Secret, Hash>;
 pub type AuthInternal = AuthInternalServiceImpl<Jwt>;
 
+// Core
 pub type Health = HealthServiceImpl<Time, Database, Cache, Email>;
 
 pub type Config = ConfigServiceImpl<Captcha>;

@@ -1,4 +1,4 @@
-use academy_core_auth_contracts::MockAuthService;
+use academy_auth_contracts::MockAuthService;
 use academy_core_oauth2_contracts::{OAuth2DeleteLinkError, OAuth2Service};
 use academy_demo::{
     oauth2::FOO_OAUTH2_LINK_1,

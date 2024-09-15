@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use academy_core_auth_contracts::{
+use academy_auth_contracts::{
     access_token::MockAuthAccessTokenService, refresh_token::MockAuthRefreshTokenService,
 };
 use academy_persistence_contracts::{session::MockSessionRepository, user::MockUserRepository};
