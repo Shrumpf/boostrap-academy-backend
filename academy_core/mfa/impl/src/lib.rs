@@ -1,14 +1,8 @@
 use academy_core_auth_contracts::{AuthResultExt, AuthService};
 use academy_core_mfa_contracts::{
-    commands::{
-        confirm_totp_device::{
-            MfaConfirmTotpDeviceCommandError, MfaConfirmTotpDeviceCommandService,
-        },
-        create_totp_device::MfaCreateTotpDeviceCommandService,
-        disable::MfaDisableCommandService,
-        reset_totp_device::MfaResetTotpDeviceCommandService,
-        setup_recovery::MfaSetupRecoveryCommandService,
-    },
+    disable::MfaDisableService,
+    recovery::MfaRecoveryService,
+    totp_device::{MfaTotpDeviceConfirmError, MfaTotpDeviceService},
     MfaDisableError, MfaEnableError, MfaInitializeError, MfaService,
 };
 use academy_di::Build;
@@ -20,66 +14,35 @@ use academy_persistence_contracts::{
     mfa::MfaRepository, user::UserRepository, Database, Transaction,
 };
 
-pub mod commands;
+pub mod authenticate;
+pub mod disable;
+pub mod recovery;
+pub mod totp_device;
 
 #[cfg(test)]
 mod tests;
 
 #[derive(Debug, Clone, Build, Default)]
-pub struct MfaServiceImpl<
-    Db,
-    Auth,
-    UserRepo,
-    MfaRepo,
-    MfaCreateTotpDevice,
-    MfaResetTotpDevice,
-    MfaConfirmTotpDevice,
-    MfaSetupRecovery,
-    MfaDisable,
-> {
+pub struct MfaServiceImpl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice> {
     db: Db,
     auth: Auth,
     user_repo: UserRepo,
     mfa_repo: MfaRepo,
-    mfa_create_totp_device: MfaCreateTotpDevice,
-    mfa_reset_totp_device: MfaResetTotpDevice,
-    mfa_confirm_totp_device: MfaConfirmTotpDevice,
-    mfa_setup_recovery: MfaSetupRecovery,
+    mfa_recovery: MfaRecovery,
     mfa_disable: MfaDisable,
+    mfa_totp_device: MfaTotpDevice,
 }
 
-impl<
-        Db,
-        Auth,
-        UserRepo,
-        MfaRepo,
-        MfaCreateTotpDevice,
-        MfaResetTotpDevice,
-        MfaConfirmTotpDevice,
-        MfaSetupRecovery,
-        MfaDisable,
-    > MfaService
-    for MfaServiceImpl<
-        Db,
-        Auth,
-        UserRepo,
-        MfaRepo,
-        MfaCreateTotpDevice,
-        MfaResetTotpDevice,
-        MfaConfirmTotpDevice,
-        MfaSetupRecovery,
-        MfaDisable,
-    >
+impl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice> MfaService
+    for MfaServiceImpl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice>
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
     UserRepo: UserRepository<Db::Transaction>,
     MfaRepo: MfaRepository<Db::Transaction>,
-    MfaCreateTotpDevice: MfaCreateTotpDeviceCommandService<Db::Transaction>,
-    MfaResetTotpDevice: MfaResetTotpDeviceCommandService<Db::Transaction>,
-    MfaConfirmTotpDevice: MfaConfirmTotpDeviceCommandService<Db::Transaction>,
-    MfaSetupRecovery: MfaSetupRecoveryCommandService<Db::Transaction>,
-    MfaDisable: MfaDisableCommandService<Db::Transaction>,
+    MfaRecovery: MfaRecoveryService<Db::Transaction>,
+    MfaDisable: MfaDisableService<Db::Transaction>,
+    MfaTotpDevice: MfaTotpDeviceService<Db::Transaction>,
 {
     async fn initialize(
         &self,
@@ -106,13 +69,11 @@ where
         }
 
         let setup = if let Some(disabled_totp_device) = totp_devices.first() {
-            self.mfa_reset_totp_device
-                .invoke(&mut txn, disabled_totp_device.id)
+            self.mfa_totp_device
+                .reset(&mut txn, disabled_totp_device.id)
                 .await?
         } else {
-            self.mfa_create_totp_device
-                .invoke(&mut txn, user_id)
-                .await?
+            self.mfa_totp_device.create(&mut txn, user_id).await?
         };
 
         txn.commit().await?;
@@ -150,15 +111,15 @@ where
             .next()
             .ok_or(MfaEnableError::NotInitialized)?;
 
-        self.mfa_confirm_totp_device
-            .invoke(&mut txn, totp_device, code)
+        self.mfa_totp_device
+            .confirm(&mut txn, totp_device, code)
             .await
             .map_err(|err| match err {
-                MfaConfirmTotpDeviceCommandError::InvalidCode => MfaEnableError::InvalidCode,
-                MfaConfirmTotpDeviceCommandError::Other(err) => err.into(),
+                MfaTotpDeviceConfirmError::InvalidCode => MfaEnableError::InvalidCode,
+                MfaTotpDeviceConfirmError::Other(err) => err.into(),
             })?;
 
-        let recovery_code = self.mfa_setup_recovery.invoke(&mut txn, user_id).await?;
+        let recovery_code = self.mfa_recovery.setup(&mut txn, user_id).await?;
 
         txn.commit().await?;
 
@@ -185,7 +146,7 @@ where
             return Err(MfaDisableError::NotEnabled);
         }
 
-        self.mfa_disable.invoke(&mut txn, user_id).await?;
+        self.mfa_disable.disable(&mut txn, user_id).await?;
 
         txn.commit().await?;
 

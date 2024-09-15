@@ -1,10 +1,6 @@
 use academy_core_auth_contracts::MockAuthService;
 use academy_core_mfa_contracts::{
-    commands::{
-        create_totp_device::MockMfaCreateTotpDeviceCommandService,
-        reset_totp_device::MockMfaResetTotpDeviceCommandService,
-    },
-    MfaInitializeError, MfaService,
+    self, totp_device::MockMfaTotpDeviceService, MfaInitializeError, MfaService,
 };
 use academy_demo::{
     mfa::FOO_TOTP_1,
@@ -38,15 +34,15 @@ async fn new() {
 
     let mfa_repo = MockMfaRepository::new().with_list_totp_devices_by_user(FOO.user.id, vec![]);
 
-    let mfa_create_totp_device =
-        MockMfaCreateTotpDeviceCommandService::new().with_invoke(FOO.user.id, expected.clone());
+    let mfa_totp_device =
+        MockMfaTotpDeviceService::new().with_create(FOO.user.id, expected.clone());
 
     let sut = MfaServiceImpl {
         auth,
         db,
         user_repo,
         mfa_repo,
-        mfa_create_totp_device,
+        mfa_totp_device,
         ..Sut::default()
     };
 
@@ -73,15 +69,15 @@ async fn reset_disabled() {
     let mfa_repo = MockMfaRepository::new()
         .with_list_totp_devices_by_user(FOO.user.id, vec![FOO_TOTP_1.clone()]);
 
-    let mfa_reset_totp_device =
-        MockMfaResetTotpDeviceCommandService::new().with_invoke(FOO_TOTP_1.id, expected.clone());
+    let mfa_totp_device =
+        MockMfaTotpDeviceService::new().with_reset(FOO_TOTP_1.id, expected.clone());
 
     let sut = MfaServiceImpl {
         auth,
         db,
         user_repo,
         mfa_repo,
-        mfa_reset_totp_device,
+        mfa_totp_device,
         ..Sut::default()
     };
 

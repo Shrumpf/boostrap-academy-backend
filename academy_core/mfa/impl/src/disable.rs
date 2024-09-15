@@ -1,19 +1,19 @@
-use academy_core_mfa_contracts::commands::disable::MfaDisableCommandService;
+use academy_core_mfa_contracts::disable::MfaDisableService;
 use academy_di::Build;
 use academy_models::user::UserId;
 use academy_persistence_contracts::mfa::MfaRepository;
 
 #[derive(Debug, Clone, Build)]
-pub struct MfaDisableCommandServiceImpl<MfaRepo> {
+pub struct MfaDisableServiceImpl<MfaRepo> {
     mfa_repo: MfaRepo,
 }
 
-impl<Txn, MfaRepo> MfaDisableCommandService<Txn> for MfaDisableCommandServiceImpl<MfaRepo>
+impl<Txn, MfaRepo> MfaDisableService<Txn> for MfaDisableServiceImpl<MfaRepo>
 where
     Txn: Send + Sync + 'static,
     MfaRepo: MfaRepository<Txn>,
 {
-    async fn invoke(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<()> {
+    async fn disable(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<()> {
         self.mfa_repo
             .delete_totp_devices_by_user(txn, user_id)
             .await?;
@@ -40,10 +40,10 @@ mod tests {
             .with_delete_totp_devices_by_user(FOO.user.id)
             .with_delete_mfa_recovery_code_hash(FOO.user.id);
 
-        let sut = MfaDisableCommandServiceImpl { mfa_repo };
+        let sut = MfaDisableServiceImpl { mfa_repo };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id).await;
+        let result = sut.disable(&mut (), FOO.user.id).await;
 
         // Assert
         result.unwrap();

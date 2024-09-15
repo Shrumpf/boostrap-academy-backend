@@ -71,7 +71,7 @@ impl MfaRecoveryCode {
 pub struct MfaRecoveryCodeHash(Sha256Hash);
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct MfaAuthenticateCommand {
+pub struct MfaAuthentication {
     pub totp_code: Option<TotpCode>,
     pub recovery_code: Option<MfaRecoveryCode>,
 }

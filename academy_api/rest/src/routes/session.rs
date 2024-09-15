@@ -6,7 +6,7 @@ use academy_core_session_contracts::{
     SessionRefreshError, SessionService,
 };
 use academy_models::{
-    mfa::{MfaAuthenticateCommand, MfaRecoveryCode, TotpCode},
+    mfa::{MfaAuthentication, MfaRecoveryCode, TotpCode},
     session::{DeviceName, SessionId},
     user::{UserId, UserNameOrEmailAddress, UserPassword},
     RecaptchaResponse,
@@ -106,7 +106,7 @@ async fn create(
                 name_or_email,
                 password,
                 device_name: user_agent.0.map(DeviceName::from_string_truncated),
-                mfa: MfaAuthenticateCommand {
+                mfa: MfaAuthentication {
                     totp_code: mfa_code.into(),
                     recovery_code: recovery_code.into(),
                 },

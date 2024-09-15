@@ -7,7 +7,10 @@ use academy_models::{
 };
 use thiserror::Error;
 
-pub mod commands;
+pub mod authenticate;
+pub mod disable;
+pub mod recovery;
+pub mod totp_device;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait MfaService: Send + Sync + 'static {

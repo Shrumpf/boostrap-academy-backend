@@ -1,26 +1,26 @@
 use std::future::Future;
 
-use academy_models::{mfa::MfaAuthenticateCommand, user::UserId};
+use academy_models::{mfa::MfaAuthentication, user::UserId};
 use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait MfaAuthenticateCommandService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
-    fn invoke(
+pub trait MfaAuthenticateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    fn authenticate(
         &self,
         txn: &mut Txn,
         user_id: UserId,
-        cmd: MfaAuthenticateCommand,
-    ) -> impl Future<Output = Result<MfaAuthenticateCommandResult, MfaAuthenticateCommandError>> + Send;
+        cmd: MfaAuthentication,
+    ) -> impl Future<Output = Result<MfaAuthenticateResult, MfaAuthenticateError>> + Send;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MfaAuthenticateCommandResult {
+pub enum MfaAuthenticateResult {
     Ok,
     Reset,
 }
 
 #[derive(Debug, Error)]
-pub enum MfaAuthenticateCommandError {
+pub enum MfaAuthenticateError {
     #[error("The user failed to authenticate.")]
     Failed,
     #[error(transparent)]
@@ -28,14 +28,14 @@ pub enum MfaAuthenticateCommandError {
 }
 
 #[cfg(feature = "mock")]
-impl<Txn: Send + Sync + 'static> MockMfaAuthenticateCommandService<Txn> {
-    pub fn with_invoke(
+impl<Txn: Send + Sync + 'static> MockMfaAuthenticateService<Txn> {
+    pub fn with_authenticate(
         mut self,
         user_id: UserId,
-        cmd: MfaAuthenticateCommand,
-        result: Result<MfaAuthenticateCommandResult, MfaAuthenticateCommandError>,
+        cmd: MfaAuthentication,
+        result: Result<MfaAuthenticateResult, MfaAuthenticateError>,
     ) -> Self {
-        self.expect_invoke()
+        self.expect_authenticate()
             .once()
             .with(
                 mockall::predicate::always(),

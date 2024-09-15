@@ -8,15 +8,8 @@ use academy_core_contact_impl::ContactServiceImpl;
 use academy_core_health_impl::HealthServiceImpl;
 use academy_core_internal_impl::InternalServiceImpl;
 use academy_core_mfa_impl::{
-    commands::{
-        authenticate::MfaAuthenticateCommandServiceImpl,
-        confirm_totp_device::MfaConfirmTotpDeviceCommandServiceImpl,
-        create_totp_device::MfaCreateTotpDeviceCommandServiceImpl,
-        disable::MfaDisableCommandServiceImpl,
-        reset_totp_device::MfaResetTotpDeviceCommandServiceImpl,
-        setup_recovery::MfaSetupRecoveryCommandServiceImpl,
-    },
-    MfaServiceImpl,
+    authenticate::MfaAuthenticateServiceImpl, disable::MfaDisableServiceImpl,
+    recovery::MfaRecoveryServiceImpl, totp_device::MfaTotpDeviceServiceImpl, MfaServiceImpl,
 };
 use academy_core_oauth2_impl::{
     create_link::OAuth2CreateLinkServiceImpl, login::OAuth2LoginServiceImpl, OAuth2ServiceImpl,
@@ -184,23 +177,12 @@ pub type SessionFailedAuthCount = SessionFailedAuthCountServiceImpl<Hash, Cache>
 
 pub type Contact = ContactServiceImpl<Captcha, Email>;
 
-pub type Mfa = MfaServiceImpl<
-    Database,
-    Auth,
-    UserRepo,
-    MfaRepo,
-    MfaCreateTotpDevice,
-    MfaResetTotpDevice,
-    MfaConfirmTotpDevice,
-    MfaSetupRecovery,
-    MfaDisable,
->;
-pub type MfaCreateTotpDevice = MfaCreateTotpDeviceCommandServiceImpl<Id, Time, Totp, MfaRepo>;
-pub type MfaResetTotpDevice = MfaResetTotpDeviceCommandServiceImpl<Totp, MfaRepo>;
-pub type MfaConfirmTotpDevice = MfaConfirmTotpDeviceCommandServiceImpl<Totp, MfaRepo>;
-pub type MfaSetupRecovery = MfaSetupRecoveryCommandServiceImpl<Secret, Hash, MfaRepo>;
-pub type MfaAuthenticate = MfaAuthenticateCommandServiceImpl<Hash, Totp, MfaDisable, MfaRepo>;
-pub type MfaDisable = MfaDisableCommandServiceImpl<MfaRepo>;
+pub type Mfa =
+    MfaServiceImpl<Database, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice>;
+pub type MfaRecovery = MfaRecoveryServiceImpl<Secret, Hash, MfaRepo>;
+pub type MfaAuthenticate = MfaAuthenticateServiceImpl<Hash, Totp, MfaDisable, MfaRepo>;
+pub type MfaDisable = MfaDisableServiceImpl<MfaRepo>;
+pub type MfaTotpDevice = MfaTotpDeviceServiceImpl<Id, Time, Totp, MfaRepo>;
 
 pub type OAuth2 = OAuth2ServiceImpl<
     Database,

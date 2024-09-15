@@ -3,10 +3,8 @@ use std::future::Future;
 use academy_models::{mfa::MfaRecoveryCode, user::UserId};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait MfaSetupRecoveryCommandService<Txn: Send + Sync + 'static>:
-    Send + Sync + 'static
-{
-    fn invoke(
+pub trait MfaRecoveryService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    fn setup(
         &self,
         txn: &mut Txn,
         user_id: UserId,
@@ -14,9 +12,9 @@ pub trait MfaSetupRecoveryCommandService<Txn: Send + Sync + 'static>:
 }
 
 #[cfg(feature = "mock")]
-impl<Txn: Send + Sync + 'static> MockMfaSetupRecoveryCommandService<Txn> {
-    pub fn with_invoke(mut self, user_id: UserId, recovery_code: MfaRecoveryCode) -> Self {
-        self.expect_invoke()
+impl<Txn: Send + Sync + 'static> MockMfaRecoveryService<Txn> {
+    pub fn with_setup(mut self, user_id: UserId, recovery_code: MfaRecoveryCode) -> Self {
+        self.expect_setup()
             .once()
             .with(
                 mockall::predicate::always(),

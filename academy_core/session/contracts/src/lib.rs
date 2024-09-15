@@ -2,7 +2,7 @@ use std::future::Future;
 
 use academy_models::{
     auth::{AuthError, Login},
-    mfa::MfaAuthenticateCommand,
+    mfa::MfaAuthentication,
     session::{DeviceName, Session, SessionId},
     user::{UserId, UserIdOrSelf, UserNameOrEmailAddress, UserPassword},
     RecaptchaResponse,
@@ -90,7 +90,7 @@ pub trait SessionService: Send + Sync + 'static {
 pub struct SessionCreateCommand {
     pub name_or_email: UserNameOrEmailAddress,
     pub password: UserPassword,
-    pub mfa: MfaAuthenticateCommand,
+    pub mfa: MfaAuthentication,
     pub device_name: Option<DeviceName>,
 }
 

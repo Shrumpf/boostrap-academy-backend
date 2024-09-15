@@ -1,6 +1,6 @@
 use academy_core_auth_contracts::MockAuthService;
-use academy_core_mfa_contracts::commands::authenticate::{
-    MfaAuthenticateCommandError, MfaAuthenticateCommandResult, MockMfaAuthenticateCommandService,
+use academy_core_mfa_contracts::authenticate::{
+    MfaAuthenticateError, MfaAuthenticateResult, MockMfaAuthenticateService,
 };
 use academy_core_session_contracts::{
     commands::create::MockSessionCreateCommandService,
@@ -12,7 +12,7 @@ use academy_demo::{
     session::{BAR_1, FOO_1},
     user::{BAR, BAR_PASSWORD, FOO, FOO_PASSWORD},
 };
-use academy_models::{auth::Login, mfa::MfaAuthenticateCommand, user::UserNameOrEmailAddress};
+use academy_models::{auth::Login, mfa::MfaAuthentication, user::UserNameOrEmailAddress};
 use academy_persistence_contracts::MockDatabase;
 use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::{assert_matches, Apply};
@@ -26,7 +26,7 @@ async fn ok() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: FOO_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand::default(),
+        mfa: MfaAuthentication::default(),
     };
 
     let expected = Login {
@@ -84,7 +84,7 @@ async fn ok_mfa() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: FOO_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand {
+        mfa: MfaAuthentication {
             totp_code: Some("123456".try_into().unwrap()),
             recovery_code: None,
         },
@@ -117,10 +117,10 @@ async fn ok_mfa() {
         true,
     );
 
-    let mfa_authenticate = MockMfaAuthenticateCommandService::new().with_invoke(
+    let mfa_authenticate = MockMfaAuthenticateService::new().with_authenticate(
         FOO.user.id,
         cmd.mfa.clone(),
-        Ok(MfaAuthenticateCommandResult::Ok),
+        Ok(MfaAuthenticateResult::Ok),
     );
 
     let session_create = MockSessionCreateCommandService::new().with_invoke(
@@ -154,7 +154,7 @@ async fn ok_mfa_reset() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: FOO_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand {
+        mfa: MfaAuthentication {
             totp_code: Some("123456".try_into().unwrap()),
             recovery_code: None,
         },
@@ -192,10 +192,10 @@ async fn ok_mfa_reset() {
         true,
     );
 
-    let mfa_authenticate = MockMfaAuthenticateCommandService::new().with_invoke(
+    let mfa_authenticate = MockMfaAuthenticateService::new().with_authenticate(
         FOO.user.id,
         cmd.mfa.clone(),
-        Ok(MfaAuthenticateCommandResult::Reset),
+        Ok(MfaAuthenticateResult::Reset),
     );
 
     let session_create = MockSessionCreateCommandService::new().with_invoke(
@@ -229,7 +229,7 @@ async fn ok_captcha() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: FOO_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand::default(),
+        mfa: MfaAuthentication::default(),
     };
 
     let expected = Login {
@@ -292,7 +292,7 @@ async fn invalid_recaptcha_response() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: FOO_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand::default(),
+        mfa: MfaAuthentication::default(),
     };
 
     let session_failed_auth_count =
@@ -323,7 +323,7 @@ async fn user_not_found() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: FOO_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand::default(),
+        mfa: MfaAuthentication::default(),
     };
 
     let db = MockDatabase::build(false);
@@ -356,7 +356,7 @@ async fn wrong_password() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: FOO_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand::default(),
+        mfa: MfaAuthentication::default(),
     };
 
     let db = MockDatabase::build(false);
@@ -401,7 +401,7 @@ async fn mfa_failed() {
         name_or_email: UserNameOrEmailAddress::Name(FOO.user.name.clone()),
         password: FOO_PASSWORD.clone(),
         device_name: BAR_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand {
+        mfa: MfaAuthentication {
             totp_code: Some("123456".try_into().unwrap()),
             recovery_code: None,
         },
@@ -427,10 +427,10 @@ async fn mfa_failed() {
         true,
     );
 
-    let mfa_authenticate = MockMfaAuthenticateCommandService::new().with_invoke(
+    let mfa_authenticate = MockMfaAuthenticateService::new().with_authenticate(
         FOO.user.id,
         cmd.mfa.clone(),
-        Err(MfaAuthenticateCommandError::Failed),
+        Err(MfaAuthenticateError::Failed),
     );
 
     let sut = SessionServiceImpl {
@@ -456,7 +456,7 @@ async fn user_disabled() {
         name_or_email: UserNameOrEmailAddress::Name(BAR.user.name.clone()),
         password: BAR_PASSWORD.clone(),
         device_name: BAR_1.device_name.clone(),
-        mfa: MfaAuthenticateCommand::default(),
+        mfa: MfaAuthentication::default(),
     };
 
     let db = MockDatabase::build(false);

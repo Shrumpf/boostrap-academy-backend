@@ -1,25 +1,25 @@
-use academy_core_mfa_contracts::commands::setup_recovery::MfaSetupRecoveryCommandService;
+use academy_core_mfa_contracts::recovery::MfaRecoveryService;
 use academy_di::Build;
 use academy_models::{mfa::MfaRecoveryCode, user::UserId};
 use academy_persistence_contracts::mfa::MfaRepository;
 use academy_shared_contracts::{hash::HashService, secret::SecretService};
 
 #[derive(Debug, Clone, Build)]
-pub struct MfaSetupRecoveryCommandServiceImpl<Secret, Hash, MfaRepo> {
+pub struct MfaRecoveryServiceImpl<Secret, Hash, MfaRepo> {
     secret: Secret,
     hash: Hash,
     mfa_repo: MfaRepo,
 }
 
-impl<Txn, Secret, Hash, MfaRepo> MfaSetupRecoveryCommandService<Txn>
-    for MfaSetupRecoveryCommandServiceImpl<Secret, Hash, MfaRepo>
+impl<Txn, Secret, Hash, MfaRepo> MfaRecoveryService<Txn>
+    for MfaRecoveryServiceImpl<Secret, Hash, MfaRepo>
 where
     Txn: Send + Sync + 'static,
     Secret: SecretService,
     Hash: HashService,
     MfaRepo: MfaRepository<Txn>,
 {
-    async fn invoke(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<MfaRecoveryCode> {
+    async fn setup(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<MfaRecoveryCode> {
         let recovery_code = self.secret.generate_mfa_recovery_code();
 
         let hash = self.hash.sha256(recovery_code.as_bytes()).into();
@@ -40,7 +40,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn ok() {
+    async fn setup() {
         // Arrange
         let expected = MfaRecoveryCode::try_new("PJVURV-QRK3YJ-O3U7T6-D50KAC").unwrap();
 
@@ -52,14 +52,14 @@ mod tests {
         let mfa_repo = MockMfaRepository::new()
             .with_save_mfa_recovery_code_hash(FOO.user.id, (*SHA256HASH1).into());
 
-        let sut = MfaSetupRecoveryCommandServiceImpl {
+        let sut = MfaRecoveryServiceImpl {
             secret,
             hash,
             mfa_repo,
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id).await;
+        let result = sut.setup(&mut (), FOO.user.id).await;
 
         // Assert
         assert_eq!(result.unwrap(), expected);

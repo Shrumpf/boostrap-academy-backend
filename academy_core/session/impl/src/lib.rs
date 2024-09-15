@@ -1,8 +1,8 @@
 use academy_core_auth_contracts::{
     AuthResultExt, AuthService, AuthenticateByPasswordError, AuthenticateByRefreshTokenError,
 };
-use academy_core_mfa_contracts::commands::authenticate::{
-    MfaAuthenticateCommandError, MfaAuthenticateCommandResult, MfaAuthenticateCommandService,
+use academy_core_mfa_contracts::authenticate::{
+    MfaAuthenticateError, MfaAuthenticateResult, MfaAuthenticateService,
 };
 use academy_core_session_contracts::{
     commands::{
@@ -110,7 +110,7 @@ where
     SessionDeleteByUser: SessionDeleteByUserCommandService<Db::Transaction>,
     SessionFailedAuthCount: SessionFailedAuthCountService,
     UserGetByNameOrEmail: UserGetByNameOrEmailQueryService<Db::Transaction>,
-    MfaAuthenticate: MfaAuthenticateCommandService<Db::Transaction>,
+    MfaAuthenticate: MfaAuthenticateService<Db::Transaction>,
     UserRepo: UserRepository<Db::Transaction>,
     SessionRepo: SessionRepository<Db::Transaction>,
 {
@@ -208,18 +208,16 @@ where
         if user_composite.details.mfa_enabled {
             match self
                 .mfa_authenticate
-                .invoke(&mut txn, user_composite.user.id, cmd.mfa)
+                .authenticate(&mut txn, user_composite.user.id, cmd.mfa)
                 .await
             {
-                Ok(MfaAuthenticateCommandResult::Ok) => (),
-                Ok(MfaAuthenticateCommandResult::Reset) => {
-                    user_composite.details.mfa_enabled = false
-                }
-                Err(MfaAuthenticateCommandError::Failed) => {
+                Ok(MfaAuthenticateResult::Ok) => (),
+                Ok(MfaAuthenticateResult::Reset) => user_composite.details.mfa_enabled = false,
+                Err(MfaAuthenticateError::Failed) => {
                     increment_failed_login_attempts().await?;
                     return Err(SessionCreateError::MfaFailed);
                 }
-                Err(MfaAuthenticateCommandError::Other(err)) => return Err(err.into()),
+                Err(MfaAuthenticateError::Other(err)) => return Err(err.into()),
             }
         }
 

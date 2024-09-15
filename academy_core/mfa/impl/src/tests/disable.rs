@@ -1,7 +1,5 @@
 use academy_core_auth_contracts::MockAuthService;
-use academy_core_mfa_contracts::{
-    commands::disable::MockMfaDisableCommandService, MfaDisableError, MfaService,
-};
+use academy_core_mfa_contracts::{disable::MockMfaDisableService, MfaDisableError, MfaService};
 use academy_demo::{
     mfa::FOO_TOTP_1,
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -32,7 +30,7 @@ async fn ok() {
         vec![FOO_TOTP_1.clone().with(|x| x.enabled = true)],
     );
 
-    let mfa_disable = MockMfaDisableCommandService::new().with_invoke(FOO.user.id);
+    let mfa_disable = MockMfaDisableService::new().with_disable(FOO.user.id);
 
     let sut = MfaServiceImpl {
         auth,

@@ -1,11 +1,9 @@
-use academy_core_mfa_contracts::commands::{
-    authenticate::{
-        MfaAuthenticateCommandError, MfaAuthenticateCommandResult, MfaAuthenticateCommandService,
-    },
-    disable::MfaDisableCommandService,
+use academy_core_mfa_contracts::{
+    authenticate::{MfaAuthenticateError, MfaAuthenticateResult, MfaAuthenticateService},
+    disable::MfaDisableService,
 };
 use academy_di::Build;
-use academy_models::{mfa::MfaAuthenticateCommand, user::UserId};
+use academy_models::{mfa::MfaAuthentication, user::UserId};
 use academy_persistence_contracts::mfa::MfaRepository;
 use academy_shared_contracts::{
     hash::HashService,
@@ -13,35 +11,35 @@ use academy_shared_contracts::{
 };
 
 #[derive(Debug, Clone, Build, Default)]
-pub struct MfaAuthenticateCommandServiceImpl<Hash, Totp, MfaDisable, MfaRepo> {
+pub struct MfaAuthenticateServiceImpl<Hash, Totp, MfaDisable, MfaRepo> {
     hash: Hash,
     totp: Totp,
     mfa_disable: MfaDisable,
     mfa_repo: MfaRepo,
 }
 
-impl<Txn, Hash, Totp, MfaDisable, MfaRepo> MfaAuthenticateCommandService<Txn>
-    for MfaAuthenticateCommandServiceImpl<Hash, Totp, MfaDisable, MfaRepo>
+impl<Txn, Hash, Totp, MfaDisable, MfaRepo> MfaAuthenticateService<Txn>
+    for MfaAuthenticateServiceImpl<Hash, Totp, MfaDisable, MfaRepo>
 where
     Txn: Send + Sync + 'static,
     Hash: HashService,
     Totp: TotpService,
-    MfaDisable: MfaDisableCommandService<Txn>,
+    MfaDisable: MfaDisableService<Txn>,
     MfaRepo: MfaRepository<Txn>,
 {
-    async fn invoke(
+    async fn authenticate(
         &self,
         txn: &mut Txn,
         user_id: UserId,
-        cmd: MfaAuthenticateCommand,
-    ) -> Result<MfaAuthenticateCommandResult, MfaAuthenticateCommandError> {
+        cmd: MfaAuthentication,
+    ) -> Result<MfaAuthenticateResult, MfaAuthenticateError> {
         let totp_secrets = self
             .mfa_repo
             .list_enabled_totp_device_secrets_by_user(txn, user_id)
             .await?;
 
         if totp_secrets.is_empty() {
-            return Ok(MfaAuthenticateCommandResult::Ok);
+            return Ok(MfaAuthenticateResult::Ok);
         }
 
         if let Some(recovery_code) = cmd.recovery_code {
@@ -51,8 +49,8 @@ where
                 .await?
             {
                 if self.hash.sha256(recovery_code.as_bytes()) == *hash {
-                    self.mfa_disable.invoke(txn, user_id).await?;
-                    return Ok(MfaAuthenticateCommandResult::Reset);
+                    self.mfa_disable.disable(txn, user_id).await?;
+                    return Ok(MfaAuthenticateResult::Reset);
                 }
             }
         }
@@ -60,20 +58,20 @@ where
         if let Some(code) = cmd.totp_code {
             for secret in totp_secrets {
                 match self.totp.check(&code, secret).await {
-                    Ok(()) => return Ok(MfaAuthenticateCommandResult::Ok),
+                    Ok(()) => return Ok(MfaAuthenticateResult::Ok),
                     Err(TotpCheckError::InvalidCode | TotpCheckError::RecentlyUsed) => (),
                     Err(TotpCheckError::Other(err)) => return Err(err.into()),
                 }
             }
         }
 
-        Err(MfaAuthenticateCommandError::Failed)
+        Err(MfaAuthenticateError::Failed)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use academy_core_mfa_contracts::commands::disable::MockMfaDisableCommandService;
+    use academy_core_mfa_contracts::disable::MockMfaDisableService;
     use academy_demo::{user::FOO, SHA256HASH1, SHA256HASH2};
     use academy_models::mfa::TotpSecret;
     use academy_persistence_contracts::mfa::MockMfaRepository;
@@ -85,17 +83,17 @@ mod tests {
 
     use super::*;
 
-    type Sut = MfaAuthenticateCommandServiceImpl<
+    type Sut = MfaAuthenticateServiceImpl<
         MockHashService,
         MockTotpService,
-        MockMfaDisableCommandService<()>,
+        MockMfaDisableService<()>,
         MockMfaRepository<()>,
     >;
 
     #[tokio::test]
     async fn ok_mfa_disabled() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: None,
             recovery_code: None,
         };
@@ -103,22 +101,22 @@ mod tests {
         let mfa_repo = MockMfaRepository::new()
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![]);
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             mfa_repo,
             ..Sut::default()
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_eq!(result.unwrap(), MfaAuthenticateCommandResult::Ok);
+        assert_eq!(result.unwrap(), MfaAuthenticateResult::Ok);
     }
 
     #[tokio::test]
     async fn ok_recovery_code() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: None,
             recovery_code: Some("PJVURV-QRK3YJ-O3U7T6-D50KAC".try_into().unwrap()),
         };
@@ -131,13 +129,13 @@ mod tests {
             *SHA256HASH1,
         );
 
-        let mfa_disable = MockMfaDisableCommandService::new().with_invoke(FOO.user.id);
+        let mfa_disable = MockMfaDisableService::new().with_disable(FOO.user.id);
 
         let mfa_repo = MockMfaRepository::new()
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret])
             .with_get_mfa_recovery_code_hash(FOO.user.id, Some((*SHA256HASH1).into()));
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             hash,
             mfa_disable,
             mfa_repo,
@@ -145,16 +143,16 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_eq!(result.unwrap(), MfaAuthenticateCommandResult::Reset);
+        assert_eq!(result.unwrap(), MfaAuthenticateResult::Reset);
     }
 
     #[tokio::test]
     async fn ok_totp() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: Some("123456".try_into().unwrap()),
             recovery_code: None,
         };
@@ -171,23 +169,23 @@ mod tests {
         let mfa_repo = MockMfaRepository::new()
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret]);
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             totp,
             mfa_repo,
             ..Sut::default()
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_eq!(result.unwrap(), MfaAuthenticateCommandResult::Ok);
+        assert_eq!(result.unwrap(), MfaAuthenticateResult::Ok);
     }
 
     #[tokio::test]
     async fn failed_no_authentication() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: None,
             recovery_code: None,
         };
@@ -198,22 +196,22 @@ mod tests {
         let mfa_repo = MockMfaRepository::new()
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret]);
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             mfa_repo,
             ..Sut::default()
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_matches!(result, Err(MfaAuthenticateCommandError::Failed));
+        assert_matches!(result, Err(MfaAuthenticateError::Failed));
     }
 
     #[tokio::test]
     async fn failed_no_recovery_code() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: None,
             recovery_code: Some("PJVURV-QRK3YJ-O3U7T6-D50KAC".try_into().unwrap()),
         };
@@ -225,22 +223,22 @@ mod tests {
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret])
             .with_get_mfa_recovery_code_hash(FOO.user.id, None);
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             mfa_repo,
             ..Sut::default()
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_matches!(result, Err(MfaAuthenticateCommandError::Failed));
+        assert_matches!(result, Err(MfaAuthenticateError::Failed));
     }
 
     #[tokio::test]
     async fn failed_invalid_recovery_code() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: None,
             recovery_code: Some("PJVURV-QRK3YJ-O3U7T6-D50KAC".try_into().unwrap()),
         };
@@ -257,23 +255,23 @@ mod tests {
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret])
             .with_get_mfa_recovery_code_hash(FOO.user.id, Some((*SHA256HASH2).into()));
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             hash,
             mfa_repo,
             ..Sut::default()
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_matches!(result, Err(MfaAuthenticateCommandError::Failed));
+        assert_matches!(result, Err(MfaAuthenticateError::Failed));
     }
 
     #[tokio::test]
     async fn failed_invalid_totp_code() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: Some("123456".try_into().unwrap()),
             recovery_code: None,
         };
@@ -290,23 +288,23 @@ mod tests {
         let mfa_repo = MockMfaRepository::new()
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret]);
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             totp,
             mfa_repo,
             ..Sut::default()
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_matches!(result, Err(MfaAuthenticateCommandError::Failed));
+        assert_matches!(result, Err(MfaAuthenticateError::Failed));
     }
 
     #[tokio::test]
     async fn failed_totp_code_recently_used() {
         // Arrange
-        let cmd = MfaAuthenticateCommand {
+        let cmd = MfaAuthentication {
             totp_code: Some("123456".try_into().unwrap()),
             recovery_code: None,
         };
@@ -323,16 +321,16 @@ mod tests {
         let mfa_repo = MockMfaRepository::new()
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret]);
 
-        let sut = MfaAuthenticateCommandServiceImpl {
+        let sut = MfaAuthenticateServiceImpl {
             totp,
             mfa_repo,
             ..Sut::default()
         };
 
         // Act
-        let result = sut.invoke(&mut (), FOO.user.id, cmd).await;
+        let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_matches!(result, Err(MfaAuthenticateCommandError::Failed));
+        assert_matches!(result, Err(MfaAuthenticateError::Failed));
     }
 }

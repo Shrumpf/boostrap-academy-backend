@@ -1,11 +1,7 @@
 use academy_core_auth_contracts::MockAuthService;
 use academy_core_mfa_contracts::{
-    commands::{
-        confirm_totp_device::{
-            MfaConfirmTotpDeviceCommandError, MockMfaConfirmTotpDeviceCommandService,
-        },
-        setup_recovery::MockMfaSetupRecoveryCommandService,
-    },
+    recovery::MockMfaRecoveryService,
+    totp_device::{MfaTotpDeviceConfirmError, MockMfaTotpDeviceService},
     MfaEnableError, MfaService,
 };
 use academy_demo::{
@@ -40,22 +36,21 @@ async fn ok() {
     let mfa_repo = MockMfaRepository::new()
         .with_list_totp_devices_by_user(FOO.user.id, vec![FOO_TOTP_1.clone()]);
 
-    let mfa_confirm_totp_device = MockMfaConfirmTotpDeviceCommandService::new().with_invoke(
+    let mfa_totp_device = MockMfaTotpDeviceService::new().with_confirm(
         FOO_TOTP_1.clone(),
         code.clone(),
         Ok(FOO_TOTP_1.clone().with(|x| x.enabled = true)),
     );
 
-    let mfa_setup_recovery =
-        MockMfaSetupRecoveryCommandService::new().with_invoke(FOO.user.id, expected.clone());
+    let mfa_recovery = MockMfaRecoveryService::new().with_setup(FOO.user.id, expected.clone());
 
     let sut = MfaServiceImpl {
         auth,
         db,
         user_repo,
         mfa_repo,
-        mfa_confirm_totp_device,
-        mfa_setup_recovery,
+        mfa_recovery,
+        mfa_totp_device,
         ..Sut::default()
     };
 
@@ -213,10 +208,10 @@ async fn invalid_code() {
     let mfa_repo = MockMfaRepository::new()
         .with_list_totp_devices_by_user(FOO.user.id, vec![FOO_TOTP_1.clone()]);
 
-    let mfa_confirm_totp_device = MockMfaConfirmTotpDeviceCommandService::new().with_invoke(
+    let mfa_totp_device = MockMfaTotpDeviceService::new().with_confirm(
         FOO_TOTP_1.clone(),
         code.clone(),
-        Err(MfaConfirmTotpDeviceCommandError::InvalidCode),
+        Err(MfaTotpDeviceConfirmError::InvalidCode),
     );
 
     let sut = MfaServiceImpl {
@@ -224,7 +219,7 @@ async fn invalid_code() {
         db,
         user_repo,
         mfa_repo,
-        mfa_confirm_totp_device,
+        mfa_totp_device,
         ..Sut::default()
     };
 

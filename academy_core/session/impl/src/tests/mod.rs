@@ -1,5 +1,5 @@
 use academy_core_auth_contracts::MockAuthService;
-use academy_core_mfa_contracts::commands::authenticate::MockMfaAuthenticateCommandService;
+use academy_core_mfa_contracts::authenticate::MockMfaAuthenticateService;
 use academy_core_session_contracts::{
     commands::{
         create::MockSessionCreateCommandService, delete::MockSessionDeleteCommandService,
@@ -35,7 +35,7 @@ type Sut = SessionServiceImpl<
     MockSessionDeleteByUserCommandService<MockTransaction>,
     MockSessionFailedAuthCountService,
     MockUserGetByNameOrEmailQueryService<MockTransaction>,
-    MockMfaAuthenticateCommandService<MockTransaction>,
+    MockMfaAuthenticateService<MockTransaction>,
     MockUserRepository<MockTransaction>,
     MockSessionRepository<MockTransaction>,
 >;
