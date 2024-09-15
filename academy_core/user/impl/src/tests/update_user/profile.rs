@@ -1,5 +1,5 @@
 use academy_auth_contracts::MockAuthService;
-use academy_core_user_contracts::{UserService, UserUpdateRequest};
+use academy_core_user_contracts::{UserFeatureService, UserUpdateRequest};
 use academy_demo::{
     session::FOO_1,
     user::{BAR, FOO},
@@ -8,7 +8,7 @@ use academy_models::user::{UserComposite, UserIdOrSelf};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::patch::Patch;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn update_profile() {
@@ -26,7 +26,7 @@ async fn update_profile() {
         .with_get_composite(FOO.user.id, Some(FOO.clone()))
         .with_update_profile(FOO.user.id, expected.profile.clone().into_patch(), true);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -58,7 +58,7 @@ async fn update_profile_no_changes() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

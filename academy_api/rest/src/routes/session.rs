@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use academy_core_session_contracts::{
     SessionCreateCommand, SessionCreateError, SessionDeleteByUserError, SessionDeleteCurrentError,
-    SessionDeleteError, SessionGetCurrentError, SessionImpersonateError, SessionListByUserError,
-    SessionRefreshError, SessionService,
+    SessionDeleteError, SessionFeatureService, SessionGetCurrentError, SessionImpersonateError,
+    SessionListByUserError, SessionRefreshError,
 };
 use academy_models::{
     mfa::{MfaAuthentication, MfaRecoveryCode, TotpCode},
@@ -29,7 +29,7 @@ use crate::{
     },
 };
 
-pub fn router(service: Arc<impl SessionService>) -> Router<()> {
+pub fn router(service: Arc<impl SessionFeatureService>) -> Router<()> {
     Router::new()
         .route(
             "/auth/session",
@@ -52,7 +52,7 @@ pub fn router(service: Arc<impl SessionService>) -> Router<()> {
 }
 
 async fn get_current(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
 ) -> Response {
     match session_service.get_current_session(&token.0).await {
@@ -63,7 +63,7 @@ async fn get_current(
 }
 
 async fn list_by_user(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {
@@ -90,7 +90,7 @@ struct CreateRequest {
 }
 
 async fn create(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     user_agent: UserAgent,
     Json(CreateRequest {
         name_or_email,
@@ -131,7 +131,7 @@ async fn create(
 }
 
 async fn impersonate(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<UserId>,
 ) -> Response {
@@ -149,7 +149,7 @@ struct RefreshRequest {
 }
 
 async fn refresh(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     Json(RefreshRequest { refresh_token }): Json<RefreshRequest>,
 ) -> Response {
     match session_service.refresh_session(&refresh_token).await {
@@ -162,7 +162,7 @@ async fn refresh(
 }
 
 async fn delete(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
     Path((user_id, session_id)): Path<(ApiUserIdOrSelf, SessionId)>,
 ) -> Response {
@@ -178,7 +178,7 @@ async fn delete(
 }
 
 async fn delete_current(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
 ) -> Response {
     match session_service.delete_current_session(&token.0).await {
@@ -189,7 +189,7 @@ async fn delete_current(
 }
 
 async fn delete_by_user(
-    session_service: State<Arc<impl SessionService>>,
+    session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {

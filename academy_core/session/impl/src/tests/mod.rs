@@ -14,7 +14,7 @@ use academy_persistence_contracts::{
 };
 use academy_shared_contracts::captcha::MockCaptchaService;
 
-use crate::{SessionServiceConfig, SessionServiceImpl};
+use crate::{SessionFeatureServiceImpl, SessionServiceConfig};
 
 mod create_session;
 mod delete_by_user;
@@ -25,7 +25,7 @@ mod impersonate;
 mod list_by_user;
 mod refresh;
 
-type Sut = SessionServiceImpl<
+type Sut = SessionFeatureServiceImpl<
     MockDatabase,
     MockAuthService<MockTransaction>,
     MockCaptchaService,

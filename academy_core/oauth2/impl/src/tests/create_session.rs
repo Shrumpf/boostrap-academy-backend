@@ -3,7 +3,7 @@ use std::time::Duration;
 use academy_cache_contracts::MockCacheService;
 use academy_core_oauth2_contracts::{
     login::{MockOAuth2LoginService, OAuth2LoginServiceError},
-    OAuth2CreateSessionError, OAuth2CreateSessionResponse, OAuth2Service,
+    OAuth2CreateSessionError, OAuth2CreateSessionResponse, OAuth2FeatureService,
 };
 use academy_core_session_contracts::commands::create::MockSessionCreateCommandService;
 use academy_demo::{
@@ -19,7 +19,7 @@ use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_shared_contracts::secret::MockSecretService;
 use academy_utils::{assert_matches, Apply};
 
-use crate::{tests::Sut, OAuth2Registration, OAuth2ServiceImpl};
+use crate::{tests::Sut, OAuth2FeatureServiceImpl, OAuth2Registration};
 
 #[tokio::test]
 async fn ok() {
@@ -55,7 +55,7 @@ async fn ok() {
         expected.clone(),
     );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         oauth2_login,
         user_repo,
@@ -109,7 +109,7 @@ async fn not_linked() {
         Some(Duration::from_secs(600)),
     );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         cache,
         secret,
@@ -140,7 +140,7 @@ async fn invalid_provider() {
     let oauth2_login = MockOAuth2LoginService::new()
         .with_invoke(login.clone(), Err(OAuth2LoginServiceError::InvalidProvider));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         oauth2_login,
         ..Sut::default()
     };
@@ -164,7 +164,7 @@ async fn invalid_code() {
     let oauth2_login = MockOAuth2LoginService::new()
         .with_invoke(login.clone(), Err(OAuth2LoginServiceError::InvalidCode));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         oauth2_login,
         ..Sut::default()
     };
@@ -197,7 +197,7 @@ async fn user_disabled() {
             Some(FOO.clone().with(|u| u.user.enabled = false)),
         );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         oauth2_login,
         user_repo,

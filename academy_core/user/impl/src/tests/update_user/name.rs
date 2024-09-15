@@ -5,7 +5,7 @@ use academy_core_user_contracts::{
     commands::update_name::{
         MockUserUpdateNameCommandService, UserUpdateNameCommandError, UserUpdateNameRateLimitPolicy,
     },
-    UserService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
     session::{ADMIN_1, FOO_1},
@@ -15,7 +15,7 @@ use academy_models::user::{User, UserComposite, UserIdOrSelf};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn update_name_self() {
@@ -42,7 +42,7 @@ async fn update_name_self() {
         Ok(expected.user.clone()),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_name,
@@ -95,7 +95,7 @@ async fn update_name_admin_no_rate_limit() {
         Ok(expected.user.clone()),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_name,
@@ -140,7 +140,7 @@ async fn update_name_self_rate_limit() {
         Err(UserUpdateNameCommandError::RateLimit { until: expected }),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_name,
@@ -183,7 +183,7 @@ async fn update_name_conflict() {
         Err(UserUpdateNameCommandError::Conflict),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_name,

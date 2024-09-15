@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
     commands::request_subscribe_newsletter_email::MockUserRequestSubscribeNewsletterEmailCommandService,
-    UserService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -11,7 +11,7 @@ use academy_models::user::{User, UserComposite, UserIdOrSelf, UserPatch};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn enable_self() {
@@ -40,7 +40,7 @@ async fn enable_self() {
                 .with_name(FOO.profile.display_name.clone().into_inner()),
         );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -92,7 +92,7 @@ async fn enable_admin() {
             Ok(true),
         );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -141,7 +141,7 @@ async fn disable_self() {
             Ok(true),
         );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -176,7 +176,7 @@ async fn enable_self_no_email() {
 
     let user_repo = MockUserRepository::new().with_get_composite(BAR.user.id, Some(BAR.clone()));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

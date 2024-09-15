@@ -1,6 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    UserService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -10,7 +10,7 @@ use academy_models::auth::{AuthError, AuthenticateError, AuthorizeError};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 mod admin;
 mod email;
@@ -27,7 +27,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -51,7 +51,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -108,7 +108,7 @@ async fn unauthorized_admin() {
         let user_repo =
             MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-        let sut = UserServiceImpl {
+        let sut = UserFeatureServiceImpl {
             auth,
             db,
             user_repo,
@@ -138,7 +138,7 @@ async fn not_found() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

@@ -2,7 +2,7 @@ use academy_core_user_contracts::{
     commands::reset_password::{
         MockUserResetPasswordCommandService, UserResetPasswordCommandError,
     },
-    UserResetPasswordError, UserService,
+    UserFeatureService, UserResetPasswordError,
 };
 use academy_demo::{
     user::{FOO, FOO_PASSWORD},
@@ -11,7 +11,7 @@ use academy_demo::{
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -28,7 +28,7 @@ async fn ok() {
         Ok(()),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         user_repo,
         user_reset_password,
@@ -56,7 +56,7 @@ async fn user_not_found() {
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_email(FOO.user.email.clone().unwrap(), None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         user_repo,
         ..Sut::default()
@@ -90,7 +90,7 @@ async fn invalid_code() {
         Err(UserResetPasswordCommandError::InvalidCode),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         user_repo,
         user_reset_password,

@@ -1,6 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
-    commands::delete::MockSessionDeleteCommandService, SessionDeleteError, SessionService,
+    commands::delete::MockSessionDeleteCommandService, SessionDeleteError, SessionFeatureService,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1, FOO_2},
@@ -13,7 +13,7 @@ use academy_models::{
 use academy_persistence_contracts::{session::MockSessionRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, SessionServiceImpl};
+use crate::{tests::Sut, SessionFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok_current() {
@@ -26,7 +26,7 @@ async fn ok_current() {
 
     let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_1.id, true);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,
@@ -54,7 +54,7 @@ async fn ok_self() {
 
     let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_2.id, true);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,
@@ -83,7 +83,7 @@ async fn ok_admin() {
 
     let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_2.id, true);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,
@@ -105,7 +105,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -129,7 +129,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -158,7 +158,7 @@ async fn not_found() {
 
     let session_repo = MockSessionRepository::new().with_get(FOO_1.id, None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,
@@ -184,7 +184,7 @@ async fn different_user() {
 
     let session_repo = MockSessionRepository::new().with_get(FOO_1.id, Some(FOO_1.clone()));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,

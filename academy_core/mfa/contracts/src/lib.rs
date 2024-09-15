@@ -13,7 +13,7 @@ pub mod recovery;
 pub mod totp_device;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait MfaService: Send + Sync + 'static {
+pub trait MfaFeatureService: Send + Sync + 'static {
     fn initialize(
         &self,
         token: &str,

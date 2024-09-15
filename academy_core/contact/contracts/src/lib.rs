@@ -4,7 +4,7 @@ use academy_models::{contact::ContactMessage, RecaptchaResponse};
 use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait ContactService: Send + Sync + 'static {
+pub trait ContactFeatureService: Send + Sync + 'static {
     fn send_message(
         &self,
         message: ContactMessage,

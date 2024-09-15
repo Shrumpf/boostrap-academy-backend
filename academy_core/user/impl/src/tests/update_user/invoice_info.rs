@@ -1,6 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    update_invoice_info::MockUserUpdateInvoiceInfoService, UserService, UserUpdateError,
+    update_invoice_info::MockUserUpdateInvoiceInfoService, UserFeatureService, UserUpdateError,
     UserUpdateRequest,
 };
 use academy_demo::{
@@ -12,7 +12,7 @@ use academy_models::user::{UserComposite, UserIdOrSelf, UserInvoiceInfo};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::{assert_matches, patch::Patch, Apply};
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -44,7 +44,7 @@ async fn ok() {
         expected.invoice_info.clone(),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -97,7 +97,7 @@ async fn ok_release_coins() {
 
     let internal_api = MockInternalApiService::new().with_release_coins(BAR.user.id);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -143,7 +143,7 @@ async fn invalid_vat_id() {
 
     let vat_api = MockVatApiService::new().with_is_vat_id_valid("DE1234".into(), false);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

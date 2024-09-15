@@ -1,6 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
-    commands::create::MockSessionCreateCommandService, SessionImpersonateError, SessionService,
+    commands::create::MockSessionCreateCommandService, SessionFeatureService,
+    SessionImpersonateError,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -10,7 +11,7 @@ use academy_models::auth::{AuthError, AuthenticateError, AuthorizeError, Login};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, SessionServiceImpl};
+use crate::{tests::Sut, SessionFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -36,7 +37,7 @@ async fn ok() {
         expected.clone(),
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -56,7 +57,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -78,7 +79,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -105,7 +106,7 @@ async fn user_not_found() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         db,
         user_repo,

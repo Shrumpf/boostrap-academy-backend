@@ -1,5 +1,5 @@
 use academy_auth_contracts::MockAuthService;
-use academy_core_oauth2_contracts::{OAuth2DeleteLinkError, OAuth2Service};
+use academy_core_oauth2_contracts::{OAuth2DeleteLinkError, OAuth2FeatureService};
 use academy_demo::{
     oauth2::FOO_OAUTH2_LINK_1,
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -11,7 +11,7 @@ use academy_persistence_contracts::{
 };
 use academy_utils::{assert_matches, Apply};
 
-use crate::{tests::Sut, OAuth2ServiceImpl};
+use crate::{tests::Sut, OAuth2FeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -29,7 +29,7 @@ async fn ok() {
         Some(FOO.clone().with(|u| u.details.oauth2_login = false)),
     );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         oauth2_repo,
@@ -51,7 +51,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -75,7 +75,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -104,7 +104,7 @@ async fn not_found() {
 
     let oauth2_repo = MockOAuth2Repository::new().with_get_link(FOO_OAUTH2_LINK_1.id, None);
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         oauth2_repo,
@@ -131,7 +131,7 @@ async fn user_id_mismatch() {
     let oauth2_repo = MockOAuth2Repository::new()
         .with_get_link(FOO_OAUTH2_LINK_1.id, Some(FOO_OAUTH2_LINK_1.clone()));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         oauth2_repo,
@@ -166,7 +166,7 @@ async fn last_login_method() {
         })),
     );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         oauth2_repo,

@@ -13,7 +13,7 @@ use academy_persistence_contracts::{
 };
 use academy_shared_contracts::secret::MockSecretService;
 
-use crate::{OAuth2ServiceConfig, OAuth2ServiceImpl};
+use crate::{OAuth2FeatureServiceImpl, OAuth2ServiceConfig};
 
 mod create_link;
 mod create_session;
@@ -21,7 +21,7 @@ mod delete_link;
 mod list_links;
 mod list_providers;
 
-type Sut = OAuth2ServiceImpl<
+type Sut = OAuth2FeatureServiceImpl<
     MockDatabase,
     MockAuthService<MockTransaction>,
     MockCacheService,

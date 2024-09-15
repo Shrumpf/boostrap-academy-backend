@@ -21,7 +21,7 @@ pub mod queries;
 pub mod update_invoice_info;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait UserService: Send + Sync + 'static {
+pub trait UserFeatureService: Send + Sync + 'static {
     /// Returns a list of all users matching the given query.
     ///
     /// Can only be used by administrators.

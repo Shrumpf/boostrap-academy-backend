@@ -1,5 +1,5 @@
 use academy_auth_contracts::MockAuthService;
-use academy_core_user_contracts::{UserDeleteError, UserService};
+use academy_core_user_contracts::{UserDeleteError, UserFeatureService};
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
     user::{ADMIN, BAR, FOO},
@@ -11,7 +11,7 @@ use academy_models::{
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok_self() {
@@ -24,7 +24,7 @@ async fn ok_self() {
 
     let user_repo = MockUserRepository::new().with_delete(FOO.user.id, true);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -49,7 +49,7 @@ async fn ok_admin() {
 
     let user_repo = MockUserRepository::new().with_delete(FOO.user.id, true);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -68,7 +68,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -90,7 +90,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -118,7 +118,7 @@ async fn not_found() {
 
     let user_repo = MockUserRepository::new().with_delete(FOO.user.id, false);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

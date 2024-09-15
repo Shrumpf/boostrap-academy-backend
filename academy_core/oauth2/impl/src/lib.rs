@@ -6,7 +6,7 @@ use academy_core_oauth2_contracts::{
     create_link::{OAuth2CreateLinkService, OAuth2CreateLinkServiceError},
     login::{OAuth2LoginService, OAuth2LoginServiceError},
     oauth2_registration_cache_key, OAuth2CreateLinkError, OAuth2CreateSessionError,
-    OAuth2CreateSessionResponse, OAuth2DeleteLinkError, OAuth2ListLinksError, OAuth2Service,
+    OAuth2CreateSessionResponse, OAuth2DeleteLinkError, OAuth2FeatureService, OAuth2ListLinksError,
 };
 use academy_core_session_contracts::commands::create::SessionCreateCommandService;
 use academy_di::Build;
@@ -32,7 +32,7 @@ mod tests;
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
-pub struct OAuth2ServiceImpl<
+pub struct OAuth2FeatureServiceImpl<
     Db,
     Auth,
     Cache,
@@ -74,8 +74,8 @@ impl<
         OAuth2CreateLink,
         OAuth2LoginS,
         SessionCreate,
-    > OAuth2Service
-    for OAuth2ServiceImpl<
+    > OAuth2FeatureService
+    for OAuth2FeatureServiceImpl<
         Db,
         Auth,
         Cache,

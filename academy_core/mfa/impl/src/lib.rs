@@ -3,7 +3,7 @@ use academy_core_mfa_contracts::{
     disable::MfaDisableService,
     recovery::MfaRecoveryService,
     totp_device::{MfaTotpDeviceConfirmError, MfaTotpDeviceService},
-    MfaDisableError, MfaEnableError, MfaInitializeError, MfaService,
+    MfaDisableError, MfaEnableError, MfaFeatureService, MfaInitializeError,
 };
 use academy_di::Build;
 use academy_models::{
@@ -23,7 +23,15 @@ pub mod totp_device;
 mod tests;
 
 #[derive(Debug, Clone, Build, Default)]
-pub struct MfaServiceImpl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice> {
+pub struct MfaFeatureServiceImpl<
+    Db,
+    Auth,
+    UserRepo,
+    MfaRepo,
+    MfaRecovery,
+    MfaDisable,
+    MfaTotpDevice,
+> {
     db: Db,
     auth: Auth,
     user_repo: UserRepo,
@@ -33,8 +41,8 @@ pub struct MfaServiceImpl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, 
     mfa_totp_device: MfaTotpDevice,
 }
 
-impl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice> MfaService
-    for MfaServiceImpl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice>
+impl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice> MfaFeatureService
+    for MfaFeatureServiceImpl<Db, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice>
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,

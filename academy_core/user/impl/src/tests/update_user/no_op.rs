@@ -1,5 +1,5 @@
 use academy_auth_contracts::MockAuthService;
-use academy_core_user_contracts::UserService;
+use academy_core_user_contracts::UserFeatureService;
 use academy_demo::{
     session::{ADMIN_1, FOO_1},
     user::{ADMIN, FOO},
@@ -7,7 +7,7 @@ use academy_demo::{
 use academy_models::user::UserIdOrSelf;
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn no_op_self() {
@@ -18,7 +18,7 @@ async fn no_op_self() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -44,7 +44,7 @@ async fn no_op_admin() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

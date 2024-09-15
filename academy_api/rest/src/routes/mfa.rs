@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use academy_core_mfa_contracts::{MfaDisableError, MfaEnableError, MfaInitializeError, MfaService};
+use academy_core_mfa_contracts::{
+    MfaDisableError, MfaEnableError, MfaFeatureService, MfaInitializeError,
+};
 use academy_models::mfa::TotpCode;
 use axum::{
     extract::{Path, State},
@@ -13,7 +15,7 @@ use serde::Deserialize;
 use super::{auth_error, error, internal_server_error};
 use crate::{extractors::auth::ApiToken, models::user::ApiUserIdOrSelf};
 
-pub fn router(service: Arc<impl MfaService>) -> Router<()> {
+pub fn router(service: Arc<impl MfaFeatureService>) -> Router<()> {
     Router::new()
         .route(
             "/auth/users/:user_id/mfa",
@@ -23,7 +25,7 @@ pub fn router(service: Arc<impl MfaService>) -> Router<()> {
 }
 
 async fn initialize(
-    service: State<Arc<impl MfaService>>,
+    service: State<Arc<impl MfaFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {
@@ -44,7 +46,7 @@ struct EnableRequest {
 }
 
 async fn enable(
-    service: State<Arc<impl MfaService>>,
+    service: State<Arc<impl MfaFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
     Json(EnableRequest { code }): Json<EnableRequest>,
@@ -63,7 +65,7 @@ async fn enable(
 }
 
 async fn disable(
-    service: State<Arc<impl MfaService>>,
+    service: State<Arc<impl MfaFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {

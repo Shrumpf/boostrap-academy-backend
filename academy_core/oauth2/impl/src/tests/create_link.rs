@@ -2,7 +2,7 @@ use academy_auth_contracts::MockAuthService;
 use academy_core_oauth2_contracts::{
     create_link::{MockOAuth2CreateLinkService, OAuth2CreateLinkServiceError},
     login::{MockOAuth2LoginService, OAuth2LoginServiceError},
-    OAuth2CreateLinkError, OAuth2Service,
+    OAuth2CreateLinkError, OAuth2FeatureService,
 };
 use academy_demo::{
     oauth2::{FOO_OAUTH2_LINK_1, TEST_OAUTH2_PROVIDER_ID},
@@ -17,7 +17,7 @@ use academy_models::{
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, OAuth2ServiceImpl};
+use crate::{tests::Sut, OAuth2FeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -44,7 +44,7 @@ async fn ok() {
         Ok(FOO_OAUTH2_LINK_1.clone()),
     );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         user_repo,
@@ -71,7 +71,7 @@ async fn unauthenticated() {
 
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -99,7 +99,7 @@ async fn unauthorized() {
 
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -132,7 +132,7 @@ async fn not_found() {
 
     let user_repo = MockUserRepository::new().with_exists(FOO.user.id, false);
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         user_repo,
@@ -164,7 +164,7 @@ async fn invalid_provider() {
     let oauth2_login = MockOAuth2LoginService::new()
         .with_invoke(login.clone(), Err(OAuth2LoginServiceError::InvalidProvider));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         user_repo,
@@ -197,7 +197,7 @@ async fn invalid_code() {
     let oauth2_login = MockOAuth2LoginService::new()
         .with_invoke(login.clone(), Err(OAuth2LoginServiceError::InvalidCode));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         user_repo,
@@ -237,7 +237,7 @@ async fn remote_already_linked() {
         Err(OAuth2CreateLinkServiceError::RemoteAlreadyLinked),
     );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         user_repo,

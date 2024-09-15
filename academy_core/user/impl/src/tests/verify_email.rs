@@ -1,12 +1,12 @@
 use academy_core_user_contracts::{
     commands::verify_email::{MockUserVerifyEmailCommandService, UserVerifyEmailCommandError},
-    UserService, UserVerifyEmailError,
+    UserFeatureService, UserVerifyEmailError,
 };
 use academy_demo::{user::FOO, VERIFICATION_CODE_1};
 use academy_persistence_contracts::MockDatabase;
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -16,7 +16,7 @@ async fn ok() {
     let user_verify_email = MockUserVerifyEmailCommandService::new()
         .with_invoke(VERIFICATION_CODE_1.clone(), Ok(FOO.clone()));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         user_verify_email,
         ..Sut::default()
@@ -39,7 +39,7 @@ async fn invalid_code() {
         Err(UserVerifyEmailCommandError::InvalidCode),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         user_verify_email,
         ..Sut::default()
@@ -62,7 +62,7 @@ async fn already_verified() {
         Err(UserVerifyEmailCommandError::AlreadyVerified),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         user_verify_email,
         ..Sut::default()

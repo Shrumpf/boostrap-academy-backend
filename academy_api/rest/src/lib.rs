@@ -1,13 +1,13 @@
 use std::net::{IpAddr, SocketAddr};
 
-use academy_core_config_contracts::ConfigService;
-use academy_core_contact_contracts::ContactService;
-use academy_core_health_contracts::HealthService;
+use academy_core_config_contracts::ConfigFeatureService;
+use academy_core_contact_contracts::ContactFeatureService;
+use academy_core_health_contracts::HealthFeatureService;
 use academy_core_internal_contracts::InternalService;
-use academy_core_mfa_contracts::MfaService;
-use academy_core_oauth2_contracts::OAuth2Service;
-use academy_core_session_contracts::SessionService;
-use academy_core_user_contracts::UserService;
+use academy_core_mfa_contracts::MfaFeatureService;
+use academy_core_oauth2_contracts::OAuth2FeatureService;
+use academy_core_session_contracts::SessionFeatureService;
+use academy_core_user_contracts::UserFeatureService;
 use academy_di::Build;
 use academy_utils::Apply;
 use axum::Router;
@@ -33,13 +33,13 @@ pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Inter
 impl<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>
     RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>
 where
-    Health: HealthService,
-    Config: ConfigService,
-    User: UserService,
-    Session: SessionService,
-    Contact: ContactService,
-    Mfa: MfaService,
-    OAuth2: OAuth2Service,
+    Health: HealthFeatureService,
+    Config: ConfigFeatureService,
+    User: UserFeatureService,
+    Session: SessionFeatureService,
+    Contact: ContactFeatureService,
+    Mfa: MfaFeatureService,
+    OAuth2: OAuth2FeatureService,
     Internal: InternalService,
 {
     pub async fn serve(

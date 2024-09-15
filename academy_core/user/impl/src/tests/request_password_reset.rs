@@ -1,13 +1,13 @@
 use academy_core_user_contracts::{
     commands::request_password_reset_email::MockUserRequestPasswordResetEmailCommandService,
-    UserRequestPasswordResetError, UserService,
+    UserFeatureService, UserRequestPasswordResetError,
 };
 use academy_demo::user::FOO;
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -29,7 +29,7 @@ async fn ok() {
                 .with_name(FOO.profile.display_name.clone().into_inner()),
         );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         captcha,
         user_repo,
@@ -55,7 +55,7 @@ async fn invalid_captcha_response() {
     let captcha =
         MockCaptchaService::new().with_check(Some("resp"), Err(CaptchaCheckError::Failed));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         captcha,
         ..Sut::default()
     };
@@ -82,7 +82,7 @@ async fn user_not_found() {
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_email(FOO.user.email.clone().unwrap(), None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         captcha,
         user_repo,

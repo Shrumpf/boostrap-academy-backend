@@ -13,8 +13,8 @@ use academy_core_session_contracts::{
     },
     failed_auth_count::SessionFailedAuthCountService,
     SessionCreateCommand, SessionCreateError, SessionDeleteByUserError, SessionDeleteCurrentError,
-    SessionDeleteError, SessionGetCurrentError, SessionImpersonateError, SessionListByUserError,
-    SessionRefreshError, SessionService,
+    SessionDeleteError, SessionFeatureService, SessionGetCurrentError, SessionImpersonateError,
+    SessionListByUserError, SessionRefreshError,
 };
 use academy_core_user_contracts::queries::get_by_name_or_email::UserGetByNameOrEmailQueryService;
 use academy_di::Build;
@@ -38,7 +38,7 @@ mod tests;
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
-pub struct SessionServiceImpl<
+pub struct SessionFeatureServiceImpl<
     Db,
     Auth,
     Captcha,
@@ -85,8 +85,8 @@ impl<
         MfaAuthenticate,
         UserRepo,
         SessionRepo,
-    > SessionService
-    for SessionServiceImpl<
+    > SessionFeatureService
+    for SessionFeatureServiceImpl<
         Db,
         Auth,
         Captcha,

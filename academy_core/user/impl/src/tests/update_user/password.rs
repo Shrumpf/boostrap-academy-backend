@@ -1,14 +1,14 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::update_password::MockUserUpdatePasswordCommandService, PasswordUpdate, UserService,
-    UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    commands::update_password::MockUserUpdatePasswordCommandService, PasswordUpdate,
+    UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::user::{UserIdOrSelf, UserPassword};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::{assert_matches, patch::PatchValue, Apply};
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn update_password() {
@@ -24,7 +24,7 @@ async fn update_password() {
     let user_update_password =
         MockUserUpdatePasswordCommandService::new().with_invoke(FOO.user.id, new_password.clone());
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_password,
@@ -62,7 +62,7 @@ async fn remove_password_oauth() {
         .with_get_composite(FOO.user.id, Some(FOO.clone()))
         .with_remove_password_hash(FOO.user.id, true);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -103,7 +103,7 @@ async fn remove_password_no_oauth() {
         Some(FOO.clone().with(|u| u.details.oauth2_login = false)),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

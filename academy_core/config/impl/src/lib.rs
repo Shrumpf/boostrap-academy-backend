@@ -1,13 +1,13 @@
-use academy_core_config_contracts::ConfigService;
+use academy_core_config_contracts::ConfigFeatureService;
 use academy_di::Build;
 use academy_shared_contracts::captcha::CaptchaService;
 
 #[derive(Debug, Clone, Build)]
-pub struct ConfigServiceImpl<Captcha> {
+pub struct ConfigFeatureServiceImpl<Captcha> {
     captcha: Captcha,
 }
 
-impl<Captcha> ConfigService for ConfigServiceImpl<Captcha>
+impl<Captcha> ConfigFeatureService for ConfigFeatureServiceImpl<Captcha>
 where
     Captcha: CaptchaService,
 {
@@ -27,7 +27,7 @@ mod tests {
         // Arrange
         let captcha = MockCaptchaService::new().with_get_recaptcha_sitekey(Some("sitekey"));
 
-        let sut = ConfigServiceImpl { captcha };
+        let sut = ConfigFeatureServiceImpl { captcha };
 
         // Act
         let result = sut.get_recaptcha_sitekey();
@@ -41,7 +41,7 @@ mod tests {
         // Arrange
         let captcha = MockCaptchaService::new().with_get_recaptcha_sitekey(None);
 
-        let sut = ConfigServiceImpl { captcha };
+        let sut = ConfigFeatureServiceImpl { captcha };
 
         // Act
         let result = sut.get_recaptcha_sitekey();

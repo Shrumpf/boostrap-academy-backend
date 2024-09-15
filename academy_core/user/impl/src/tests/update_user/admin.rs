@@ -1,6 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::update_admin::MockUserUpdateAdminCommandService, UserService, UserUpdateError,
+    commands::update_admin::MockUserUpdateAdminCommandService, UserFeatureService, UserUpdateError,
     UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
@@ -12,7 +12,7 @@ use academy_models::user::{User, UserComposite, UserIdOrSelf};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn update_admin() {
@@ -48,7 +48,7 @@ async fn update_admin() {
             true,
         );
 
-        let sut = UserServiceImpl {
+        let sut = UserFeatureServiceImpl {
             auth,
             db,
             user_update_admin,
@@ -87,7 +87,7 @@ async fn demote_self() {
     let user_repo =
         MockUserRepository::new().with_get_composite(ADMIN.user.id, Some(ADMIN.clone()));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,

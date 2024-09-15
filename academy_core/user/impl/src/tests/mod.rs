@@ -23,7 +23,7 @@ use academy_extern_contracts::{internal::MockInternalApiService, vat::MockVatApi
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase, MockTransaction};
 use academy_shared_contracts::captcha::MockCaptchaService;
 
-use crate::UserServiceImpl;
+use crate::UserFeatureServiceImpl;
 
 mod create_user;
 mod delete_user;
@@ -36,7 +36,7 @@ mod update_user;
 mod verify_email;
 mod verify_newsletter_subscription;
 
-type Sut = UserServiceImpl<
+type Sut = UserFeatureServiceImpl<
     MockDatabase,
     MockAuthService<MockTransaction>,
     MockCacheService,

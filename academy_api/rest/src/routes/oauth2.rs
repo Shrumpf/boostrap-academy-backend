@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use academy_core_oauth2_contracts::{
     OAuth2CreateLinkError, OAuth2CreateSessionError, OAuth2CreateSessionResponse,
-    OAuth2DeleteLinkError, OAuth2ListLinksError, OAuth2Service,
+    OAuth2DeleteLinkError, OAuth2FeatureService, OAuth2ListLinksError,
 };
 use academy_models::{
     oauth2::{OAuth2LinkId, OAuth2RegistrationToken},
@@ -26,7 +26,7 @@ use crate::{
     },
 };
 
-pub fn router(service: Arc<impl OAuth2Service>) -> Router<()> {
+pub fn router(service: Arc<impl OAuth2FeatureService>) -> Router<()> {
     Router::new()
         .route("/auth/oauth/providers", routing::get(list_providers))
         .route(
@@ -41,7 +41,7 @@ pub fn router(service: Arc<impl OAuth2Service>) -> Router<()> {
         .with_state(service)
 }
 
-async fn list_providers(service: State<Arc<impl OAuth2Service>>) -> Response {
+async fn list_providers(service: State<Arc<impl OAuth2FeatureService>>) -> Response {
     Json(
         service
             .list_providers()
@@ -53,7 +53,7 @@ async fn list_providers(service: State<Arc<impl OAuth2Service>>) -> Response {
 }
 
 async fn list_links(
-    service: State<Arc<impl OAuth2Service>>,
+    service: State<Arc<impl OAuth2FeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {
@@ -72,7 +72,7 @@ async fn list_links(
 }
 
 async fn create_link(
-    service: State<Arc<impl OAuth2Service>>,
+    service: State<Arc<impl OAuth2FeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
     Json(login): Json<ApiOAuth2Login>,
@@ -96,7 +96,7 @@ async fn create_link(
 }
 
 async fn delete_link(
-    service: State<Arc<impl OAuth2Service>>,
+    service: State<Arc<impl OAuth2FeatureService>>,
     token: ApiToken,
     Path((user_id, link_id)): Path<(ApiUserIdOrSelf, OAuth2LinkId)>,
 ) -> Response {
@@ -122,7 +122,7 @@ enum CreateSessionResponse {
 }
 
 async fn create_session(
-    service: State<Arc<impl OAuth2Service>>,
+    service: State<Arc<impl OAuth2FeatureService>>,
     user_agent: UserAgent,
     Json(login): Json<ApiOAuth2Login>,
 ) -> Response {

@@ -2,7 +2,7 @@ use academy_auth_contracts::MockAuthService;
 use academy_core_mfa_contracts::{
     recovery::MockMfaRecoveryService,
     totp_device::{MfaTotpDeviceConfirmError, MockMfaTotpDeviceService},
-    MfaEnableError, MfaService,
+    MfaEnableError, MfaFeatureService,
 };
 use academy_demo::{
     mfa::FOO_TOTP_1,
@@ -19,7 +19,7 @@ use academy_persistence_contracts::{
 };
 use academy_utils::{assert_matches, Apply};
 
-use crate::{tests::Sut, MfaServiceImpl};
+use crate::{tests::Sut, MfaFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -44,7 +44,7 @@ async fn ok() {
 
     let mfa_recovery = MockMfaRecoveryService::new().with_setup(FOO.user.id, expected.clone());
 
-    let sut = MfaServiceImpl {
+    let sut = MfaFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -68,7 +68,7 @@ async fn unauthenticated() {
 
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = MfaServiceImpl {
+    let sut = MfaFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -92,7 +92,7 @@ async fn unauthorized() {
 
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = MfaServiceImpl {
+    let sut = MfaFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -121,7 +121,7 @@ async fn user_not_found() {
 
     let user_repo = MockUserRepository::new().with_exists(FOO.user.id, false);
 
-    let sut = MfaServiceImpl {
+    let sut = MfaFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -151,7 +151,7 @@ async fn already_enabled() {
         vec![FOO_TOTP_1.clone().with(|t| t.enabled = true)],
     );
 
-    let sut = MfaServiceImpl {
+    let sut = MfaFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -179,7 +179,7 @@ async fn not_initialized() {
 
     let mfa_repo = MockMfaRepository::new().with_list_totp_devices_by_user(FOO.user.id, vec![]);
 
-    let sut = MfaServiceImpl {
+    let sut = MfaFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -214,7 +214,7 @@ async fn invalid_code() {
         Err(MfaTotpDeviceConfirmError::InvalidCode),
     );
 
-    let sut = MfaServiceImpl {
+    let sut = MfaFeatureServiceImpl {
         auth,
         db,
         user_repo,

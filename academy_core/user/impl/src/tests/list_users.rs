@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
     queries::list::{MockUserListQueryService, UserListQuery, UserListResult},
-    UserListError, UserService,
+    UserFeatureService, UserListError,
 };
 use academy_demo::{
     session::{ADMIN_1, FOO_1},
@@ -15,7 +15,7 @@ use academy_models::{
 use academy_persistence_contracts::MockDatabase;
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -33,7 +33,7 @@ async fn ok() {
 
     let user_list = MockUserListQueryService::new().with_invoke(query.clone(), expected.clone());
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         auth,
         user_list,
@@ -54,7 +54,7 @@ async fn unauthenticated() {
 
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -78,7 +78,7 @@ async fn unauthorized() {
 
     let auth = MockAuthService::new().with_authenticate(Some((FOO.user.clone(), FOO_1.clone())));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };

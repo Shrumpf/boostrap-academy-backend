@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use academy_core_contact_contracts::{ContactSendMessageError, ContactService};
+use academy_core_contact_contracts::{ContactFeatureService, ContactSendMessageError};
 use academy_di::Build;
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_models::{
@@ -10,7 +10,7 @@ use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
-pub struct ContactServiceImpl<Captcha, Email> {
+pub struct ContactFeatureServiceImpl<Captcha, Email> {
     captcha: Captcha,
     email: Email,
     config: ContactServiceConfig,
@@ -21,7 +21,7 @@ pub struct ContactServiceConfig {
     pub email: Arc<EmailAddressWithName>,
 }
 
-impl<Captcha, EmailS> ContactService for ContactServiceImpl<Captcha, EmailS>
+impl<Captcha, EmailS> ContactFeatureService for ContactFeatureServiceImpl<Captcha, EmailS>
 where
     Captcha: CaptchaService,
     EmailS: EmailService,
@@ -74,7 +74,7 @@ mod tests {
 
     use super::*;
 
-    type Sut = ContactServiceImpl<MockCaptchaService, MockEmailService>;
+    type Sut = ContactFeatureServiceImpl<MockCaptchaService, MockEmailService>;
 
     #[tokio::test]
     async fn ok() {
@@ -83,7 +83,7 @@ mod tests {
 
         let email = MockEmailService::new().with_send(make_email(), true);
 
-        let sut = ContactServiceImpl {
+        let sut = ContactFeatureServiceImpl {
             captcha,
             email,
             ..Sut::default()
@@ -104,7 +104,7 @@ mod tests {
         let captcha =
             MockCaptchaService::new().with_check(Some("resp"), Err(CaptchaCheckError::Failed));
 
-        let sut = ContactServiceImpl {
+        let sut = ContactFeatureServiceImpl {
             captcha,
             ..Sut::default()
         };
@@ -125,7 +125,7 @@ mod tests {
 
         let email = MockEmailService::new().with_send(make_email(), false);
 
-        let sut = ContactServiceImpl {
+        let sut = ContactFeatureServiceImpl {
             captcha,
             email,
             ..Sut::default()

@@ -1,5 +1,5 @@
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait ConfigService: Send + Sync + 'static {
+pub trait ConfigFeatureService: Send + Sync + 'static {
     #[allow(
         clippy::needless_lifetimes,
         reason = "explicit lifetime needed for automock"

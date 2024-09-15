@@ -7,13 +7,13 @@ use academy_persistence_contracts::{
     mfa::MockMfaRepository, user::MockUserRepository, MockDatabase, MockTransaction,
 };
 
-use crate::MfaServiceImpl;
+use crate::MfaFeatureServiceImpl;
 
 mod disable;
 mod enable;
 mod initialize;
 
-type Sut = MfaServiceImpl<
+type Sut = MfaFeatureServiceImpl<
     MockDatabase,
     MockAuthService<MockTransaction>,
     MockUserRepository<MockTransaction>,

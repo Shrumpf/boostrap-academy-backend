@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use academy_core_user_contracts::{
     queries::list::{UserListQuery, UserListResult},
-    PasswordUpdate, UserCreateError, UserCreateRequest, UserDeleteError, UserGetError,
-    UserListError, UserRequestPasswordResetError, UserRequestVerificationEmailError,
-    UserResetPasswordError, UserService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    PasswordUpdate, UserCreateError, UserCreateRequest, UserDeleteError, UserFeatureService,
+    UserGetError, UserListError, UserRequestPasswordResetError, UserRequestVerificationEmailError,
+    UserResetPasswordError, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
     UserVerifyEmailError, UserVerifyNewsletterSubscriptionError,
 };
 use academy_models::{
@@ -36,7 +36,7 @@ use crate::{
     },
 };
 
-pub fn router(service: Arc<impl UserService>) -> Router<()> {
+pub fn router(service: Arc<impl UserFeatureService>) -> Router<()> {
     Router::new()
         .route("/auth/users", routing::get(list).post(create))
         .route(
@@ -65,7 +65,7 @@ struct ListResult {
 }
 
 async fn list(
-    user_service: State<Arc<impl UserService>>,
+    user_service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
     Query(pagination): Query<ApiPaginationSlice>,
     Query(filter): Query<ApiUserFilter>,
@@ -94,7 +94,7 @@ async fn list(
 }
 
 async fn get(
-    user_service: State<Arc<impl UserService>>,
+    user_service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {
@@ -117,7 +117,7 @@ struct CreateRequest {
 }
 
 async fn create(
-    user_service: State<Arc<impl UserService>>,
+    user_service: State<Arc<impl UserFeatureService>>,
     user_agent: UserAgent,
     Json(CreateRequest {
         name,
@@ -184,7 +184,7 @@ struct UpdateRequest {
 }
 
 async fn update(
-    user_service: State<Arc<impl UserService>>,
+    user_service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
     Json(UpdateRequest {
@@ -266,7 +266,7 @@ async fn update(
 }
 
 async fn delete(
-    user_service: State<Arc<impl UserService>>,
+    user_service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {
@@ -279,7 +279,7 @@ async fn delete(
 }
 
 async fn request_verification_email(
-    service: State<Arc<impl UserService>>,
+    service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
 ) -> Response {
@@ -308,7 +308,7 @@ struct VerifyEmailRequest {
 }
 
 async fn verify_email(
-    service: State<Arc<impl UserService>>,
+    service: State<Arc<impl UserFeatureService>>,
     Path(user_id): Path<ApiUserIdOrSelf>,
     Json(VerifyEmailRequest { code }): Json<VerifyEmailRequest>,
 ) -> Response {
@@ -331,7 +331,7 @@ struct VerifyNewsletterSubscriptionRequest {
 }
 
 async fn verify_newsletter_subscription(
-    service: State<Arc<impl UserService>>,
+    service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
     Path(user_id): Path<ApiUserIdOrSelf>,
     Json(VerifyNewsletterSubscriptionRequest { code }): Json<VerifyNewsletterSubscriptionRequest>,
@@ -362,7 +362,7 @@ struct RequestPasswordResetRequest {
 }
 
 async fn request_password_reset(
-    service: State<Arc<impl UserService>>,
+    service: State<Arc<impl UserFeatureService>>,
     Json(RequestPasswordResetRequest {
         email,
         recaptcha_response,
@@ -388,7 +388,7 @@ struct ResetPasswordRequest {
 }
 
 async fn reset_password(
-    service: State<Arc<impl UserService>>,
+    service: State<Arc<impl UserFeatureService>>,
     Json(ResetPasswordRequest {
         email,
         code,

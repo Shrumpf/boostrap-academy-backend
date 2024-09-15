@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use academy_cache_contracts::CacheService;
-use academy_core_health_contracts::{HealthService, HealthStatus};
+use academy_core_health_contracts::{HealthFeatureService, HealthStatus};
 use academy_di::Build;
 use academy_email_contracts::EmailService;
 use academy_persistence_contracts::Database;
@@ -11,7 +11,7 @@ use tokio::sync::RwLock;
 use tracing::error;
 
 #[derive(Debug, Clone, Build)]
-pub struct HealthServiceImpl<Time, Db, Cache, Email> {
+pub struct HealthFeatureServiceImpl<Time, Db, Cache, Email> {
     time: Time,
     db: Db,
     cache: Cache,
@@ -37,7 +37,8 @@ struct CachedStatus {
     timestamp: DateTime<Utc>,
 }
 
-impl<Time, Db, Cache, Email> HealthService for HealthServiceImpl<Time, Db, Cache, Email>
+impl<Time, Db, Cache, Email> HealthFeatureService
+    for HealthFeatureServiceImpl<Time, Db, Cache, Email>
 where
     Time: TimeService,
     Db: Database,

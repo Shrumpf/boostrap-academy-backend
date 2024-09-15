@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use academy_core_health_contracts::{HealthService, HealthStatus};
+use academy_core_health_contracts::{HealthFeatureService, HealthStatus};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -9,7 +9,7 @@ use axum::{
 };
 use serde::Serialize;
 
-pub fn router(service: Arc<impl HealthService>) -> Router<()> {
+pub fn router(service: Arc<impl HealthFeatureService>) -> Router<()> {
     Router::new()
         .route("/health", routing::get(health))
         .with_state(service)
@@ -23,7 +23,7 @@ struct HealthResponse {
     email: bool,
 }
 
-async fn health(service: State<Arc<impl HealthService>>) -> Response {
+async fn health(service: State<Arc<impl HealthFeatureService>>) -> Response {
     let HealthStatus {
         database,
         cache,

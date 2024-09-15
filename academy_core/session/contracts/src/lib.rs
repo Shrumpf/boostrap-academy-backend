@@ -13,7 +13,7 @@ pub mod commands;
 pub mod failed_auth_count;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait SessionService: Send + Sync + 'static {
+pub trait SessionFeatureService: Send + Sync + 'static {
     /// Returns the currently authenticated session.
     fn get_current_session(
         &self,

@@ -2,7 +2,7 @@ use academy_cache_contracts::MockCacheService;
 use academy_core_session_contracts::commands::create::MockSessionCreateCommandService;
 use academy_core_user_contracts::{
     commands::create::{MockUserCreateCommandService, UserCreateCommand, UserCreateCommandError},
-    UserCreateError, UserCreateRequest, UserService,
+    UserCreateError, UserCreateRequest, UserFeatureService,
 };
 use academy_demo::{
     oauth2::{FOO_OAUTH2_LINK_1, TEST_OAUTH2_PROVIDER_ID},
@@ -14,7 +14,7 @@ use academy_persistence_contracts::MockDatabase;
 use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -48,7 +48,7 @@ async fn ok() {
         expected.clone(),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         captcha,
         user_create,
@@ -117,7 +117,7 @@ async fn ok_oauth2() {
         expected.clone(),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         cache,
         captcha,
@@ -175,7 +175,7 @@ async fn invalid_recaptcha_response() {
     let captcha =
         MockCaptchaService::new().with_check(Some("resp"), Err(CaptchaCheckError::Failed));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         captcha,
         ..Sut::default()
     };
@@ -213,7 +213,7 @@ async fn name_conflict() {
         Err(UserCreateCommandError::NameConflict),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         captcha,
         user_create,
@@ -249,7 +249,7 @@ async fn email_conflict() {
         Err(UserCreateCommandError::EmailConflict),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         captcha,
         user_create,
@@ -288,7 +288,7 @@ async fn oauth2_invalid_registration_token() {
         None::<OAuth2Registration>,
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         cache,
         captcha,
         ..Sut::default()
@@ -341,7 +341,7 @@ async fn oauth2_remote_already_linked() {
         Err(UserCreateCommandError::RemoteAlreadyLinked),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         db,
         cache,
         captcha,

@@ -1,13 +1,14 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
-    commands::delete::MockSessionDeleteCommandService, SessionDeleteCurrentError, SessionService,
+    commands::delete::MockSessionDeleteCommandService, SessionDeleteCurrentError,
+    SessionFeatureService,
 };
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::auth::{AuthError, AuthenticateError};
 use academy_persistence_contracts::MockDatabase;
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, SessionServiceImpl};
+use crate::{tests::Sut, SessionFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -18,7 +19,7 @@ async fn ok() {
 
     let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_1.id, true);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_delete,
@@ -38,7 +39,7 @@ async fn unauthenticated() {
 
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };

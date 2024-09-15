@@ -3,16 +3,17 @@ use academy_auth_impl::{
     refresh_token::AuthRefreshTokenServiceImpl, AuthServiceImpl,
 };
 use academy_cache_valkey::ValkeyCache;
-use academy_core_config_impl::ConfigServiceImpl;
-use academy_core_contact_impl::ContactServiceImpl;
-use academy_core_health_impl::HealthServiceImpl;
+use academy_core_config_impl::ConfigFeatureServiceImpl;
+use academy_core_contact_impl::ContactFeatureServiceImpl;
+use academy_core_health_impl::HealthFeatureServiceImpl;
 use academy_core_internal_impl::InternalServiceImpl;
 use academy_core_mfa_impl::{
     authenticate::MfaAuthenticateServiceImpl, disable::MfaDisableServiceImpl,
-    recovery::MfaRecoveryServiceImpl, totp_device::MfaTotpDeviceServiceImpl, MfaServiceImpl,
+    recovery::MfaRecoveryServiceImpl, totp_device::MfaTotpDeviceServiceImpl, MfaFeatureServiceImpl,
 };
 use academy_core_oauth2_impl::{
-    create_link::OAuth2CreateLinkServiceImpl, login::OAuth2LoginServiceImpl, OAuth2ServiceImpl,
+    create_link::OAuth2CreateLinkServiceImpl, login::OAuth2LoginServiceImpl,
+    OAuth2FeatureServiceImpl,
 };
 use academy_core_session_impl::{
     commands::{
@@ -21,7 +22,7 @@ use academy_core_session_impl::{
         refresh::SessionRefreshCommandServiceImpl,
     },
     failed_auth_count::SessionFailedAuthCountServiceImpl,
-    SessionServiceImpl,
+    SessionFeatureServiceImpl,
 };
 use academy_core_user_impl::{
     commands::{
@@ -42,7 +43,7 @@ use academy_core_user_impl::{
         get_by_name_or_email::UserGetByNameOrEmailQueryServiceImpl, list::UserListQueryServiceImpl,
     },
     update_invoice_info::UserUpdateInvoiceInfoServiceImpl,
-    UserServiceImpl,
+    UserFeatureServiceImpl,
 };
 use academy_email_impl::{template::TemplateEmailServiceImpl, EmailServiceImpl};
 use academy_extern_impl::{
@@ -61,8 +62,16 @@ use academy_shared_impl::{
 use academy_templates_impl::TemplateServiceImpl;
 
 // API
-pub type RestServer =
-    academy_api_rest::RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>;
+pub type RestServer = academy_api_rest::RestServer<
+    HealthFeature,
+    ConfigFeature,
+    UserFeature,
+    SessionFeature,
+    ContactFeature,
+    MfaFeature,
+    OAuth2Feature,
+    Internal,
+>;
 
 // Persistence
 pub type Database = PostgresDatabase;
@@ -107,11 +116,11 @@ pub type AuthRefreshToken = AuthRefreshTokenServiceImpl<Secret, Hash>;
 pub type AuthInternal = AuthInternalServiceImpl<Jwt>;
 
 // Core
-pub type Health = HealthServiceImpl<Time, Database, Cache, Email>;
+pub type HealthFeature = HealthFeatureServiceImpl<Time, Database, Cache, Email>;
 
-pub type Config = ConfigServiceImpl<Captcha>;
+pub type ConfigFeature = ConfigFeatureServiceImpl<Captcha>;
 
-pub type User = UserServiceImpl<
+pub type UserFeature = UserFeatureServiceImpl<
     Database,
     Auth,
     Cache,
@@ -155,7 +164,7 @@ pub type UserVerifyEmail = UserVerifyEmailCommandServiceImpl<Auth, Cache, UserRe
 pub type UserUpdateInvoiceInfo = UserUpdateInvoiceInfoServiceImpl<UserRepo>;
 pub type UserList = UserListQueryServiceImpl<UserRepo>;
 
-pub type Session = SessionServiceImpl<
+pub type SessionFeature = SessionFeatureServiceImpl<
     Database,
     Auth,
     Captcha,
@@ -176,16 +185,23 @@ pub type SessionDelete = SessionDeleteCommandServiceImpl<AuthAccessToken, Sessio
 pub type SessionDeleteByUser = SessionDeleteByUserCommandServiceImpl<Auth, SessionRepo>;
 pub type SessionFailedAuthCount = SessionFailedAuthCountServiceImpl<Hash, Cache>;
 
-pub type Contact = ContactServiceImpl<Captcha, Email>;
+pub type ContactFeature = ContactFeatureServiceImpl<Captcha, Email>;
 
-pub type Mfa =
-    MfaServiceImpl<Database, Auth, UserRepo, MfaRepo, MfaRecovery, MfaDisable, MfaTotpDevice>;
+pub type MfaFeature = MfaFeatureServiceImpl<
+    Database,
+    Auth,
+    UserRepo,
+    MfaRepo,
+    MfaRecovery,
+    MfaDisable,
+    MfaTotpDevice,
+>;
 pub type MfaRecovery = MfaRecoveryServiceImpl<Secret, Hash, MfaRepo>;
 pub type MfaAuthenticate = MfaAuthenticateServiceImpl<Hash, Totp, MfaDisable, MfaRepo>;
 pub type MfaDisable = MfaDisableServiceImpl<MfaRepo>;
 pub type MfaTotpDevice = MfaTotpDeviceServiceImpl<Id, Time, Totp, MfaRepo>;
 
-pub type OAuth2 = OAuth2ServiceImpl<
+pub type OAuth2Feature = OAuth2FeatureServiceImpl<
     Database,
     Auth,
     Cache,

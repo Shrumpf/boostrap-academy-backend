@@ -4,7 +4,7 @@ use academy_core_user_contracts::{
         MockUserVerifyNewsletterSubscriptionCommandService,
         UserVerifyNewsletterSubscriptionCommandError,
     },
-    UserService, UserVerifyNewsletterSubscriptionError,
+    UserFeatureService, UserVerifyNewsletterSubscriptionError,
 };
 use academy_demo::{
     session::{BAR_1, FOO_1},
@@ -18,7 +18,7 @@ use academy_models::{
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::{assert_matches, Apply};
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -39,7 +39,7 @@ async fn ok() {
             Ok(()),
         );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_verify_newsletter_subscription,
@@ -61,7 +61,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -85,7 +85,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -113,7 +113,7 @@ async fn not_found() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, None);
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -138,7 +138,7 @@ async fn already_subscribed() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_repo,
@@ -176,7 +176,7 @@ async fn invalid_code() {
             Err(UserVerifyNewsletterSubscriptionCommandError::InvalidCode),
         );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_verify_newsletter_subscription,

@@ -5,7 +5,7 @@ use academy_core_mfa_contracts::authenticate::{
 use academy_core_session_contracts::{
     commands::create::MockSessionCreateCommandService,
     failed_auth_count::MockSessionFailedAuthCountService, SessionCreateCommand, SessionCreateError,
-    SessionService,
+    SessionFeatureService,
 };
 use academy_core_user_contracts::queries::get_by_name_or_email::MockUserGetByNameOrEmailQueryService;
 use academy_demo::{
@@ -17,7 +17,7 @@ use academy_persistence_contracts::MockDatabase;
 use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::{assert_matches, Apply};
 
-use crate::{tests::Sut, SessionServiceImpl};
+use crate::{tests::Sut, SessionFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -61,7 +61,7 @@ async fn ok() {
         expected.clone(),
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         auth,
@@ -130,7 +130,7 @@ async fn ok_mfa() {
         expected.clone(),
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         auth,
@@ -205,7 +205,7 @@ async fn ok_mfa_reset() {
         expected.clone(),
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         auth,
@@ -266,7 +266,7 @@ async fn ok_captcha() {
         expected.clone(),
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         captcha,
@@ -301,7 +301,7 @@ async fn invalid_recaptcha_response() {
     let captcha =
         MockCaptchaService::new().with_check(Some("resp"), Err(CaptchaCheckError::Failed));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         session_failed_auth_count,
         captcha,
         ..Sut::default()
@@ -335,7 +335,7 @@ async fn user_not_found() {
     let user_get_by_name_or_email =
         MockUserGetByNameOrEmailQueryService::new().with_invoke(cmd.name_or_email.clone(), None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         user_get_by_name_or_email,
@@ -379,7 +379,7 @@ async fn wrong_password() {
         false,
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         auth,
@@ -433,7 +433,7 @@ async fn mfa_failed() {
         Err(MfaAuthenticateError::Failed),
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         auth,
@@ -474,7 +474,7 @@ async fn user_disabled() {
         true,
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
         auth,

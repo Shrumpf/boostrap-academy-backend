@@ -24,9 +24,9 @@ use academy_core_user_contracts::{
     },
     queries::list::{UserListQuery, UserListQueryService, UserListResult},
     update_invoice_info::UserUpdateInvoiceInfoService,
-    PasswordUpdate, UserCreateError, UserCreateRequest, UserDeleteError, UserGetError,
-    UserListError, UserRequestPasswordResetError, UserRequestVerificationEmailError,
-    UserResetPasswordError, UserService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    PasswordUpdate, UserCreateError, UserCreateRequest, UserDeleteError, UserFeatureService,
+    UserGetError, UserListError, UserRequestPasswordResetError, UserRequestVerificationEmailError,
+    UserResetPasswordError, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
     UserVerifyEmailError, UserVerifyNewsletterSubscriptionError,
 };
 use academy_di::Build;
@@ -52,7 +52,7 @@ pub mod update_invoice_info;
 mod tests;
 
 #[derive(Debug, Clone, Default, Build)]
-pub struct UserServiceImpl<
+pub struct UserFeatureServiceImpl<
     Db,
     Auth,
     Cache,
@@ -123,8 +123,8 @@ impl<
         UserUpdateInvoiceInfo,
         SessionCreate,
         UserRepo,
-    > UserService
-    for UserServiceImpl<
+    > UserFeatureService
+    for UserFeatureServiceImpl<
         Db,
         Auth,
         Cache,

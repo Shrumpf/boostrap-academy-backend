@@ -6,14 +6,14 @@ use academy_core_session_contracts::{
         delete::MockSessionDeleteCommandService,
         refresh::{MockSessionRefreshCommandService, SessionRefreshCommandError},
     },
-    SessionRefreshError, SessionService,
+    SessionFeatureService, SessionRefreshError,
 };
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::{auth::Login, session::Session};
 use academy_persistence_contracts::MockDatabase;
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, SessionServiceImpl};
+use crate::{tests::Sut, SessionFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -36,7 +36,7 @@ async fn ok() {
     let session_refresh =
         MockSessionRefreshCommandService::new().with_invoke(FOO_1.id, Ok(expected.clone()));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_refresh,
@@ -60,7 +60,7 @@ async fn invalid_token() {
         Err(AuthenticateByRefreshTokenError::Invalid),
     );
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         ..Sut::default()
@@ -85,7 +85,7 @@ async fn expired() {
 
     let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_1.id, true);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_delete,
@@ -110,7 +110,7 @@ async fn not_found() {
     let session_refresh = MockSessionRefreshCommandService::new()
         .with_invoke(FOO_1.id, Err(SessionRefreshCommandError::NotFound));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_refresh,

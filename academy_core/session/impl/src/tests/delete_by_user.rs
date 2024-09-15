@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
     commands::delete_by_user::MockSessionDeleteByUserCommandService, SessionDeleteByUserError,
-    SessionService,
+    SessionFeatureService,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -15,7 +15,7 @@ use academy_persistence_contracts::MockDatabase;
 use academy_utils::assert_matches;
 
 use super::Sut;
-use crate::SessionServiceImpl;
+use crate::SessionFeatureServiceImpl;
 
 #[tokio::test]
 async fn ok_self() {
@@ -27,7 +27,7 @@ async fn ok_self() {
     let session_delete_by_user =
         MockSessionDeleteByUserCommandService::new().with_invoke(FOO.user.id);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_delete_by_user,
@@ -54,7 +54,7 @@ async fn ok_admin() {
     let session_delete_by_user =
         MockSessionDeleteByUserCommandService::new().with_invoke(FOO.user.id);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_delete_by_user,
@@ -75,7 +75,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -99,7 +99,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };

@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
     commands::update_email::{MockUserUpdateEmailCommandService, UserUpdateEmailCommandError},
-    UserService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
     session::{ADMIN_1, FOO_1},
@@ -11,7 +11,7 @@ use academy_models::user::{User, UserComposite, UserIdOrSelf};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, UserServiceImpl};
+use crate::{tests::Sut, UserFeatureServiceImpl};
 
 #[tokio::test]
 async fn update_email_self() {
@@ -38,7 +38,7 @@ async fn update_email_self() {
         Ok(true),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_email,
@@ -91,7 +91,7 @@ async fn update_email_admin() {
         Ok(true),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_email,
@@ -144,7 +144,7 @@ async fn update_email_admin_verified() {
         Ok(true),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_email,
@@ -198,7 +198,7 @@ async fn update_email_admin_unverified() {
         Ok(true),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_email,
@@ -254,7 +254,7 @@ async fn update_set_email_verified() {
         Ok(true),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_email,
@@ -306,7 +306,7 @@ async fn update_set_email_unverified() {
         Ok(true),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_email,
@@ -349,7 +349,7 @@ async fn update_email_conflict() {
         Err(UserUpdateEmailCommandError::Conflict),
     );
 
-    let sut = UserServiceImpl {
+    let sut = UserFeatureServiceImpl {
         auth,
         db,
         user_update_email,

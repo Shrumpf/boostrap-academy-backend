@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use academy_core_contact_contracts::{ContactSendMessageError, ContactService};
+use academy_core_contact_contracts::{ContactFeatureService, ContactSendMessageError};
 use academy_models::RecaptchaResponse;
 use axum::{
     extract::State,
@@ -13,7 +13,7 @@ use serde::Deserialize;
 use super::{error, internal_server_error};
 use crate::models::{contact::ApiContactMessage, StringOption};
 
-pub fn router(service: Arc<impl ContactService>) -> Router<()> {
+pub fn router(service: Arc<impl ContactFeatureService>) -> Router<()> {
     Router::new()
         .route("/auth/contact", routing::post(send_message))
         .with_state(service)
@@ -27,7 +27,7 @@ struct SendMessageRequest {
 }
 
 async fn send_message(
-    service: State<Arc<impl ContactService>>,
+    service: State<Arc<impl ContactFeatureService>>,
     Json(SendMessageRequest {
         message,
         recaptcha_response,

@@ -1,5 +1,5 @@
 use academy_auth_contracts::MockAuthService;
-use academy_core_session_contracts::{SessionListByUserError, SessionService};
+use academy_core_session_contracts::{SessionFeatureService, SessionListByUserError};
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1, FOO_2},
     user::{ADMIN, BAR, FOO},
@@ -11,7 +11,7 @@ use academy_models::{
 use academy_persistence_contracts::{session::MockSessionRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, SessionServiceImpl};
+use crate::{tests::Sut, SessionFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok_self() {
@@ -25,7 +25,7 @@ async fn ok_self() {
     let session_repo =
         MockSessionRepository::new().with_list_by_user(FOO.user.id, expected.clone());
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         db,
         session_repo,
@@ -52,7 +52,7 @@ async fn ok_admin() {
     let session_repo =
         MockSessionRepository::new().with_list_by_user(FOO.user.id, expected.clone());
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         db,
         session_repo,
@@ -72,7 +72,7 @@ async fn ok_admin() {
 async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -95,7 +95,7 @@ async fn unauthenticated() {
 async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };

@@ -1,11 +1,11 @@
 use academy_auth_contracts::MockAuthService;
-use academy_core_session_contracts::{SessionGetCurrentError, SessionService};
+use academy_core_session_contracts::{SessionFeatureService, SessionGetCurrentError};
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::auth::{AuthError, AuthenticateError};
 use academy_persistence_contracts::{session::MockSessionRepository, MockDatabase};
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, SessionServiceImpl};
+use crate::{tests::Sut, SessionFeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -16,7 +16,7 @@ async fn ok() {
 
     let session_repo = MockSessionRepository::new().with_get(FOO_1.id, Some(FOO_1.clone()));
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         db,
         session_repo,
@@ -35,7 +35,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = SessionServiceImpl {
+    let sut = SessionFeatureServiceImpl {
         auth,
         ..Sut::default()
     };

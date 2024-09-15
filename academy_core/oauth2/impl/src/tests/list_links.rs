@@ -1,5 +1,5 @@
 use academy_auth_contracts::MockAuthService;
-use academy_core_oauth2_contracts::{OAuth2ListLinksError, OAuth2Service};
+use academy_core_oauth2_contracts::{OAuth2FeatureService, OAuth2ListLinksError};
 use academy_demo::{
     oauth2::FOO_OAUTH2_LINK_1,
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -15,7 +15,7 @@ use academy_persistence_contracts::{
 };
 use academy_utils::assert_matches;
 
-use crate::{tests::Sut, OAuth2ServiceImpl};
+use crate::{tests::Sut, OAuth2FeatureServiceImpl};
 
 #[tokio::test]
 async fn ok() {
@@ -38,7 +38,7 @@ async fn ok() {
         ],
     );
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         user_repo,
@@ -58,7 +58,7 @@ async fn unauthenticated() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(None);
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -80,7 +80,7 @@ async fn unauthorized() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((BAR.user.clone(), BAR_1.clone())));
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         auth,
         ..Sut::default()
     };
@@ -107,7 +107,7 @@ async fn not_found() {
 
     let user_repo = MockUserRepository::new().with_exists(FOO.user.id, false);
 
-    let sut = OAuth2ServiceImpl {
+    let sut = OAuth2FeatureServiceImpl {
         db,
         auth,
         user_repo,

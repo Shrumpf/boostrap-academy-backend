@@ -13,7 +13,7 @@ use thiserror::Error;
 pub mod create_link;
 pub mod login;
 
-pub trait OAuth2Service: Send + Sync + 'static {
+pub trait OAuth2FeatureService: Send + Sync + 'static {
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary>;
 
     fn list_links(
