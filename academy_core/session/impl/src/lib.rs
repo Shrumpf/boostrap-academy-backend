@@ -1,3 +1,8 @@
+#![expect(
+    clippy::self_named_module_files,
+    reason = "false positive in session module"
+)]
+
 use academy_auth_contracts::{
     AuthResultExt, AuthService, AuthenticateByPasswordError, AuthenticateByRefreshTokenError,
 };
@@ -5,13 +10,7 @@ use academy_core_mfa_contracts::authenticate::{
     MfaAuthenticateError, MfaAuthenticateResult, MfaAuthenticateService,
 };
 use academy_core_session_contracts::{
-    commands::{
-        create::SessionCreateCommandService,
-        delete::SessionDeleteCommandService,
-        delete_by_user::SessionDeleteByUserCommandService,
-        refresh::{SessionRefreshCommandError, SessionRefreshCommandService},
-    },
-    failed_auth_count::SessionFailedAuthCountService,
+    failed_auth_count::SessionFailedAuthCountService, session::SessionService,
     SessionCreateCommand, SessionCreateError, SessionDeleteByUserError, SessionDeleteCurrentError,
     SessionDeleteError, SessionFeatureService, SessionGetCurrentError, SessionImpersonateError,
     SessionListByUserError, SessionRefreshError,
@@ -30,8 +29,8 @@ use academy_persistence_contracts::{
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 use anyhow::anyhow;
 
-pub mod commands;
 pub mod failed_auth_count;
+pub mod session;
 
 #[cfg(test)]
 mod tests;
@@ -42,10 +41,7 @@ pub struct SessionFeatureServiceImpl<
     Db,
     Auth,
     Captcha,
-    SessionCreate,
-    SessionRefresh,
-    SessionDelete,
-    SessionDeleteByUser,
+    Session,
     SessionFailedAuthCount,
     UserGetByNameOrEmail,
     MfaAuthenticate,
@@ -55,10 +51,7 @@ pub struct SessionFeatureServiceImpl<
     db: Db,
     auth: Auth,
     captcha: Captcha,
-    session_create: SessionCreate,
-    session_refresh: SessionRefresh,
-    session_delete: SessionDelete,
-    session_delete_by_user: SessionDeleteByUser,
+    session: Session,
     session_failed_auth_count: SessionFailedAuthCount,
     user_get_by_name_or_email: UserGetByNameOrEmail,
     mfa_authenticate: MfaAuthenticate,
@@ -76,10 +69,7 @@ impl<
         Db,
         Auth,
         Captcha,
-        SessionCreate,
-        SessionRefresh,
-        SessionDelete,
-        SessionDeleteByUser,
+        SessionS,
         SessionFailedAuthCount,
         UserGetByNameOrEmail,
         MfaAuthenticate,
@@ -90,10 +80,7 @@ impl<
         Db,
         Auth,
         Captcha,
-        SessionCreate,
-        SessionRefresh,
-        SessionDelete,
-        SessionDeleteByUser,
+        SessionS,
         SessionFailedAuthCount,
         UserGetByNameOrEmail,
         MfaAuthenticate,
@@ -104,10 +91,7 @@ where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
     Captcha: CaptchaService,
-    SessionCreate: SessionCreateCommandService<Db::Transaction>,
-    SessionRefresh: SessionRefreshCommandService<Db::Transaction>,
-    SessionDelete: SessionDeleteCommandService<Db::Transaction>,
-    SessionDeleteByUser: SessionDeleteByUserCommandService<Db::Transaction>,
+    SessionS: SessionService<Db::Transaction>,
     SessionFailedAuthCount: SessionFailedAuthCountService,
     UserGetByNameOrEmail: UserGetByNameOrEmailQueryService<Db::Transaction>,
     MfaAuthenticate: MfaAuthenticateService<Db::Transaction>,
@@ -237,8 +221,8 @@ where
         }
 
         let login = self
-            .session_create
-            .invoke(&mut txn, user_composite, cmd.device_name, true)
+            .session
+            .create(&mut txn, user_composite, cmd.device_name, true)
             .await?;
 
         txn.commit().await?;
@@ -263,8 +247,8 @@ where
             .ok_or(SessionImpersonateError::NotFound)?;
 
         let login = self
-            .session_create
-            .invoke(&mut txn, user_composite, None, false)
+            .session
+            .create(&mut txn, user_composite, None, false)
             .await?;
 
         txn.commit().await?;
@@ -285,19 +269,22 @@ where
                 return Err(SessionRefreshError::InvalidRefreshToken)
             }
             Err(AuthenticateByRefreshTokenError::Expired(session_id)) => {
-                self.session_delete.invoke(&mut txn, session_id).await?;
+                self.session.delete(&mut txn, session_id).await?;
                 return Err(SessionRefreshError::InvalidRefreshToken);
             }
             Err(AuthenticateByRefreshTokenError::Other(err)) => return Err(err.into()),
         };
 
         let login = self
-            .session_refresh
-            .invoke(&mut txn, session_id)
+            .session
+            .refresh(&mut txn, session_id)
             .await
-            .map_err(|err| match err {
-                SessionRefreshCommandError::NotFound => SessionRefreshError::InvalidRefreshToken,
-                SessionRefreshCommandError::Other(err) => err.into(),
+            .map_err(|err| {
+                use academy_core_session_contracts::session::SessionRefreshError as E;
+                match err {
+                    E::NotFound => SessionRefreshError::InvalidRefreshToken,
+                    E::Other(err) => err.into(),
+                }
             })?;
 
         txn.commit().await?;
@@ -324,7 +311,7 @@ where
             .filter(|s| s.user_id == user_id)
             .ok_or(SessionDeleteError::NotFound)?;
 
-        self.session_delete.invoke(&mut txn, session.id).await?;
+        self.session.delete(&mut txn, session.id).await?;
 
         txn.commit().await?;
 
@@ -336,9 +323,7 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
-        self.session_delete
-            .invoke(&mut txn, auth.session_id)
-            .await?;
+        self.session.delete(&mut txn, auth.session_id).await?;
 
         txn.commit().await?;
 
@@ -356,9 +341,7 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
-        self.session_delete_by_user
-            .invoke(&mut txn, user_id)
-            .await?;
+        self.session.delete_by_user(&mut txn, user_id).await?;
 
         txn.commit().await?;
 

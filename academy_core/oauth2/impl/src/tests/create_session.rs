@@ -5,7 +5,7 @@ use academy_core_oauth2_contracts::{
     login::{MockOAuth2LoginService, OAuth2LoginServiceError},
     OAuth2CreateSessionError, OAuth2CreateSessionResponse, OAuth2FeatureService,
 };
-use academy_core_session_contracts::commands::create::MockSessionCreateCommandService;
+use academy_core_session_contracts::session::MockSessionService;
 use academy_demo::{
     oauth2::{FOO_OAUTH2_LINK_1, TEST_OAUTH2_PROVIDER_ID},
     session::FOO_1,
@@ -48,18 +48,13 @@ async fn ok() {
             Some(FOO.clone()),
         );
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
-        FOO.clone(),
-        None,
-        true,
-        expected.clone(),
-    );
+    let session = MockSessionService::new().with_create(FOO.clone(), None, true, expected.clone());
 
     let sut = OAuth2FeatureServiceImpl {
         db,
         oauth2_login,
         user_repo,
-        session_create,
+        session,
         ..Sut::default()
     };
 

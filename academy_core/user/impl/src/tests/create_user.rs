@@ -1,5 +1,5 @@
 use academy_cache_contracts::MockCacheService;
-use academy_core_session_contracts::commands::create::MockSessionCreateCommandService;
+use academy_core_session_contracts::session::MockSessionService;
 use academy_core_user_contracts::{
     commands::create::{MockUserCreateCommandService, UserCreateCommand, UserCreateCommandError},
     UserCreateError, UserCreateRequest, UserFeatureService,
@@ -41,7 +41,7 @@ async fn ok() {
     let user_create =
         MockUserCreateCommandService::new().with_invoke(req_to_cmd(&request), Ok(FOO.clone()));
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
+    let session = MockSessionService::new().with_create(
         FOO.clone(),
         FOO_1.device_name.clone(),
         true,
@@ -52,7 +52,7 @@ async fn ok() {
         db,
         captcha,
         user_create,
-        session_create,
+        session,
         ..Sut::default()
     };
 
@@ -110,7 +110,7 @@ async fn ok_oauth2() {
     let user_create =
         MockUserCreateCommandService::new().with_invoke(req_to_cmd(&request), Ok(FOO.clone()));
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
+    let session = MockSessionService::new().with_create(
         FOO.clone(),
         FOO_1.device_name.clone(),
         true,
@@ -122,7 +122,7 @@ async fn ok_oauth2() {
         cache,
         captcha,
         user_create,
-        session_create,
+        session,
         ..Sut::default()
     };
 

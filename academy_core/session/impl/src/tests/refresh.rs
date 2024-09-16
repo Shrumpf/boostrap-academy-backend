@@ -2,11 +2,7 @@ use std::time::Duration;
 
 use academy_auth_contracts::{AuthenticateByRefreshTokenError, MockAuthService};
 use academy_core_session_contracts::{
-    commands::{
-        delete::MockSessionDeleteCommandService,
-        refresh::{MockSessionRefreshCommandService, SessionRefreshCommandError},
-    },
-    SessionFeatureService, SessionRefreshError,
+    session::MockSessionService, SessionFeatureService, SessionRefreshError,
 };
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::{auth::Login, session::Session};
@@ -33,13 +29,12 @@ async fn ok() {
     let auth = MockAuthService::new()
         .with_authenticate_by_refresh_token("refresh token".into(), Ok(FOO_1.id));
 
-    let session_refresh =
-        MockSessionRefreshCommandService::new().with_invoke(FOO_1.id, Ok(expected.clone()));
+    let session = MockSessionService::new().with_refresh(FOO_1.id, Ok(expected.clone()));
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
-        session_refresh,
+        session,
         ..Sut::default()
     };
 
@@ -83,12 +78,12 @@ async fn expired() {
         Err(AuthenticateByRefreshTokenError::Expired(FOO_1.id)),
     );
 
-    let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_1.id, true);
+    let session = MockSessionService::new().with_delete(FOO_1.id, true);
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
-        session_delete,
+        session,
         ..Sut::default()
     };
 
@@ -107,13 +102,15 @@ async fn not_found() {
     let auth = MockAuthService::new()
         .with_authenticate_by_refresh_token("refresh token".into(), Ok(FOO_1.id));
 
-    let session_refresh = MockSessionRefreshCommandService::new()
-        .with_invoke(FOO_1.id, Err(SessionRefreshCommandError::NotFound));
+    let session = MockSessionService::new().with_refresh(
+        FOO_1.id,
+        Err(academy_core_session_contracts::session::SessionRefreshError::NotFound),
+    );
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
-        session_refresh,
+        session,
         ..Sut::default()
     };
 

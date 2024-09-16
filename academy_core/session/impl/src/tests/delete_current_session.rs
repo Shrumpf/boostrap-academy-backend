@@ -1,7 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
-    commands::delete::MockSessionDeleteCommandService, SessionDeleteCurrentError,
-    SessionFeatureService,
+    session::MockSessionService, SessionDeleteCurrentError, SessionFeatureService,
 };
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::auth::{AuthError, AuthenticateError};
@@ -17,12 +16,12 @@ async fn ok() {
 
     let auth = MockAuthService::new().with_authenticate(Some((FOO.user.clone(), FOO_1.clone())));
 
-    let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_1.id, true);
+    let session = MockSessionService::new().with_delete(FOO_1.id, true);
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
-        session_delete,
+        session,
         ..Sut::default()
     };
 

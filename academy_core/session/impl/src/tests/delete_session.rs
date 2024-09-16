@@ -1,6 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
-    commands::delete::MockSessionDeleteCommandService, SessionDeleteError, SessionFeatureService,
+    session::MockSessionService, SessionDeleteError, SessionFeatureService,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1, FOO_2},
@@ -24,13 +24,13 @@ async fn ok_current() {
 
     let session_repo = MockSessionRepository::new().with_get(FOO_1.id, Some(FOO_1.clone()));
 
-    let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_1.id, true);
+    let session = MockSessionService::new().with_delete(FOO_1.id, true);
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,
-        session_delete,
+        session,
         ..Sut::default()
     };
 
@@ -52,13 +52,13 @@ async fn ok_self() {
 
     let session_repo = MockSessionRepository::new().with_get(FOO_2.id, Some(FOO_2.clone()));
 
-    let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_2.id, true);
+    let session = MockSessionService::new().with_delete(FOO_2.id, true);
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,
-        session_delete,
+        session,
         ..Sut::default()
     };
 
@@ -81,13 +81,13 @@ async fn ok_admin() {
 
     let session_repo = MockSessionRepository::new().with_get(FOO_2.id, Some(FOO_2.clone()));
 
-    let session_delete = MockSessionDeleteCommandService::new().with_invoke(FOO_2.id, true);
+    let session = MockSessionService::new().with_delete(FOO_2.id, true);
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
         session_repo,
-        session_delete,
+        session,
         ..Sut::default()
     };
 

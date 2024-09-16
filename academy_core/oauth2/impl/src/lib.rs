@@ -8,7 +8,7 @@ use academy_core_oauth2_contracts::{
     oauth2_registration_cache_key, OAuth2CreateLinkError, OAuth2CreateSessionError,
     OAuth2CreateSessionResponse, OAuth2DeleteLinkError, OAuth2FeatureService, OAuth2ListLinksError,
 };
-use academy_core_session_contracts::commands::create::SessionCreateCommandService;
+use academy_core_session_contracts::session::SessionService;
 use academy_di::Build;
 use academy_extern_contracts::oauth2::OAuth2ApiService;
 use academy_models::{
@@ -42,7 +42,7 @@ pub struct OAuth2FeatureServiceImpl<
     OAuth2Repo,
     OAuth2CreateLink,
     OAuth2Login,
-    SessionCreate,
+    Session,
 > {
     db: Db,
     auth: Auth,
@@ -53,7 +53,7 @@ pub struct OAuth2FeatureServiceImpl<
     oauth2_repo: OAuth2Repo,
     oauth2_create_link: OAuth2CreateLink,
     oauth2_login: OAuth2Login,
-    session_create: SessionCreate,
+    session: Session,
     config: OAuth2ServiceConfig,
 }
 
@@ -73,7 +73,7 @@ impl<
         OAuth2Repo,
         OAuth2CreateLink,
         OAuth2LoginS,
-        SessionCreate,
+        Session,
     > OAuth2FeatureService
     for OAuth2FeatureServiceImpl<
         Db,
@@ -85,7 +85,7 @@ impl<
         OAuth2Repo,
         OAuth2CreateLink,
         OAuth2LoginS,
-        SessionCreate,
+        Session,
     >
 where
     Db: Database,
@@ -97,7 +97,7 @@ where
     OAuth2Repo: OAuth2Repository<Db::Transaction>,
     OAuth2CreateLink: OAuth2CreateLinkService<Db::Transaction>,
     OAuth2LoginS: OAuth2LoginService,
-    SessionCreate: SessionCreateCommandService<Db::Transaction>,
+    Session: SessionService<Db::Transaction>,
 {
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary> {
         self.config
@@ -268,8 +268,8 @@ where
         }
 
         let login = self
-            .session_create
-            .invoke(&mut txn, user_composite, device_name, true)
+            .session
+            .create(&mut txn, user_composite, device_name, true)
             .await?;
 
         txn.commit().await?;

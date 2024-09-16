@@ -1,7 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
-    commands::delete_by_user::MockSessionDeleteByUserCommandService, SessionDeleteByUserError,
-    SessionFeatureService,
+    session::MockSessionService, SessionDeleteByUserError, SessionFeatureService,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -24,13 +23,12 @@ async fn ok_self() {
 
     let db = MockDatabase::build(true);
 
-    let session_delete_by_user =
-        MockSessionDeleteByUserCommandService::new().with_invoke(FOO.user.id);
+    let session = MockSessionService::new().with_delete_by_user(FOO.user.id);
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
-        session_delete_by_user,
+        session,
         ..Sut::default()
     };
 
@@ -51,13 +49,12 @@ async fn ok_admin() {
 
     let db = MockDatabase::build(true);
 
-    let session_delete_by_user =
-        MockSessionDeleteByUserCommandService::new().with_invoke(FOO.user.id);
+    let session = MockSessionService::new().with_delete_by_user(FOO.user.id);
 
     let sut = SessionFeatureServiceImpl {
         db,
         auth,
-        session_delete_by_user,
+        session,
         ..Sut::default()
     };
 

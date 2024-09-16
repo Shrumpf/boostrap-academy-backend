@@ -1,7 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_session_contracts::{
-    commands::create::MockSessionCreateCommandService, SessionFeatureService,
-    SessionImpersonateError,
+    session::MockSessionService, SessionFeatureService, SessionImpersonateError,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -30,18 +29,13 @@ async fn ok() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
-        FOO.clone(),
-        None,
-        false,
-        expected.clone(),
-    );
+    let session = MockSessionService::new().with_create(FOO.clone(), None, false, expected.clone());
 
     let sut = SessionFeatureServiceImpl {
         auth,
         db,
         user_repo,
-        session_create,
+        session,
         ..Sut::default()
     };
 

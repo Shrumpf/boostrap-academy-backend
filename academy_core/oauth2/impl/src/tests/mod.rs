@@ -5,7 +5,7 @@ use academy_cache_contracts::MockCacheService;
 use academy_core_oauth2_contracts::{
     create_link::MockOAuth2CreateLinkService, login::MockOAuth2LoginService,
 };
-use academy_core_session_contracts::commands::create::MockSessionCreateCommandService;
+use academy_core_session_contracts::session::MockSessionService;
 use academy_demo::oauth2::{TEST_OAUTH2_PROVIDER, TEST_OAUTH2_PROVIDER_ID};
 use academy_extern_contracts::oauth2::MockOAuth2ApiService;
 use academy_persistence_contracts::{
@@ -31,7 +31,7 @@ type Sut = OAuth2FeatureServiceImpl<
     MockOAuth2Repository<MockTransaction>,
     MockOAuth2CreateLinkService<MockTransaction>,
     MockOAuth2LoginService,
-    MockSessionCreateCommandService<MockTransaction>,
+    MockSessionService<MockTransaction>,
 >;
 
 impl Default for OAuth2ServiceConfig {

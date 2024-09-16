@@ -3,9 +3,8 @@ use academy_core_mfa_contracts::authenticate::{
     MfaAuthenticateError, MfaAuthenticateResult, MockMfaAuthenticateService,
 };
 use academy_core_session_contracts::{
-    commands::create::MockSessionCreateCommandService,
-    failed_auth_count::MockSessionFailedAuthCountService, SessionCreateCommand, SessionCreateError,
-    SessionFeatureService,
+    failed_auth_count::MockSessionFailedAuthCountService, session::MockSessionService,
+    SessionCreateCommand, SessionCreateError, SessionFeatureService,
 };
 use academy_core_user_contracts::queries::get_by_name_or_email::MockUserGetByNameOrEmailQueryService;
 use academy_demo::{
@@ -54,7 +53,7 @@ async fn ok() {
         true,
     );
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
+    let session = MockSessionService::new().with_create(
         FOO.clone(),
         cmd.device_name.clone(),
         true,
@@ -65,7 +64,7 @@ async fn ok() {
         db,
         session_failed_auth_count,
         auth,
-        session_create,
+        session,
         user_get_by_name_or_email,
         ..Sut::default()
     };
@@ -123,7 +122,7 @@ async fn ok_mfa() {
         Ok(MfaAuthenticateResult::Ok),
     );
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
+    let session = MockSessionService::new().with_create(
         expected.user_composite.clone(),
         cmd.device_name.clone(),
         true,
@@ -134,7 +133,7 @@ async fn ok_mfa() {
         db,
         session_failed_auth_count,
         auth,
-        session_create,
+        session,
         mfa_authenticate,
         user_get_by_name_or_email,
         ..Sut::default()
@@ -198,7 +197,7 @@ async fn ok_mfa_reset() {
         Ok(MfaAuthenticateResult::Reset),
     );
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
+    let session = MockSessionService::new().with_create(
         expected.user_composite.clone(),
         cmd.device_name.clone(),
         true,
@@ -209,7 +208,7 @@ async fn ok_mfa_reset() {
         db,
         session_failed_auth_count,
         auth,
-        session_create,
+        session,
         mfa_authenticate,
         user_get_by_name_or_email,
         ..Sut::default()
@@ -259,7 +258,7 @@ async fn ok_captcha() {
         true,
     );
 
-    let session_create = MockSessionCreateCommandService::new().with_invoke(
+    let session = MockSessionService::new().with_create(
         FOO.clone(),
         cmd.device_name.clone(),
         true,
@@ -271,7 +270,7 @@ async fn ok_captcha() {
         session_failed_auth_count,
         captcha,
         auth,
-        session_create,
+        session,
         user_get_by_name_or_email,
         ..Sut::default()
     };

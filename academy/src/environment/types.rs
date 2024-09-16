@@ -16,12 +16,7 @@ use academy_core_oauth2_impl::{
     OAuth2FeatureServiceImpl,
 };
 use academy_core_session_impl::{
-    commands::{
-        create::SessionCreateCommandServiceImpl, delete::SessionDeleteCommandServiceImpl,
-        delete_by_user::SessionDeleteByUserCommandServiceImpl,
-        refresh::SessionRefreshCommandServiceImpl,
-    },
-    failed_auth_count::SessionFailedAuthCountServiceImpl,
+    failed_auth_count::SessionFailedAuthCountServiceImpl, session::SessionServiceImpl,
     SessionFeatureServiceImpl,
 };
 use academy_core_user_impl::{
@@ -141,7 +136,7 @@ pub type UserFeature = UserFeatureServiceImpl<
     UserRequestPasswordResetEmail,
     UserResetPassword,
     UserUpdateInvoiceInfo,
-    SessionCreate,
+    Session,
     UserRepo,
 >;
 pub type UserCreate = UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>;
@@ -150,7 +145,7 @@ pub type UserRequestSubscribeNewsletterEmail =
 pub type UserUpdateName = UserUpdateNameCommandServiceImpl<Time, UserRepo>;
 pub type UserUpdateEmail = UserUpdateEmailCommandServiceImpl<Auth, UserRepo>;
 pub type UserUpdateAdmin = UserUpdateAdminCommandServiceImpl<Auth, UserRepo>;
-pub type UserUpdateEnabled = UserUpdateEnabledCommandServiceImpl<UserRepo, SessionDeleteByUser>;
+pub type UserUpdateEnabled = UserUpdateEnabledCommandServiceImpl<UserRepo, Session>;
 pub type UserUpdatePassword = UserUpdatePasswordCommandServiceImpl<Password, UserRepo>;
 pub type UserGetByNameOrEmail = UserGetByNameOrEmailQueryServiceImpl<UserRepo>;
 pub type UserVerifyNewsletterSubscription =
@@ -168,21 +163,14 @@ pub type SessionFeature = SessionFeatureServiceImpl<
     Database,
     Auth,
     Captcha,
-    SessionCreate,
-    SessionRefresh,
-    SessionDelete,
-    SessionDeleteByUser,
+    Session,
     SessionFailedAuthCount,
     UserGetByNameOrEmail,
     MfaAuthenticate,
     UserRepo,
     SessionRepo,
 >;
-pub type SessionCreate = SessionCreateCommandServiceImpl<Id, Time, Auth, SessionRepo, UserRepo>;
-pub type SessionRefresh =
-    SessionRefreshCommandServiceImpl<Time, Auth, AuthAccessToken, UserRepo, SessionRepo>;
-pub type SessionDelete = SessionDeleteCommandServiceImpl<AuthAccessToken, SessionRepo>;
-pub type SessionDeleteByUser = SessionDeleteByUserCommandServiceImpl<Auth, SessionRepo>;
+pub type Session = SessionServiceImpl<Id, Time, Auth, AuthAccessToken, SessionRepo, UserRepo>;
 pub type SessionFailedAuthCount = SessionFailedAuthCountServiceImpl<Hash, Cache>;
 
 pub type ContactFeature = ContactFeatureServiceImpl<Captcha, Email>;
@@ -211,7 +199,7 @@ pub type OAuth2Feature = OAuth2FeatureServiceImpl<
     OAuth2Repo,
     OAuth2CreateLink,
     OAuth2Login,
-    SessionCreate,
+    Session,
 >;
 pub type OAuth2CreateLink = OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo>;
 pub type OAuth2Login = OAuth2LoginServiceImpl<OAuth2Api>;

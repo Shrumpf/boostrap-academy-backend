@@ -1,7 +1,7 @@
 use academy_auth_contracts::{AuthResultExt, AuthService};
 use academy_cache_contracts::CacheService;
 use academy_core_oauth2_contracts::oauth2_registration_cache_key;
-use academy_core_session_contracts::commands::create::SessionCreateCommandService;
+use academy_core_session_contracts::session::SessionService;
 use academy_core_user_contracts::{
     commands::{
         create::{UserCreateCommand, UserCreateCommandError, UserCreateCommandService},
@@ -73,7 +73,7 @@ pub struct UserFeatureServiceImpl<
     UserRequestPasswordResetEmail,
     UserResetPassword,
     UserUpdateInvoiceInfo,
-    SessionCreate,
+    Session,
     UserRepo,
 > {
     db: Db,
@@ -96,7 +96,7 @@ pub struct UserFeatureServiceImpl<
     user_request_password_reset_email: UserRequestPasswordResetEmail,
     user_reset_password: UserResetPassword,
     user_update_invoice_info: UserUpdateInvoiceInfo,
-    session_create: SessionCreate,
+    session: Session,
     user_repo: UserRepo,
 }
 
@@ -121,7 +121,7 @@ impl<
         UserRequestPasswordResetEmail,
         UserResetPassword,
         UserUpdateInvoiceInfo,
-        SessionCreate,
+        Session,
         UserRepo,
     > UserFeatureService
     for UserFeatureServiceImpl<
@@ -145,7 +145,7 @@ impl<
         UserRequestPasswordResetEmail,
         UserResetPassword,
         UserUpdateInvoiceInfo,
-        SessionCreate,
+        Session,
         UserRepo,
     >
 where
@@ -170,7 +170,7 @@ where
     UserRequestPasswordResetEmail: UserRequestPasswordResetEmailCommandService,
     UserResetPassword: UserResetPasswordCommandService<Db::Transaction>,
     UserUpdateInvoiceInfo: UserUpdateInvoiceInfoService<Db::Transaction>,
-    SessionCreate: SessionCreateCommandService<Db::Transaction>,
+    Session: SessionService<Db::Transaction>,
     UserRepo: UserRepository<Db::Transaction>,
 {
     async fn list_users(
@@ -261,8 +261,8 @@ where
             })?;
 
         let result = self
-            .session_create
-            .invoke(&mut txn, user, device_name, true)
+            .session
+            .create(&mut txn, user, device_name, true)
             .await
             .map_err(UserCreateError::Other)?;
 

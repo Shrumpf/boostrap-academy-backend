@@ -1,25 +1,25 @@
-use academy_core_session_contracts::commands::delete_by_user::SessionDeleteByUserCommandService;
+use academy_core_session_contracts::session::SessionService;
 use academy_core_user_contracts::commands::update_enabled::UserUpdateEnabledCommandService;
 use academy_di::Build;
 use academy_models::user::{UserId, UserPatchRef};
 use academy_persistence_contracts::user::UserRepository;
 
 #[derive(Debug, Clone, Build, Default)]
-pub struct UserUpdateEnabledCommandServiceImpl<UserRepo, SessionDeleteByUser> {
+pub struct UserUpdateEnabledCommandServiceImpl<UserRepo, Session> {
     user_repo: UserRepo,
-    session_delete_by_user: SessionDeleteByUser,
+    session: Session,
 }
 
-impl<Txn, UserRepo, SessionDeleteByUser> UserUpdateEnabledCommandService<Txn>
-    for UserUpdateEnabledCommandServiceImpl<UserRepo, SessionDeleteByUser>
+impl<Txn, UserRepo, Session> UserUpdateEnabledCommandService<Txn>
+    for UserUpdateEnabledCommandServiceImpl<UserRepo, Session>
 where
     Txn: Send + Sync + 'static,
     UserRepo: UserRepository<Txn>,
-    SessionDeleteByUser: SessionDeleteByUserCommandService<Txn>,
+    Session: SessionService<Txn>,
 {
     async fn invoke(&self, txn: &mut Txn, user_id: UserId, enabled: bool) -> anyhow::Result<bool> {
         if !enabled {
-            self.session_delete_by_user.invoke(txn, user_id).await?;
+            self.session.delete_by_user(txn, user_id).await?;
         }
 
         self.user_repo
@@ -31,17 +31,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_session_contracts::commands::delete_by_user::MockSessionDeleteByUserCommandService;
+    use academy_core_session_contracts::session::MockSessionService;
     use academy_demo::user::{BAR, FOO};
     use academy_models::user::UserPatch;
     use academy_persistence_contracts::user::MockUserRepository;
 
     use super::*;
 
-    type Sut = UserUpdateEnabledCommandServiceImpl<
-        MockUserRepository<()>,
-        MockSessionDeleteByUserCommandService<()>,
-    >;
+    type Sut = UserUpdateEnabledCommandServiceImpl<MockUserRepository<()>, MockSessionService<()>>;
 
     #[tokio::test]
     async fn enable() {
@@ -73,13 +70,9 @@ mod tests {
             Ok(true),
         );
 
-        let session_delete_by_user =
-            MockSessionDeleteByUserCommandService::new().with_invoke(FOO.user.id);
+        let session = MockSessionService::new().with_delete_by_user(FOO.user.id);
 
-        let sut = UserUpdateEnabledCommandServiceImpl {
-            user_repo,
-            session_delete_by_user,
-        };
+        let sut = UserUpdateEnabledCommandServiceImpl { user_repo, session };
 
         // Act
         let result = sut.invoke(&mut (), FOO.user.id, false).await;

@@ -1,3 +1,8 @@
+#![expect(
+    clippy::self_named_module_files,
+    reason = "false positive in session module"
+)]
+
 use std::future::Future;
 
 use academy_models::{
@@ -9,8 +14,8 @@ use academy_models::{
 };
 use thiserror::Error;
 
-pub mod commands;
 pub mod failed_auth_count;
+pub mod session;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SessionFeatureService: Send + Sync + 'static {
