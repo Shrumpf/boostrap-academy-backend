@@ -86,7 +86,7 @@ axum-extra = { version = "0.9.3", default-features = false, features = ["typed-h
 base64 = { version = "0.22.1", default-features = false }
 chrono = { version = "0.4.38", default-features = false, features = ["serde", "clock"] }
 clap = { version = "4.5.17", features = ["derive", "env"] }
-clap_complete = { version = "4.5.27", default-features = false }
+clap_complete = { version = "4.5.28", default-features = false }
 futures = { version = "0.3.30", default-features = false, features = ["std"] }
 hex = { version = "0.4.3", default-features = false, features = ["std"] }
 lettre = { version = "0.11.9", default-features = false, features = ["builder", "hostname", "pool", "rustls-tls", "serde", "smtp-transport", "tokio1", "tokio1-rustls-tls", "tracing"] }
