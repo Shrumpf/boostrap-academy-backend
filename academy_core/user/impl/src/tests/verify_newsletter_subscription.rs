@@ -1,8 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::verify_newsletter_subscription::{
-        MockUserVerifyNewsletterSubscriptionCommandService,
-        UserVerifyNewsletterSubscriptionCommandError,
+    email_confirmation::{
+        MockUserEmailConfirmationService, UserEmailConfirmationSubscribeToNewsletterError,
     },
     UserFeatureService, UserVerifyNewsletterSubscriptionError,
 };
@@ -32,17 +31,13 @@ async fn ok() {
         Some(FOO.clone().with(|u| u.user.newsletter = false)),
     );
 
-    let user_verify_newsletter_subscription =
-        MockUserVerifyNewsletterSubscriptionCommandService::new().with_invoke(
-            FOO.user.id,
-            VERIFICATION_CODE_1.clone(),
-            Ok(()),
-        );
+    let user_email_confirmation = MockUserEmailConfirmationService::new()
+        .with_subscribe_to_newsletter(FOO.user.id, VERIFICATION_CODE_1.clone(), Ok(()));
 
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_verify_newsletter_subscription,
+        user_email_confirmation,
         user_repo,
         ..Sut::default()
     };
@@ -169,17 +164,17 @@ async fn invalid_code() {
         Some(FOO.clone().with(|u| u.user.newsletter = false)),
     );
 
-    let user_verify_newsletter_subscription =
-        MockUserVerifyNewsletterSubscriptionCommandService::new().with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new()
+        .with_subscribe_to_newsletter(
             FOO.user.id,
             VERIFICATION_CODE_1.clone(),
-            Err(UserVerifyNewsletterSubscriptionCommandError::InvalidCode),
+            Err(UserEmailConfirmationSubscribeToNewsletterError::InvalidCode),
         );
 
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_verify_newsletter_subscription,
+        user_email_confirmation,
         user_repo,
         ..Sut::default()
     };

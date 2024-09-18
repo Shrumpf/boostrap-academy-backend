@@ -1,29 +1,17 @@
+use std::time::Duration;
+
 use academy_auth_contracts::MockAuthService;
 use academy_cache_contracts::MockCacheService;
 use academy_core_session_contracts::session::MockSessionService;
 use academy_core_user_contracts::{
-    commands::{
-        create::MockUserCreateCommandService,
-        request_password_reset_email::MockUserRequestPasswordResetEmailCommandService,
-        request_subscribe_newsletter_email::MockUserRequestSubscribeNewsletterEmailCommandService,
-        request_verification_email::MockUserRequestVerificationEmailCommandService,
-        reset_password::MockUserResetPasswordCommandService,
-        update_admin::MockUserUpdateAdminCommandService,
-        update_email::MockUserUpdateEmailCommandService,
-        update_enabled::MockUserUpdateEnabledCommandService,
-        update_name::MockUserUpdateNameCommandService,
-        update_password::MockUserUpdatePasswordCommandService,
-        verify_email::MockUserVerifyEmailCommandService,
-        verify_newsletter_subscription::MockUserVerifyNewsletterSubscriptionCommandService,
-    },
-    queries::list::MockUserListQueryService,
-    update_invoice_info::MockUserUpdateInvoiceInfoService,
+    email_confirmation::MockUserEmailConfirmationService, update::MockUserUpdateService,
+    user::MockUserService,
 };
 use academy_extern_contracts::{internal::MockInternalApiService, vat::MockVatApiService};
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase, MockTransaction};
 use academy_shared_contracts::captcha::MockCaptchaService;
 
-use crate::UserFeatureServiceImpl;
+use crate::{UserFeatureConfig, UserFeatureServiceImpl};
 
 mod create_user;
 mod delete_user;
@@ -43,20 +31,29 @@ type Sut = UserFeatureServiceImpl<
     MockCaptchaService,
     MockVatApiService,
     MockInternalApiService,
-    MockUserListQueryService<MockTransaction>,
-    MockUserCreateCommandService<MockTransaction>,
-    MockUserRequestSubscribeNewsletterEmailCommandService,
-    MockUserUpdateNameCommandService<MockTransaction>,
-    MockUserUpdateEmailCommandService<MockTransaction>,
-    MockUserUpdateAdminCommandService<MockTransaction>,
-    MockUserUpdateEnabledCommandService<MockTransaction>,
-    MockUserUpdatePasswordCommandService<MockTransaction>,
-    MockUserVerifyNewsletterSubscriptionCommandService<MockTransaction>,
-    MockUserRequestVerificationEmailCommandService,
-    MockUserVerifyEmailCommandService<MockTransaction>,
-    MockUserRequestPasswordResetEmailCommandService,
-    MockUserResetPasswordCommandService<MockTransaction>,
-    MockUserUpdateInvoiceInfoService<MockTransaction>,
+    MockUserService<MockTransaction>,
+    MockUserEmailConfirmationService<MockTransaction>,
+    MockUserUpdateService<MockTransaction>,
     MockSessionService<MockTransaction>,
     MockUserRepository<MockTransaction>,
 >;
+
+impl Default for UserFeatureConfig {
+    fn default() -> Self {
+        Self {
+            name_change_rate_limit: Duration::from_secs(30 * 24 * 3600),
+            verification_redirect_url: "https://bootstrap.academy/auth/verify-account"
+                .to_owned()
+                .into(),
+            verification_verification_code_ttl: Duration::from_secs(3600),
+            password_reset_redirect_url: "https://bootstrap.academy/auth/reset-password"
+                .to_owned()
+                .into(),
+            password_reset_verification_code_ttl: Duration::from_secs(3600),
+            newsletter_subscription_redirect_url: "https://bootstrap.academy/account/newsletter"
+                .to_owned()
+                .into(),
+            newsletter_subscription_verification_code_ttl: Duration::from_secs(3600),
+        }
+    }
+}

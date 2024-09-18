@@ -1,6 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::update_email::{MockUserUpdateEmailCommandService, UserUpdateEmailCommandError},
+    update::{MockUserUpdateService, UserUpdateEmailError},
     UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
@@ -31,7 +31,7 @@ async fn update_email_self() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_email = MockUserUpdateEmailCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_email(
         FOO.user.id,
         expected.user.email.clone().unwrap(),
         expected.user.email_verified,
@@ -41,7 +41,7 @@ async fn update_email_self() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_email,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -84,7 +84,7 @@ async fn update_email_admin() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_email = MockUserUpdateEmailCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_email(
         FOO.user.id,
         expected.user.email.clone().unwrap(),
         expected.user.email_verified,
@@ -94,7 +94,7 @@ async fn update_email_admin() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_email,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -137,7 +137,7 @@ async fn update_email_admin_verified() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_email = MockUserUpdateEmailCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_email(
         FOO.user.id,
         expected.user.email.clone().unwrap(),
         expected.user.email_verified,
@@ -147,7 +147,7 @@ async fn update_email_admin_verified() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_email,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -191,7 +191,7 @@ async fn update_email_admin_unverified() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_email = MockUserUpdateEmailCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_email(
         FOO.user.id,
         expected.user.email.clone().unwrap(),
         expected.user.email_verified,
@@ -201,7 +201,7 @@ async fn update_email_admin_unverified() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_email,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -247,7 +247,7 @@ async fn update_set_email_verified() {
         }),
     );
 
-    let user_update_email = MockUserUpdateEmailCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_email(
         FOO.user.id,
         expected.user.email.clone().unwrap(),
         expected.user.email_verified,
@@ -257,7 +257,7 @@ async fn update_set_email_verified() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_email,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -299,7 +299,7 @@ async fn update_set_email_unverified() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_email = MockUserUpdateEmailCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_email(
         FOO.user.id,
         expected.user.email.clone().unwrap(),
         expected.user.email_verified,
@@ -309,7 +309,7 @@ async fn update_set_email_unverified() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_email,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -342,17 +342,17 @@ async fn update_email_conflict() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_email = MockUserUpdateEmailCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_email(
         FOO.user.id,
         ADMIN.user.email.clone().unwrap(),
         false,
-        Err(UserUpdateEmailCommandError::Conflict),
+        Err(UserUpdateEmailError::Conflict),
     );
 
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_email,
+        user_update,
         user_repo,
         ..Sut::default()
     };

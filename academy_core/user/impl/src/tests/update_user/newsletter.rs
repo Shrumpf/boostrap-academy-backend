@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::request_subscribe_newsletter_email::MockUserRequestSubscribeNewsletterEmailCommandService,
-    UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    email_confirmation::MockUserEmailConfirmationService, UserFeatureService, UserUpdateError,
+    UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -30,8 +30,8 @@ async fn enable_self() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(foo.clone()));
 
-    let user_request_subscribe_newsletter_email =
-        MockUserRequestSubscribeNewsletterEmailCommandService::new().with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new()
+        .with_request_newsletter_subscription(
             FOO.user.id,
             FOO.user
                 .email
@@ -44,7 +44,7 @@ async fn enable_self() {
         auth,
         db,
         user_repo,
-        user_request_subscribe_newsletter_email,
+        user_email_confirmation,
         ..Sut::default()
     };
 

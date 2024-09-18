@@ -1,5 +1,5 @@
 use academy_config::Config;
-use academy_core_user_contracts::commands::create::{UserCreateCommand, UserCreateCommandService};
+use academy_core_user_contracts::user::{UserCreateCommand, UserService};
 use academy_di::Provides;
 use academy_persistence_contracts::{Database as _, Transaction};
 use clap::Subcommand;
@@ -7,7 +7,7 @@ use clap::Subcommand;
 use crate::{
     cache, database, email,
     environment::{
-        types::{Database, UserCreate},
+        types::{self, Database},
         ConfigProvider, Provider,
     },
 };
@@ -62,9 +62,9 @@ async fn create(
     let db: Database = provider.provide();
     let mut txn = db.begin_transaction().await?;
 
-    let user_create: UserCreate = provider.provide();
-    let user = user_create
-        .invoke(
+    let user_service: types::User = provider.provide();
+    let user = user_service
+        .create(
             &mut txn,
             UserCreateCommand {
                 name: name.clone().try_into()?,

@@ -1,7 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    update_invoice_info::MockUserUpdateInvoiceInfoService, UserFeatureService, UserUpdateError,
-    UserUpdateRequest,
+    update::MockUserUpdateService, UserFeatureService, UserUpdateError, UserUpdateRequest,
 };
 use academy_demo::{
     session::BAR_1,
@@ -35,7 +34,7 @@ async fn ok() {
         Some(BAR.clone().with(|u| u.user.email_verified = true)),
     );
 
-    let user_update_invoice_info = MockUserUpdateInvoiceInfoService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_invoice_info(
         BAR.user.id,
         BAR.invoice_info.clone(),
         academy_models::user::UserInvoiceInfoPatch::new()
@@ -48,7 +47,7 @@ async fn ok() {
         auth,
         db,
         user_repo,
-        user_update_invoice_info,
+        user_update,
         ..Sut::default()
     };
 
@@ -85,7 +84,7 @@ async fn ok_release_coins() {
         Some(BAR.clone().with(|u| u.user.email_verified = true)),
     );
 
-    let user_update_invoice_info = MockUserUpdateInvoiceInfoService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_invoice_info(
         BAR.user.id,
         BAR.invoice_info.clone(),
         FOO.invoice_info.clone().into_patch(),
@@ -101,7 +100,7 @@ async fn ok_release_coins() {
         auth,
         db,
         user_repo,
-        user_update_invoice_info,
+        user_update,
         vat_api,
         internal_api,
         ..Sut::default()

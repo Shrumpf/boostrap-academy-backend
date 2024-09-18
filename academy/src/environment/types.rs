@@ -20,25 +20,8 @@ use academy_core_session_impl::{
     SessionFeatureServiceImpl,
 };
 use academy_core_user_impl::{
-    commands::{
-        create::UserCreateCommandServiceImpl,
-        request_password_reset_email::UserRequestPasswordResetEmailCommandServiceImpl,
-        request_subscribe_newsletter_email::UserRequestSubscribeNewsletterEmailCommandServiceImpl,
-        request_verification_email::UserRequestVerificationEmailCommandServiceImpl,
-        reset_password::UserResetPasswordCommandServiceImpl,
-        update_admin::UserUpdateAdminCommandServiceImpl,
-        update_email::UserUpdateEmailCommandServiceImpl,
-        update_enabled::UserUpdateEnabledCommandServiceImpl,
-        update_name::UserUpdateNameCommandServiceImpl,
-        update_password::UserUpdatePasswordCommandServiceImpl,
-        verify_email::UserVerifyEmailCommandServiceImpl,
-        verify_newsletter_subscription::UserVerifyNewsletterSubscriptionCommandServiceImpl,
-    },
-    queries::{
-        get_by_name_or_email::UserGetByNameOrEmailQueryServiceImpl, list::UserListQueryServiceImpl,
-    },
-    update_invoice_info::UserUpdateInvoiceInfoServiceImpl,
-    UserFeatureServiceImpl,
+    email_confirmation::UserEmailConfirmationServiceImpl, update::UserUpdateServiceImpl,
+    user::UserServiceImpl, UserFeatureServiceImpl,
 };
 use academy_email_impl::{template::TemplateEmailServiceImpl, EmailServiceImpl};
 use academy_extern_impl::{
@@ -122,42 +105,16 @@ pub type UserFeature = UserFeatureServiceImpl<
     Captcha,
     VatApi,
     InternalApi,
-    UserList,
-    UserCreate,
-    UserRequestSubscribeNewsletterEmail,
-    UserUpdateName,
-    UserUpdateEmail,
-    UserUpdateAdmin,
-    UserUpdateEnabled,
-    UserUpdatePassword,
-    UserVerifyNewsletterSubscription,
-    UserRequestVerificationEmail,
-    UserVerifyEmail,
-    UserRequestPasswordResetEmail,
-    UserResetPassword,
-    UserUpdateInvoiceInfo,
+    User,
+    UserEmailConfirmation,
+    UserUpdate,
     Session,
     UserRepo,
 >;
-pub type UserCreate = UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>;
-pub type UserRequestSubscribeNewsletterEmail =
-    UserRequestSubscribeNewsletterEmailCommandServiceImpl<Secret, TemplateEmail, Cache>;
-pub type UserUpdateName = UserUpdateNameCommandServiceImpl<Time, UserRepo>;
-pub type UserUpdateEmail = UserUpdateEmailCommandServiceImpl<Auth, UserRepo>;
-pub type UserUpdateAdmin = UserUpdateAdminCommandServiceImpl<Auth, UserRepo>;
-pub type UserUpdateEnabled = UserUpdateEnabledCommandServiceImpl<UserRepo, Session>;
-pub type UserUpdatePassword = UserUpdatePasswordCommandServiceImpl<Password, UserRepo>;
-pub type UserGetByNameOrEmail = UserGetByNameOrEmailQueryServiceImpl<UserRepo>;
-pub type UserVerifyNewsletterSubscription =
-    UserVerifyNewsletterSubscriptionCommandServiceImpl<UserRepo, Cache>;
-pub type UserRequestVerificationEmail =
-    UserRequestVerificationEmailCommandServiceImpl<Secret, TemplateEmail, Cache>;
-pub type UserRequestPasswordResetEmail =
-    UserRequestPasswordResetEmailCommandServiceImpl<Secret, TemplateEmail, Cache>;
-pub type UserResetPassword = UserResetPasswordCommandServiceImpl<Cache, Password, UserRepo>;
-pub type UserVerifyEmail = UserVerifyEmailCommandServiceImpl<Auth, Cache, UserRepo>;
-pub type UserUpdateInvoiceInfo = UserUpdateInvoiceInfoServiceImpl<UserRepo>;
-pub type UserList = UserListQueryServiceImpl<UserRepo>;
+pub type User = UserServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>;
+pub type UserEmailConfirmation =
+    UserEmailConfirmationServiceImpl<Auth, Secret, TemplateEmail, Cache, Password, UserRepo>;
+pub type UserUpdate = UserUpdateServiceImpl<Auth, Time, Password, Session, UserRepo>;
 
 pub type SessionFeature = SessionFeatureServiceImpl<
     Database,
@@ -165,7 +122,6 @@ pub type SessionFeature = SessionFeatureServiceImpl<
     Captcha,
     Session,
     SessionFailedAuthCount,
-    UserGetByNameOrEmail,
     MfaAuthenticate,
     UserRepo,
     SessionRepo,

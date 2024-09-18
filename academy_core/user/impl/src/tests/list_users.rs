@@ -1,6 +1,6 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    queries::list::{MockUserListQueryService, UserListQuery, UserListResult},
+    user::{MockUserService, UserListQuery, UserListResult},
     UserFeatureService, UserListError,
 };
 use academy_demo::{
@@ -31,12 +31,12 @@ async fn ok() {
     let auth =
         MockAuthService::new().with_authenticate(Some((ADMIN.user.clone(), ADMIN_1.clone())));
 
-    let user_list = MockUserListQueryService::new().with_invoke(query.clone(), expected.clone());
+    let user = MockUserService::new().with_list(query.clone(), expected.clone());
 
     let sut = UserFeatureServiceImpl {
         db,
         auth,
-        user_list,
+        user,
         ..Sut::default()
     };
 

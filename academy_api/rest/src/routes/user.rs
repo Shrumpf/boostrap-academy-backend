@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use academy_core_user_contracts::{
-    queries::list::{UserListQuery, UserListResult},
+    user::{UserListQuery, UserListResult},
     PasswordUpdate, UserCreateError, UserCreateRequest, UserDeleteError, UserFeatureService,
     UserGetError, UserListError, UserRequestPasswordResetError, UserRequestVerificationEmailError,
     UserResetPasswordError, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,

@@ -6,7 +6,7 @@ use academy_models::{
     pagination::PaginationSlice,
     user::{
         User, UserComposite, UserFilter, UserId, UserInvoiceInfo, UserInvoiceInfoPatchRef,
-        UserName, UserPatchRef, UserProfile, UserProfilePatchRef,
+        UserName, UserNameOrEmailAddress, UserPatchRef, UserProfile, UserProfilePatchRef,
     },
 };
 use thiserror::Error;
@@ -56,6 +56,21 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         txn: &mut Txn,
         email: &EmailAddress,
     ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send;
+
+    fn get_composite_by_name_or_email(
+        &self,
+        txn: &mut Txn,
+        name_or_email: &UserNameOrEmailAddress,
+    ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send {
+        async move {
+            match name_or_email {
+                UserNameOrEmailAddress::Name(name) => self.get_composite_by_name(txn, name).await,
+                UserNameOrEmailAddress::Email(email) => {
+                    self.get_composite_by_email(txn, email).await
+                }
+            }
+        }
+    }
 
     /// Returns the user linked to the given remote oauth2 user.
     fn get_composite_by_oauth2_provider_id_and_remote_user_id(
@@ -206,6 +221,21 @@ impl<Txn: Send + Sync + 'static> MockUserRepository<Txn> {
         self.expect_get_composite_by_email()
             .once()
             .with(mockall::predicate::always(), mockall::predicate::eq(email))
+            .return_once(|_, _| Box::pin(std::future::ready(Ok(result))));
+        self
+    }
+
+    pub fn with_get_composite_by_name_or_email(
+        mut self,
+        name_or_email: UserNameOrEmailAddress,
+        result: Option<UserComposite>,
+    ) -> Self {
+        self.expect_get_composite_by_name_or_email()
+            .once()
+            .with(
+                mockall::predicate::always(),
+                mockall::predicate::eq(name_or_email),
+            )
             .return_once(|_, _| Box::pin(std::future::ready(Ok(result))));
         self
     }

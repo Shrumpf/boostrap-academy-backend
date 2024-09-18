@@ -2,9 +2,7 @@ use std::time::Duration;
 
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::update_name::{
-        MockUserUpdateNameCommandService, UserUpdateNameCommandError, UserUpdateNameRateLimitPolicy,
-    },
+    update::{MockUserUpdateService, UserUpdateNameError, UserUpdateNameRateLimitPolicy},
     UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{
@@ -35,7 +33,7 @@ async fn update_name_self() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_name = MockUserUpdateNameCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_name(
         FOO.user.clone(),
         BAR.user.name.clone(),
         UserUpdateNameRateLimitPolicy::Enforce,
@@ -45,7 +43,7 @@ async fn update_name_self() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_name,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -88,7 +86,7 @@ async fn update_name_admin_no_rate_limit() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_name = MockUserUpdateNameCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_name(
         FOO.user.clone(),
         BAR.user.name.clone(),
         UserUpdateNameRateLimitPolicy::Bypass,
@@ -98,7 +96,7 @@ async fn update_name_admin_no_rate_limit() {
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_name,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -133,17 +131,17 @@ async fn update_name_self_rate_limit() {
 
     let expected = FOO.user.last_name_change.unwrap() + Duration::from_secs(17);
 
-    let user_update_name = MockUserUpdateNameCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_name(
         FOO.user.clone(),
         BAR.user.name.clone(),
         UserUpdateNameRateLimitPolicy::Enforce,
-        Err(UserUpdateNameCommandError::RateLimit { until: expected }),
+        Err(UserUpdateNameError::RateLimit { until: expected }),
     );
 
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_name,
+        user_update,
         user_repo,
         ..Sut::default()
     };
@@ -176,17 +174,17 @@ async fn update_name_conflict() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_name = MockUserUpdateNameCommandService::new().with_invoke(
+    let user_update = MockUserUpdateService::new().with_update_name(
         FOO.user.clone(),
         BAR.user.name.clone(),
         UserUpdateNameRateLimitPolicy::Enforce,
-        Err(UserUpdateNameCommandError::Conflict),
+        Err(UserUpdateNameError::Conflict),
     );
 
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_name,
+        user_update,
         user_repo,
         ..Sut::default()
     };

@@ -1,6 +1,6 @@
 use academy_core_user_contracts::{
-    commands::request_password_reset_email::MockUserRequestPasswordResetEmailCommandService,
-    UserFeatureService, UserRequestPasswordResetError,
+    email_confirmation::MockUserEmailConfirmationService, UserFeatureService,
+    UserRequestPasswordResetError,
 };
 use academy_demo::user::FOO;
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
@@ -19,8 +19,8 @@ async fn ok() {
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_email(FOO.user.email.clone().unwrap(), Some(FOO.clone()));
 
-    let user_request_password_reset_email = MockUserRequestPasswordResetEmailCommandService::new()
-        .with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new()
+        .with_request_password_reset(
             FOO.user.id,
             FOO.user
                 .email
@@ -33,7 +33,7 @@ async fn ok() {
         db,
         captcha,
         user_repo,
-        user_request_password_reset_email,
+        user_email_confirmation,
         ..Sut::default()
     };
 

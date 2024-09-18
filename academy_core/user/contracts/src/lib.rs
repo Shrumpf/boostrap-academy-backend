@@ -1,3 +1,8 @@
+#![expect(
+    clippy::self_named_module_files,
+    reason = "false positive in user module"
+)]
+
 use std::future::Future;
 
 use academy_models::{
@@ -13,12 +18,12 @@ use academy_models::{
 };
 use academy_utils::patch::PatchValue;
 use chrono::{DateTime, Utc};
-use queries::list::{UserListQuery, UserListResult};
 use thiserror::Error;
+use user::{UserListQuery, UserListResult};
 
-pub mod commands;
-pub mod queries;
-pub mod update_invoice_info;
+pub mod email_confirmation;
+pub mod update;
+pub mod user;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait UserFeatureService: Send + Sync + 'static {

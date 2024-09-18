@@ -6,12 +6,7 @@ use academy_core_contact_impl::ContactServiceConfig;
 use academy_core_health_impl::HealthServiceConfig;
 use academy_core_oauth2_impl::OAuth2ServiceConfig;
 use academy_core_session_impl::SessionServiceConfig;
-use academy_core_user_impl::commands::{
-    request_password_reset_email::UserRequestPasswordResetEmailCommandServiceConfig,
-    request_subscribe_newsletter_email::UserRequestSubscribeNewsletterEmailCommandServiceConfig,
-    request_verification_email::UserRequestVerificationEmailCommandServiceConfig,
-    update_name::UserUpdateNameCommandServiceConfig,
-};
+use academy_core_user_impl::UserFeatureConfig;
 use academy_di::provider;
 use academy_extern_impl::{
     internal::InternalApiServiceConfig, recaptcha::RecaptchaApiServiceConfig,
@@ -35,12 +30,8 @@ provider! {
         ..config: ConfigProvider {
             AuthServiceConfig,
             JwtServiceConfig,
-            UserUpdateNameCommandServiceConfig,
             HealthServiceConfig,
-            UserRequestSubscribeNewsletterEmailCommandServiceConfig,
             ContactServiceConfig,
-            UserRequestVerificationEmailCommandServiceConfig,
-            UserRequestPasswordResetEmailCommandServiceConfig,
             TotpServiceConfig,
             Arc<CaptchaServiceConfig>,
             Arc<RecaptchaApiServiceConfig>,
@@ -48,6 +39,7 @@ provider! {
             OAuth2ServiceConfig,
             InternalApiServiceConfig,
             VatApiServiceConfig,
+            UserFeatureConfig,
         }
     }
 }
@@ -68,12 +60,8 @@ provider! {
     pub ConfigProvider {
         auth_service_config: AuthServiceConfig,
         jwt_service_config: JwtServiceConfig,
-        user_update_name_command_service_config: UserUpdateNameCommandServiceConfig,
         health_service_config: HealthServiceConfig,
-        user_request_subscribe_newsletter_email_command_service_config: UserRequestSubscribeNewsletterEmailCommandServiceConfig,
         contact_service_config: ContactServiceConfig,
-        user_request_verification_email_command_service_config: UserRequestVerificationEmailCommandServiceConfig,
-        user_request_password_reset_email_command_service_config: UserRequestPasswordResetEmailCommandServiceConfig,
         totp_service_config: TotpServiceConfig,
         captcha_service_config: Arc<CaptchaServiceConfig>,
         recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>,
@@ -81,6 +69,7 @@ provider! {
         oauth2_service_config: OAuth2ServiceConfig,
         internal_api_service_config: InternalApiServiceConfig,
         vat_api_service_config: VatApiServiceConfig,
+        user_feature_config: UserFeatureConfig,
     }
 }
 
@@ -93,30 +82,12 @@ impl ConfigProvider {
             internal_token_ttl: config.internal.jwt_ttl.into(),
         };
         let jwt_service_config = JwtServiceConfig::new(&config.jwt.secret)?;
-        let user_update_name_command_service_config = UserUpdateNameCommandServiceConfig {
-            name_change_rate_limit: config.user.name_change_rate_limit.into(),
-        };
         let health_service_config = HealthServiceConfig {
             cache_ttl: config.health.cache_ttl.into(),
         };
-        let user_request_subscribe_newsletter_email_command_service_config =
-            UserRequestSubscribeNewsletterEmailCommandServiceConfig {
-                redirect_url: config.user.newsletter_redirect_url.clone().into(),
-                verification_code_ttl: config.user.newsletter_code_ttl.into(),
-            };
         let contact_service_config = ContactServiceConfig {
             email: config.contact.email.clone().into(),
         };
-        let user_request_verification_email_command_service_config =
-            UserRequestVerificationEmailCommandServiceConfig {
-                redirect_url: config.user.verification_redirect_url.clone().into(),
-                verification_code_ttl: config.user.verification_code_ttl.into(),
-            };
-        let user_request_password_reset_email_command_service_config =
-            UserRequestPasswordResetEmailCommandServiceConfig {
-                redirect_url: config.user.password_reset_redirect_url.clone().into(),
-                verification_code_ttl: config.user.password_reset_code_ttl.into(),
-            };
         let totp_service_config = TotpServiceConfig {
             secret_length: config.totp.secret_length,
         };
@@ -179,16 +150,26 @@ impl ConfigProvider {
         let vat_api_service_config =
             VatApiServiceConfig::new(config.vat.validate_endpoint_override.clone());
 
+        let user_feature_config = UserFeatureConfig {
+            name_change_rate_limit: config.user.name_change_rate_limit.into(),
+            verification_redirect_url: config.user.verification_redirect_url.clone().into(),
+            verification_verification_code_ttl: config.user.verification_code_ttl.into(),
+            password_reset_redirect_url: config.user.password_reset_redirect_url.clone().into(),
+            password_reset_verification_code_ttl: config.user.password_reset_code_ttl.into(),
+            newsletter_subscription_redirect_url: config
+                .user
+                .newsletter_redirect_url
+                .clone()
+                .into(),
+            newsletter_subscription_verification_code_ttl: config.user.newsletter_code_ttl.into(),
+        };
+
         Ok(Self {
             _state: Default::default(),
             auth_service_config,
             jwt_service_config,
-            user_update_name_command_service_config,
             health_service_config,
-            user_request_subscribe_newsletter_email_command_service_config,
             contact_service_config,
-            user_request_verification_email_command_service_config,
-            user_request_password_reset_email_command_service_config,
             totp_service_config,
             captcha_service_config,
             recaptcha_api_service_config,
@@ -196,6 +177,7 @@ impl ConfigProvider {
             oauth2_service_config,
             internal_api_service_config,
             vat_api_service_config,
+            user_feature_config,
         })
     }
 }

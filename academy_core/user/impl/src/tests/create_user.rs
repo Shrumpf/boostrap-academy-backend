@@ -1,7 +1,7 @@
 use academy_cache_contracts::MockCacheService;
 use academy_core_session_contracts::session::MockSessionService;
 use academy_core_user_contracts::{
-    commands::create::{MockUserCreateCommandService, UserCreateCommand, UserCreateCommandError},
+    user::{MockUserService, UserCreateCommand},
     UserCreateError, UserCreateRequest, UserFeatureService,
 };
 use academy_demo::{
@@ -38,8 +38,7 @@ async fn ok() {
 
     let captcha = MockCaptchaService::new().with_check(Some("resp"), Ok(()));
 
-    let user_create =
-        MockUserCreateCommandService::new().with_invoke(req_to_cmd(&request), Ok(FOO.clone()));
+    let user = MockUserService::new().with_create(req_to_cmd(&request), Ok(FOO.clone()));
 
     let session = MockSessionService::new().with_create(
         FOO.clone(),
@@ -51,7 +50,7 @@ async fn ok() {
     let sut = UserFeatureServiceImpl {
         db,
         captcha,
-        user_create,
+        user,
         session,
         ..Sut::default()
     };
@@ -107,8 +106,7 @@ async fn ok_oauth2() {
         )
         .with_remove(cache_key.into());
 
-    let user_create =
-        MockUserCreateCommandService::new().with_invoke(req_to_cmd(&request), Ok(FOO.clone()));
+    let user = MockUserService::new().with_create(req_to_cmd(&request), Ok(FOO.clone()));
 
     let session = MockSessionService::new().with_create(
         FOO.clone(),
@@ -121,7 +119,7 @@ async fn ok_oauth2() {
         db,
         cache,
         captcha,
-        user_create,
+        user,
         session,
         ..Sut::default()
     };
@@ -208,15 +206,15 @@ async fn name_conflict() {
 
     let captcha = MockCaptchaService::new().with_check(None, Ok(()));
 
-    let user_create = MockUserCreateCommandService::new().with_invoke(
+    let user = MockUserService::new().with_create(
         req_to_cmd(&request),
-        Err(UserCreateCommandError::NameConflict),
+        Err(academy_core_user_contracts::user::UserCreateError::NameConflict),
     );
 
     let sut = UserFeatureServiceImpl {
         db,
         captcha,
-        user_create,
+        user,
         ..Sut::default()
     };
 
@@ -244,15 +242,15 @@ async fn email_conflict() {
 
     let captcha = MockCaptchaService::new().with_check(None, Ok(()));
 
-    let user_create = MockUserCreateCommandService::new().with_invoke(
+    let user = MockUserService::new().with_create(
         req_to_cmd(&request),
-        Err(UserCreateCommandError::EmailConflict),
+        Err(academy_core_user_contracts::user::UserCreateError::EmailConflict),
     );
 
     let sut = UserFeatureServiceImpl {
         db,
         captcha,
-        user_create,
+        user,
         ..Sut::default()
     };
 
@@ -336,16 +334,16 @@ async fn oauth2_remote_already_linked() {
         }),
     );
 
-    let user_create = MockUserCreateCommandService::new().with_invoke(
+    let user = MockUserService::new().with_create(
         req_to_cmd(&request),
-        Err(UserCreateCommandError::RemoteAlreadyLinked),
+        Err(academy_core_user_contracts::user::UserCreateError::RemoteAlreadyLinked),
     );
 
     let sut = UserFeatureServiceImpl {
         db,
         cache,
         captcha,
-        user_create,
+        user,
         ..Sut::default()
     };
 

@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::update_password::MockUserUpdatePasswordCommandService, PasswordUpdate,
-    UserFeatureService, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
+    update::MockUserUpdateService, PasswordUpdate, UserFeatureService, UserUpdateError,
+    UserUpdateRequest, UserUpdateUserRequest,
 };
 use academy_demo::{session::FOO_1, user::FOO};
 use academy_models::user::{UserIdOrSelf, UserPassword};
@@ -21,13 +21,13 @@ async fn update_password() {
 
     let user_repo = MockUserRepository::new().with_get_composite(FOO.user.id, Some(FOO.clone()));
 
-    let user_update_password =
-        MockUserUpdatePasswordCommandService::new().with_invoke(FOO.user.id, new_password.clone());
+    let user_update =
+        MockUserUpdateService::new().with_update_password(FOO.user.id, new_password.clone());
 
     let sut = UserFeatureServiceImpl {
         auth,
         db,
-        user_update_password,
+        user_update,
         user_repo,
         ..Sut::default()
     };

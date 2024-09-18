@@ -1,8 +1,8 @@
 use academy_core_oauth2_contracts::create_link::{
     OAuth2CreateLinkService, OAuth2CreateLinkServiceError,
 };
-use academy_core_user_contracts::commands::create::{
-    UserCreateCommand, UserCreateCommandError, UserCreateCommandService,
+use academy_core_user_contracts::user::{
+    UserCreateCommand, UserCreateError, UserListQuery, UserListResult, UserService,
 };
 use academy_di::Build;
 use academy_models::user::{User, UserComposite, UserDetails, UserInvoiceInfo, UserProfile};
@@ -10,7 +10,7 @@ use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_shared_contracts::{id::IdService, password::PasswordService, time::TimeService};
 
 #[derive(Debug, Clone, Copy, Build, Default)]
-pub struct UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink> {
+pub struct UserServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink> {
     id: Id,
     time: Time,
     password: Password,
@@ -18,8 +18,8 @@ pub struct UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2Crea
     oauth2_create_link: OAuth2CreateLink,
 }
 
-impl<Txn, Id, Time, Password, UserRepo, OAuth2CreateLink> UserCreateCommandService<Txn>
-    for UserCreateCommandServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>
+impl<Txn, Id, Time, Password, UserRepo, OAuth2CreateLink> UserService<Txn>
+    for UserServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>
 where
     Txn: Send + Sync + 'static,
     Id: IdService,
@@ -28,7 +28,21 @@ where
     UserRepo: UserRepository<Txn>,
     OAuth2CreateLink: OAuth2CreateLinkService<Txn>,
 {
-    async fn invoke(
+    async fn list(&self, txn: &mut Txn, query: UserListQuery) -> anyhow::Result<UserListResult> {
+        let total = self.user_repo.count(txn, &query.filter).await?;
+
+        let user_composites = self
+            .user_repo
+            .list_composites(txn, &query.filter, query.pagination)
+            .await?;
+
+        Ok(UserListResult {
+            total,
+            user_composites,
+        })
+    }
+
+    async fn create(
         &self,
         txn: &mut Txn,
         UserCreateCommand {
@@ -41,7 +55,7 @@ where
             email_verified,
             oauth2_registration,
         }: UserCreateCommand,
-    ) -> Result<UserComposite, UserCreateCommandError> {
+    ) -> Result<UserComposite, UserCreateError> {
         let password_hash = match password {
             Some(password) => Some(self.password.hash(password.into_inner()).await?),
             None => None,
@@ -78,9 +92,9 @@ where
             .create(txn, &user, &profile, &invoice_info)
             .await
             .map_err(|err| match err {
-                UserRepoError::NameConflict => UserCreateCommandError::NameConflict,
-                UserRepoError::EmailConflict => UserCreateCommandError::EmailConflict,
-                UserRepoError::Other(err) => UserCreateCommandError::Other(err),
+                UserRepoError::NameConflict => UserCreateError::NameConflict,
+                UserRepoError::EmailConflict => UserCreateError::EmailConflict,
+                UserRepoError::Other(err) => UserCreateError::Other(err),
             })?;
 
         if let Some(password_hash) = password_hash {
@@ -100,7 +114,7 @@ where
                 .await
                 .map_err(|err| match err {
                     OAuth2CreateLinkServiceError::RemoteAlreadyLinked => {
-                        UserCreateCommandError::RemoteAlreadyLinked
+                        UserCreateError::RemoteAlreadyLinked
                     }
                     OAuth2CreateLinkServiceError::Other(err) => err.into(),
                 })?;
@@ -122,9 +136,13 @@ mod tests {
     use academy_core_oauth2_contracts::create_link::MockOAuth2CreateLinkService;
     use academy_demo::{
         oauth2::{FOO_OAUTH2_LINK_1, TEST_OAUTH2_PROVIDER_ID},
-        user::FOO,
+        user::{ALL_USERS, FOO},
     };
-    use academy_models::{oauth2::OAuth2Registration, user::UserPassword};
+    use academy_models::{
+        oauth2::OAuth2Registration,
+        pagination::PaginationSlice,
+        user::{UserFilter, UserPassword},
+    };
     use academy_persistence_contracts::user::MockUserRepository;
     use academy_shared_contracts::{
         id::MockIdService, password::MockPasswordService, time::MockTimeService,
@@ -133,7 +151,7 @@ mod tests {
 
     use super::*;
 
-    type Sut = UserCreateCommandServiceImpl<
+    type Sut = UserServiceImpl<
         MockIdService,
         MockTimeService,
         MockPasswordService,
@@ -142,12 +160,49 @@ mod tests {
     >;
 
     #[tokio::test]
-    async fn ok() {
+    async fn list() {
+        // Arrange
+        let query = UserListQuery {
+            pagination: PaginationSlice {
+                limit: 42.try_into().unwrap(),
+                offset: 7,
+            },
+            filter: UserFilter {
+                name: Some("the name".try_into().unwrap()),
+                email: Some("the email".try_into().unwrap()),
+                enabled: Some(true),
+                admin: Some(false),
+                mfa_enabled: None,
+                email_verified: Some(true),
+                newsletter: Some(false),
+            },
+        };
+        let expected = ALL_USERS.iter().copied().cloned().collect::<Vec<_>>();
+
+        let user_repo = MockUserRepository::new()
+            .with_count(query.filter.clone(), 17)
+            .with_list_composites(query.filter.clone(), query.pagination, expected.clone());
+
+        let sut = UserServiceImpl {
+            user_repo,
+            ..Sut::default()
+        };
+
+        // Act
+        let result = sut.list(&mut (), query).await;
+
+        // Assert
+        let result = result.unwrap();
+        assert_eq!(result.user_composites, expected);
+    }
+
+    #[tokio::test]
+    async fn create_ok() {
         // Arrange
         let user_password = UserPassword::try_new("secure password").unwrap();
         let user_password_hash = "password_hash".to_owned();
 
-        let expected = get_expected(true, false);
+        let expected = make_user_composite(true, false);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -164,7 +219,7 @@ mod tests {
             )
             .with_save_password_hash(FOO.user.id, user_password_hash);
 
-        let sut = UserCreateCommandServiceImpl {
+        let sut = UserServiceImpl {
             id,
             time,
             password,
@@ -184,16 +239,16 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(&mut (), command).await;
+        let result = sut.create(&mut (), command).await;
 
         // Assert
         assert_eq!(result.unwrap(), expected);
     }
 
     #[tokio::test]
-    async fn ok_oauth2() {
+    async fn create_ok_oauth2() {
         // Arrange
-        let expected = get_expected(false, true);
+        let expected = make_user_composite(false, true);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -211,7 +266,7 @@ mod tests {
             Ok(FOO_OAUTH2_LINK_1.clone()),
         );
 
-        let sut = UserCreateCommandServiceImpl {
+        let sut = UserServiceImpl {
             id,
             time,
             user_repo,
@@ -234,19 +289,19 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(&mut (), command).await;
+        let result = sut.create(&mut (), command).await;
 
         // Assert
         assert_eq!(result.unwrap(), expected);
     }
 
     #[tokio::test]
-    async fn name_conflict() {
+    async fn create_name_conflict() {
         // Arrange
         let user_password = UserPassword::try_new("secure password").unwrap();
         let user_password_hash = "password_hash".to_owned();
 
-        let expected = get_expected(true, false);
+        let expected = make_user_composite(true, false);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -261,7 +316,7 @@ mod tests {
             Err(UserRepoError::NameConflict),
         );
 
-        let sut = UserCreateCommandServiceImpl {
+        let sut = UserServiceImpl {
             id,
             time,
             password,
@@ -281,19 +336,19 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(&mut (), command).await;
+        let result = sut.create(&mut (), command).await;
 
         // Assert
-        assert_matches!(result, Err(UserCreateCommandError::NameConflict));
+        assert_matches!(result, Err(UserCreateError::NameConflict));
     }
 
     #[tokio::test]
-    async fn email_conflict() {
+    async fn create_email_conflict() {
         // Arrange
         let user_password = UserPassword::try_new("secure password").unwrap();
         let user_password_hash = "password_hash".to_owned();
 
-        let expected = get_expected(true, false);
+        let expected = make_user_composite(true, false);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -308,7 +363,7 @@ mod tests {
             Err(UserRepoError::EmailConflict),
         );
 
-        let sut = UserCreateCommandServiceImpl {
+        let sut = UserServiceImpl {
             id,
             time,
             password,
@@ -328,16 +383,16 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(&mut (), command).await;
+        let result = sut.create(&mut (), command).await;
 
         // Assert
-        assert_matches!(result, Err(UserCreateCommandError::EmailConflict));
+        assert_matches!(result, Err(UserCreateError::EmailConflict));
     }
 
     #[tokio::test]
-    async fn oauth2_remote_already_linked() {
+    async fn create_oauth2_remote_already_linked() {
         // Arrange
-        let expected = get_expected(false, true);
+        let expected = make_user_composite(false, true);
 
         let id = MockIdService::new().with_generate(FOO.user.id);
         let time = MockTimeService::new().with_now(FOO.user.created_at);
@@ -355,7 +410,7 @@ mod tests {
             Err(OAuth2CreateLinkServiceError::RemoteAlreadyLinked),
         );
 
-        let sut = UserCreateCommandServiceImpl {
+        let sut = UserServiceImpl {
             id,
             time,
             user_repo,
@@ -378,13 +433,13 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(&mut (), command).await;
+        let result = sut.create(&mut (), command).await;
 
         // Assert
-        assert_matches!(result, Err(UserCreateCommandError::RemoteAlreadyLinked));
+        assert_matches!(result, Err(UserCreateError::RemoteAlreadyLinked));
     }
 
-    fn get_expected(password_login: bool, oauth2_login: bool) -> UserComposite {
+    fn make_user_composite(password_login: bool, oauth2_login: bool) -> UserComposite {
         UserComposite {
             user: User {
                 id: FOO.user.id,

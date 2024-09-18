@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::update_admin::MockUserUpdateAdminCommandService, UserFeatureService, UserUpdateError,
-    UserUpdateRequest, UserUpdateUserRequest,
+    update::MockUserUpdateService, UserFeatureService, UserUpdateError, UserUpdateRequest,
+    UserUpdateUserRequest,
 };
 use academy_demo::{
     session::ADMIN_1,
@@ -42,16 +42,13 @@ async fn update_admin() {
         let user_repo = MockUserRepository::new()
             .with_get_composite(user_composite.user.id, Some(user_composite.clone()));
 
-        let user_update_admin = MockUserUpdateAdminCommandService::new().with_invoke(
-            user_composite.user.id,
-            admin,
-            true,
-        );
+        let user_update =
+            MockUserUpdateService::new().with_update_admin(user_composite.user.id, admin, true);
 
         let sut = UserFeatureServiceImpl {
             auth,
             db,
-            user_update_admin,
+            user_update,
             user_repo,
             ..Sut::default()
         };

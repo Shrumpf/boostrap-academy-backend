@@ -1,29 +1,23 @@
+#![expect(
+    clippy::self_named_module_files,
+    reason = "false positive in user module"
+)]
+
+use std::{sync::Arc, time::Duration};
+
 use academy_auth_contracts::{AuthResultExt, AuthService};
 use academy_cache_contracts::CacheService;
 use academy_core_oauth2_contracts::oauth2_registration_cache_key;
 use academy_core_session_contracts::session::SessionService;
 use academy_core_user_contracts::{
-    commands::{
-        create::{UserCreateCommand, UserCreateCommandError, UserCreateCommandService},
-        request_password_reset_email::UserRequestPasswordResetEmailCommandService,
-        request_subscribe_newsletter_email::UserRequestSubscribeNewsletterEmailCommandService,
-        request_verification_email::UserRequestVerificationEmailCommandService,
-        reset_password::{UserResetPasswordCommandError, UserResetPasswordCommandService},
-        update_admin::UserUpdateAdminCommandService,
-        update_email::{UserUpdateEmailCommandError, UserUpdateEmailCommandService},
-        update_enabled::UserUpdateEnabledCommandService,
-        update_name::{
-            UserUpdateNameCommandError, UserUpdateNameCommandService, UserUpdateNameRateLimitPolicy,
-        },
-        update_password::UserUpdatePasswordCommandService,
-        verify_email::{UserVerifyEmailCommandError, UserVerifyEmailCommandService},
-        verify_newsletter_subscription::{
-            UserVerifyNewsletterSubscriptionCommandError,
-            UserVerifyNewsletterSubscriptionCommandService,
-        },
+    email_confirmation::{
+        UserEmailConfirmationResetPasswordError, UserEmailConfirmationService,
+        UserEmailConfirmationSubscribeToNewsletterError, UserEmailConfirmationVerifyEmailError,
     },
-    queries::list::{UserListQuery, UserListQueryService, UserListResult},
-    update_invoice_info::UserUpdateInvoiceInfoService,
+    update::{
+        UserUpdateEmailError, UserUpdateNameError, UserUpdateNameRateLimitPolicy, UserUpdateService,
+    },
+    user::{UserCreateCommand, UserListQuery, UserListResult, UserService},
     PasswordUpdate, UserCreateError, UserCreateRequest, UserDeleteError, UserFeatureService,
     UserGetError, UserListError, UserRequestPasswordResetError, UserRequestVerificationEmailError,
     UserResetPasswordError, UserUpdateError, UserUpdateRequest, UserUpdateUserRequest,
@@ -36,7 +30,7 @@ use academy_models::{
     email_address::EmailAddress,
     oauth2::OAuth2Registration,
     session::DeviceName,
-    user::{UserComposite, UserId, UserIdOrSelf, UserInvoiceInfoPatch, UserPassword, UserPatchRef},
+    user::{UserComposite, UserIdOrSelf, UserInvoiceInfoPatch, UserPassword, UserPatchRef},
     RecaptchaResponse, VerificationCode,
 };
 use academy_persistence_contracts::{user::UserRepository, Database, Transaction};
@@ -44,9 +38,9 @@ use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 use academy_utils::patch::{Patch, PatchValue};
 use anyhow::anyhow;
 
-pub mod commands;
-pub mod queries;
-pub mod update_invoice_info;
+pub mod email_confirmation;
+pub mod update;
+pub mod user;
 
 #[cfg(test)]
 mod tests;
@@ -59,20 +53,9 @@ pub struct UserFeatureServiceImpl<
     Captcha,
     VatApi,
     InternalApi,
-    UserList,
-    UserCreate,
-    UserRequestSubscribeNewsletterEmail,
-    UserUpdateName,
-    UserUpdateEmail,
-    UserUpdateAdmin,
-    UserUpdateEnabled,
-    UserUpdatePassword,
-    UserVerifyNewsletterSubscription,
-    UserRequestVerificationEmail,
-    UserVerifyEmail,
-    UserRequestPasswordResetEmail,
-    UserResetPassword,
-    UserUpdateInvoiceInfo,
+    User,
+    UserEmailConfirmation,
+    UserUpdate,
     Session,
     UserRepo,
 > {
@@ -82,22 +65,22 @@ pub struct UserFeatureServiceImpl<
     captcha: Captcha,
     vat_api: VatApi,
     internal_api: InternalApi,
-    user_list: UserList,
-    user_create: UserCreate,
-    user_request_subscribe_newsletter_email: UserRequestSubscribeNewsletterEmail,
-    user_update_name: UserUpdateName,
-    user_update_email: UserUpdateEmail,
-    user_update_admin: UserUpdateAdmin,
-    user_update_enabled: UserUpdateEnabled,
-    user_update_password: UserUpdatePassword,
-    user_verify_newsletter_subscription: UserVerifyNewsletterSubscription,
-    user_request_verification_email: UserRequestVerificationEmail,
-    user_verify_email: UserVerifyEmail,
-    user_request_password_reset_email: UserRequestPasswordResetEmail,
-    user_reset_password: UserResetPassword,
-    user_update_invoice_info: UserUpdateInvoiceInfo,
+    user: User,
+    user_email_confirmation: UserEmailConfirmation,
+    user_update: UserUpdate,
     session: Session,
     user_repo: UserRepo,
+}
+
+#[derive(Debug, Clone)]
+pub struct UserFeatureConfig {
+    pub name_change_rate_limit: Duration,
+    pub verification_redirect_url: Arc<String>,
+    pub verification_verification_code_ttl: Duration,
+    pub password_reset_redirect_url: Arc<String>,
+    pub password_reset_verification_code_ttl: Duration,
+    pub newsletter_subscription_redirect_url: Arc<String>,
+    pub newsletter_subscription_verification_code_ttl: Duration,
 }
 
 impl<
@@ -107,20 +90,9 @@ impl<
         Captcha,
         VatApi,
         InternalApi,
-        UserList,
-        UserCreate,
-        UserRequestSubscribeNewsletterEmail,
-        UserUpdateName,
-        UserUpdateEmail,
-        UserUpdateAdmin,
-        UserUpdateEnabled,
-        UserUpdatePassword,
-        UserVerifyNewsletterSubscription,
-        UserRequestVerificationEmail,
-        UserVerifyEmail,
-        UserRequestPasswordResetEmail,
-        UserResetPassword,
-        UserUpdateInvoiceInfo,
+        UserS,
+        UserEmailConfirmation,
+        UserUpdate,
         Session,
         UserRepo,
     > UserFeatureService
@@ -131,20 +103,9 @@ impl<
         Captcha,
         VatApi,
         InternalApi,
-        UserList,
-        UserCreate,
-        UserRequestSubscribeNewsletterEmail,
-        UserUpdateName,
-        UserUpdateEmail,
-        UserUpdateAdmin,
-        UserUpdateEnabled,
-        UserUpdatePassword,
-        UserVerifyNewsletterSubscription,
-        UserRequestVerificationEmail,
-        UserVerifyEmail,
-        UserRequestPasswordResetEmail,
-        UserResetPassword,
-        UserUpdateInvoiceInfo,
+        UserS,
+        UserEmailConfirmation,
+        UserUpdate,
         Session,
         UserRepo,
     >
@@ -155,21 +116,9 @@ where
     Captcha: CaptchaService,
     VatApi: VatApiService,
     InternalApi: InternalApiService,
-    UserList: UserListQueryService<Db::Transaction>,
-    UserCreate: UserCreateCommandService<Db::Transaction>,
-    UserRequestSubscribeNewsletterEmail: UserRequestSubscribeNewsletterEmailCommandService,
-    UserUpdateName: UserUpdateNameCommandService<Db::Transaction>,
-    UserUpdateEmail: UserUpdateEmailCommandService<Db::Transaction>,
-    UserUpdateAdmin: UserUpdateAdminCommandService<Db::Transaction>,
-    UserUpdateEnabled: UserUpdateEnabledCommandService<Db::Transaction>,
-    UserUpdatePassword: UserUpdatePasswordCommandService<Db::Transaction>,
-    UserVerifyNewsletterSubscription:
-        UserVerifyNewsletterSubscriptionCommandService<Db::Transaction>,
-    UserRequestVerificationEmail: UserRequestVerificationEmailCommandService,
-    UserVerifyEmail: UserVerifyEmailCommandService<Db::Transaction>,
-    UserRequestPasswordResetEmail: UserRequestPasswordResetEmailCommandService,
-    UserResetPassword: UserResetPasswordCommandService<Db::Transaction>,
-    UserUpdateInvoiceInfo: UserUpdateInvoiceInfoService<Db::Transaction>,
+    UserS: UserService<Db::Transaction>,
+    UserEmailConfirmation: UserEmailConfirmationService<Db::Transaction>,
+    UserUpdate: UserUpdateService<Db::Transaction>,
     Session: SessionService<Db::Transaction>,
     UserRepo: UserRepository<Db::Transaction>,
 {
@@ -183,10 +132,7 @@ where
 
         let mut txn = self.db.begin_transaction().await.unwrap();
 
-        self.user_list
-            .invoke(&mut txn, query)
-            .await
-            .map_err(Into::into)
+        self.user.list(&mut txn, query).await.map_err(Into::into)
     }
 
     async fn get_user(
@@ -249,16 +195,15 @@ where
             oauth2_registration,
         };
 
-        let user = self
-            .user_create
-            .invoke(&mut txn, cmd)
-            .await
-            .map_err(|err| match err {
-                UserCreateCommandError::NameConflict => UserCreateError::NameConflict,
-                UserCreateCommandError::EmailConflict => UserCreateError::EmailConflict,
-                UserCreateCommandError::RemoteAlreadyLinked => UserCreateError::RemoteAlreadyLinked,
-                UserCreateCommandError::Other(err) => err.into(),
-            })?;
+        let user = self.user.create(&mut txn, cmd).await.map_err(|err| {
+            use academy_core_user_contracts::user::UserCreateError as E;
+            match err {
+                E::NameConflict => UserCreateError::NameConflict,
+                E::EmailConflict => UserCreateError::EmailConflict,
+                E::RemoteAlreadyLinked => UserCreateError::RemoteAlreadyLinked,
+                E::Other(err) => err.into(),
+            }
+        })?;
 
         let result = self
             .session
@@ -374,15 +319,15 @@ where
                 UserUpdateNameRateLimitPolicy::Enforce
             };
             user = self
-                .user_update_name
-                .invoke(&mut txn, user, name, rate_limit_policy)
+                .user_update
+                .update_name(&mut txn, user, name, rate_limit_policy)
                 .await
                 .map_err(|err| match err {
-                    UserUpdateNameCommandError::Conflict => UserUpdateError::NameConflict,
-                    UserUpdateNameCommandError::RateLimit { until } => {
+                    UserUpdateNameError::Conflict => UserUpdateError::NameConflict,
+                    UserUpdateNameError::RateLimit { until } => {
                         UserUpdateError::NameChangeRateLimit { until }
                     }
-                    UserUpdateNameCommandError::Other(err) => err.into(),
+                    UserUpdateNameError::Other(err) => err.into(),
                 })?;
             commit = true;
         }
@@ -391,27 +336,27 @@ where
             user.email_verified =
                 email_verified.update(user.email_verified && email.is_unchanged());
             user.email = email.update(user.email);
-            self.user_update_email
-                .invoke(&mut txn, user_id, &user.email, user.email_verified)
+            self.user_update
+                .update_email(&mut txn, user_id, &user.email, user.email_verified)
                 .await
                 .map_err(|err| match err {
-                    UserUpdateEmailCommandError::Conflict => UserUpdateError::EmailConflict,
-                    UserUpdateEmailCommandError::Other(err) => err.into(),
+                    UserUpdateEmailError::Conflict => UserUpdateError::EmailConflict,
+                    UserUpdateEmailError::Other(err) => err.into(),
                 })?;
             commit = true;
         }
 
         if let PatchValue::Update(enabled) = enabled {
-            self.user_update_enabled
-                .invoke(&mut txn, user_id, enabled)
+            self.user_update
+                .update_enabled(&mut txn, user_id, enabled)
                 .await?;
             user.enabled = enabled;
             commit = true;
         }
 
         if let PatchValue::Update(admin) = admin {
-            self.user_update_admin
-                .invoke(&mut txn, user_id, admin)
+            self.user_update
+                .update_admin(&mut txn, user_id, admin)
                 .await?;
             user.admin = admin;
             commit = true;
@@ -429,8 +374,8 @@ where
                 commit = true;
             }
             PatchValue::Update(PasswordUpdate::Change(password)) => {
-                self.user_update_password
-                    .invoke(&mut txn, user_id, password)
+                self.user_update
+                    .update_password(&mut txn, user_id, password)
                     .await?;
                 details.password_login = true;
                 commit = true;
@@ -441,8 +386,8 @@ where
         if let PatchValue::Update(newsletter) = newsletter {
             if newsletter && !auth.admin {
                 let email = user.email.clone().ok_or(UserUpdateError::NoEmail)?;
-                self.user_request_subscribe_newsletter_email
-                    .invoke(
+                self.user_email_confirmation
+                    .request_newsletter_subscription(
                         user_id,
                         email.with_name(profile.display_name.clone().into_inner()),
                     )
@@ -464,8 +409,8 @@ where
         let invoice_info_updated = invoice_info_update.is_update();
         if invoice_info_updated {
             invoice_info = self
-                .user_update_invoice_info
-                .invoke(&mut txn, user.id, invoice_info, invoice_info_update)
+                .user_update
+                .update_invoice_info(&mut txn, user.id, invoice_info, invoice_info_update)
                 .await?;
             commit = true;
         }
@@ -536,8 +481,8 @@ where
             .email
             .ok_or(UserRequestVerificationEmailError::NoEmail)?;
 
-        self.user_request_verification_email
-            .invoke(email.with_name(user_composite.profile.display_name.into_inner()))
+        self.user_email_confirmation
+            .request_verification(email.with_name(user_composite.profile.display_name.into_inner()))
             .await?;
 
         Ok(())
@@ -546,14 +491,20 @@ where
     async fn verify_email(&self, code: VerificationCode) -> Result<(), UserVerifyEmailError> {
         let mut txn = self.db.begin_transaction().await?;
 
-        match self.user_verify_email.invoke(&mut txn, &code).await {
+        match self
+            .user_email_confirmation
+            .verify_email(&mut txn, &code)
+            .await
+        {
             Ok(_) => {
                 txn.commit().await?;
                 Ok(())
             }
-            Err(UserVerifyEmailCommandError::AlreadyVerified) => Ok(()),
-            Err(UserVerifyEmailCommandError::InvalidCode) => Err(UserVerifyEmailError::InvalidCode),
-            Err(UserVerifyEmailCommandError::Other(err)) => Err(err.into()),
+            Err(UserEmailConfirmationVerifyEmailError::AlreadyVerified) => Ok(()),
+            Err(UserEmailConfirmationVerifyEmailError::InvalidCode) => {
+                Err(UserVerifyEmailError::InvalidCode)
+            }
+            Err(UserEmailConfirmationVerifyEmailError::Other(err)) => Err(err.into()),
         }
     }
 
@@ -579,14 +530,14 @@ where
             return Err(UserVerifyNewsletterSubscriptionError::AlreadySubscribed);
         }
 
-        self.user_verify_newsletter_subscription
-            .invoke(&mut txn, user_id, code)
+        self.user_email_confirmation
+            .subscribe_to_newsletter(&mut txn, user_id, code)
             .await
             .map_err(|err| match err {
-                UserVerifyNewsletterSubscriptionCommandError::InvalidCode => {
+                UserEmailConfirmationSubscribeToNewsletterError::InvalidCode => {
                     UserVerifyNewsletterSubscriptionError::InvalidCode
                 }
-                UserVerifyNewsletterSubscriptionCommandError::Other(err) => err.into(),
+                UserEmailConfirmationSubscribeToNewsletterError::Other(err) => err.into(),
             })?;
 
         user_composite.user.newsletter = true;
@@ -623,8 +574,8 @@ where
                     email.as_str()
                 )
             })?;
-            self.user_request_password_reset_email
-                .invoke(
+            self.user_email_confirmation
+                .request_password_reset(
                     user_composite.user.id,
                     email.with_name(user_composite.profile.display_name.into_inner()),
                 )
@@ -648,28 +599,18 @@ where
             .await?
             .ok_or(UserResetPasswordError::Failed)?;
 
-        self.user_reset_password
-            .invoke(&mut txn, user_composite.user.id, code, new_password)
+        self.user_email_confirmation
+            .reset_password(&mut txn, user_composite.user.id, code, new_password)
             .await
             .map_err(|err| match err {
-                UserResetPasswordCommandError::InvalidCode => UserResetPasswordError::Failed,
-                UserResetPasswordCommandError::Other(err) => err.into(),
+                UserEmailConfirmationResetPasswordError::InvalidCode => {
+                    UserResetPasswordError::Failed
+                }
+                UserEmailConfirmationResetPasswordError::Other(err) => err.into(),
             })?;
 
         txn.commit().await?;
 
         Ok(user_composite)
     }
-}
-
-fn subscribe_newsletter_cache_key(user_id: UserId) -> String {
-    format!("subscribe_newsletter_code:{}", user_id.hyphenated())
-}
-
-fn verification_cache_key(verification_code: &VerificationCode) -> String {
-    format!("verification:{}", **verification_code)
-}
-
-fn reset_password_cache_key(user_id: UserId) -> String {
-    format!("reset_password_code:{}", user_id.hyphenated())
 }

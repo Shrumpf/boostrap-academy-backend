@@ -6,13 +6,12 @@ use academy_core_session_contracts::{
     failed_auth_count::MockSessionFailedAuthCountService, session::MockSessionService,
     SessionCreateCommand, SessionCreateError, SessionFeatureService,
 };
-use academy_core_user_contracts::queries::get_by_name_or_email::MockUserGetByNameOrEmailQueryService;
 use academy_demo::{
     session::{BAR_1, FOO_1},
     user::{BAR, BAR_PASSWORD, FOO, FOO_PASSWORD},
 };
 use academy_models::{auth::Login, mfa::MfaAuthentication, user::UserNameOrEmailAddress};
-use academy_persistence_contracts::MockDatabase;
+use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
 use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::{assert_matches, Apply};
 
@@ -44,8 +43,8 @@ async fn ok() {
             FOO.user.email.clone().unwrap(),
         ));
 
-    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new()
-        .with_invoke(cmd.name_or_email.clone(), Some(FOO.clone()));
+    let user_repo = MockUserRepository::new()
+        .with_get_composite_by_name_or_email(cmd.name_or_email.clone(), Some(FOO.clone()));
 
     let auth = MockAuthService::new().with_authenticate_by_password(
         FOO.user.id,
@@ -65,7 +64,7 @@ async fn ok() {
         session_failed_auth_count,
         auth,
         session,
-        user_get_by_name_or_email,
+        user_repo,
         ..Sut::default()
     };
 
@@ -105,7 +104,7 @@ async fn ok_mfa() {
             FOO.user.email.clone().unwrap(),
         ));
 
-    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
+    let user_repo = MockUserRepository::new().with_get_composite_by_name_or_email(
         cmd.name_or_email.clone(),
         Some(expected.user_composite.clone()),
     );
@@ -135,7 +134,7 @@ async fn ok_mfa() {
         auth,
         session,
         mfa_authenticate,
-        user_get_by_name_or_email,
+        user_repo,
         ..Sut::default()
     };
 
@@ -175,7 +174,7 @@ async fn ok_mfa_reset() {
             FOO.user.email.clone().unwrap(),
         ));
 
-    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
+    let user_repo = MockUserRepository::new().with_get_composite_by_name_or_email(
         cmd.name_or_email.clone(),
         Some(
             expected
@@ -210,7 +209,7 @@ async fn ok_mfa_reset() {
         auth,
         session,
         mfa_authenticate,
-        user_get_by_name_or_email,
+        user_repo,
         ..Sut::default()
     };
 
@@ -249,8 +248,8 @@ async fn ok_captcha() {
 
     let captcha = MockCaptchaService::new().with_check(Some("resp"), Ok(()));
 
-    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new()
-        .with_invoke(cmd.name_or_email.clone(), Some(FOO.clone()));
+    let user_repo = MockUserRepository::new()
+        .with_get_composite_by_name_or_email(cmd.name_or_email.clone(), Some(FOO.clone()));
 
     let auth = MockAuthService::new().with_authenticate_by_password(
         FOO.user.id,
@@ -271,7 +270,7 @@ async fn ok_captcha() {
         captcha,
         auth,
         session,
-        user_get_by_name_or_email,
+        user_repo,
         ..Sut::default()
     };
 
@@ -331,13 +330,13 @@ async fn user_not_found() {
         .with_get(cmd.name_or_email.clone(), 1)
         .with_increment(cmd.name_or_email.clone());
 
-    let user_get_by_name_or_email =
-        MockUserGetByNameOrEmailQueryService::new().with_invoke(cmd.name_or_email.clone(), None);
+    let user_repo = MockUserRepository::new()
+        .with_get_composite_by_name_or_email(cmd.name_or_email.clone(), None);
 
     let sut = SessionFeatureServiceImpl {
         db,
         session_failed_auth_count,
-        user_get_by_name_or_email,
+        user_repo,
         ..Sut::default()
     };
 
@@ -367,7 +366,7 @@ async fn wrong_password() {
             FOO.user.email.clone().unwrap(),
         ));
 
-    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
+    let user_repo = MockUserRepository::new().with_get_composite_by_name_or_email(
         cmd.name_or_email.clone(),
         Some(FOO.clone().with(|u| u.details.mfa_enabled = true)),
     );
@@ -382,7 +381,7 @@ async fn wrong_password() {
         db,
         session_failed_auth_count,
         auth,
-        user_get_by_name_or_email,
+        user_repo,
         ..Sut::default()
     };
 
@@ -415,7 +414,7 @@ async fn mfa_failed() {
             FOO.user.email.clone().unwrap(),
         ));
 
-    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new().with_invoke(
+    let user_repo = MockUserRepository::new().with_get_composite_by_name_or_email(
         cmd.name_or_email.clone(),
         Some(FOO.clone().with(|u| u.details.mfa_enabled = true)),
     );
@@ -436,7 +435,7 @@ async fn mfa_failed() {
         db,
         session_failed_auth_count,
         auth,
-        user_get_by_name_or_email,
+        user_repo,
         mfa_authenticate,
         ..Sut::default()
     };
@@ -464,8 +463,8 @@ async fn user_disabled() {
         .with_get(cmd.name_or_email.clone(), 1)
         .with_reset(UserNameOrEmailAddress::Name(BAR.user.name.clone()));
 
-    let user_get_by_name_or_email = MockUserGetByNameOrEmailQueryService::new()
-        .with_invoke(cmd.name_or_email.clone(), Some(BAR.clone()));
+    let user_repo = MockUserRepository::new()
+        .with_get_composite_by_name_or_email(cmd.name_or_email.clone(), Some(BAR.clone()));
 
     let auth = MockAuthService::new().with_authenticate_by_password(
         BAR.user.id,
@@ -477,7 +476,7 @@ async fn user_disabled() {
         db,
         session_failed_auth_count,
         auth,
-        user_get_by_name_or_email,
+        user_repo,
         ..Sut::default()
     };
 

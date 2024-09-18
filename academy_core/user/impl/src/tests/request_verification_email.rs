@@ -1,7 +1,7 @@
 use academy_auth_contracts::MockAuthService;
 use academy_core_user_contracts::{
-    commands::request_verification_email::MockUserRequestVerificationEmailCommandService,
-    UserFeatureService, UserRequestVerificationEmailError,
+    email_confirmation::MockUserEmailConfirmationService, UserFeatureService,
+    UserRequestVerificationEmailError,
 };
 use academy_demo::{
     session::{ADMIN_1, BAR_1, FOO_1},
@@ -28,8 +28,8 @@ async fn ok_self() {
         Some(FOO.clone().with(|u| u.user.email_verified = false)),
     );
 
-    let user_request_verification_email = MockUserRequestVerificationEmailCommandService::new()
-        .with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new()
+        .with_request_verification(
             FOO.user
                 .email
                 .clone()
@@ -41,7 +41,7 @@ async fn ok_self() {
         auth,
         db,
         user_repo,
-        user_request_verification_email,
+        user_email_confirmation,
         ..Sut::default()
     };
 
@@ -67,8 +67,8 @@ async fn ok_admin() {
         Some(FOO.clone().with(|u| u.user.email_verified = false)),
     );
 
-    let user_request_verification_email = MockUserRequestVerificationEmailCommandService::new()
-        .with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new()
+        .with_request_verification(
             FOO.user
                 .email
                 .clone()
@@ -80,7 +80,7 @@ async fn ok_admin() {
         auth,
         db,
         user_repo,
-        user_request_verification_email,
+        user_email_confirmation,
         ..Sut::default()
     };
 

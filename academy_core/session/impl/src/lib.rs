@@ -15,7 +15,6 @@ use academy_core_session_contracts::{
     SessionDeleteError, SessionFeatureService, SessionGetCurrentError, SessionImpersonateError,
     SessionListByUserError, SessionRefreshError,
 };
-use academy_core_user_contracts::queries::get_by_name_or_email::UserGetByNameOrEmailQueryService;
 use academy_di::Build;
 use academy_models::{
     auth::Login,
@@ -43,7 +42,6 @@ pub struct SessionFeatureServiceImpl<
     Captcha,
     Session,
     SessionFailedAuthCount,
-    UserGetByNameOrEmail,
     MfaAuthenticate,
     UserRepo,
     SessionRepo,
@@ -53,7 +51,6 @@ pub struct SessionFeatureServiceImpl<
     captcha: Captcha,
     session: Session,
     session_failed_auth_count: SessionFailedAuthCount,
-    user_get_by_name_or_email: UserGetByNameOrEmail,
     mfa_authenticate: MfaAuthenticate,
     user_repo: UserRepo,
     session_repo: SessionRepo,
@@ -71,7 +68,6 @@ impl<
         Captcha,
         SessionS,
         SessionFailedAuthCount,
-        UserGetByNameOrEmail,
         MfaAuthenticate,
         UserRepo,
         SessionRepo,
@@ -82,7 +78,6 @@ impl<
         Captcha,
         SessionS,
         SessionFailedAuthCount,
-        UserGetByNameOrEmail,
         MfaAuthenticate,
         UserRepo,
         SessionRepo,
@@ -93,7 +88,6 @@ where
     Captcha: CaptchaService,
     SessionS: SessionService<Db::Transaction>,
     SessionFailedAuthCount: SessionFailedAuthCountService,
-    UserGetByNameOrEmail: UserGetByNameOrEmailQueryService<Db::Transaction>,
     MfaAuthenticate: MfaAuthenticateService<Db::Transaction>,
     UserRepo: UserRepository<Db::Transaction>,
     SessionRepo: SessionRepository<Db::Transaction>,
@@ -149,8 +143,8 @@ where
         let mut txn = self.db.begin_transaction().await?;
 
         let mut user_composite = match self
-            .user_get_by_name_or_email
-            .invoke(&mut txn, &cmd.name_or_email)
+            .user_repo
+            .get_composite_by_name_or_email(&mut txn, &cmd.name_or_email)
             .await?
         {
             Some(user_composite) => user_composite,

@@ -1,5 +1,5 @@
 use academy_core_user_contracts::{
-    commands::verify_email::{MockUserVerifyEmailCommandService, UserVerifyEmailCommandError},
+    email_confirmation::{MockUserEmailConfirmationService, UserEmailConfirmationVerifyEmailError},
     UserFeatureService, UserVerifyEmailError,
 };
 use academy_demo::{user::FOO, VERIFICATION_CODE_1};
@@ -13,12 +13,12 @@ async fn ok() {
     // Arrange
     let db = MockDatabase::build(true);
 
-    let user_verify_email = MockUserVerifyEmailCommandService::new()
-        .with_invoke(VERIFICATION_CODE_1.clone(), Ok(FOO.clone()));
+    let user_email_confirmation = MockUserEmailConfirmationService::new()
+        .with_verify_email(VERIFICATION_CODE_1.clone(), Ok(FOO.clone()));
 
     let sut = UserFeatureServiceImpl {
         db,
-        user_verify_email,
+        user_email_confirmation,
         ..Sut::default()
     };
 
@@ -34,14 +34,14 @@ async fn invalid_code() {
     // Arrange
     let db = MockDatabase::build(false);
 
-    let user_verify_email = MockUserVerifyEmailCommandService::new().with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new().with_verify_email(
         VERIFICATION_CODE_1.clone(),
-        Err(UserVerifyEmailCommandError::InvalidCode),
+        Err(UserEmailConfirmationVerifyEmailError::InvalidCode),
     );
 
     let sut = UserFeatureServiceImpl {
         db,
-        user_verify_email,
+        user_email_confirmation,
         ..Sut::default()
     };
 
@@ -57,14 +57,14 @@ async fn already_verified() {
     // Arrange
     let db = MockDatabase::build(false);
 
-    let user_verify_email = MockUserVerifyEmailCommandService::new().with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new().with_verify_email(
         VERIFICATION_CODE_1.clone(),
-        Err(UserVerifyEmailCommandError::AlreadyVerified),
+        Err(UserEmailConfirmationVerifyEmailError::AlreadyVerified),
     );
 
     let sut = UserFeatureServiceImpl {
         db,
-        user_verify_email,
+        user_email_confirmation,
         ..Sut::default()
     };
 

@@ -1,6 +1,6 @@
 use academy_core_user_contracts::{
-    commands::reset_password::{
-        MockUserResetPasswordCommandService, UserResetPasswordCommandError,
+    email_confirmation::{
+        MockUserEmailConfirmationService, UserEmailConfirmationResetPasswordError,
     },
     UserFeatureService, UserResetPasswordError,
 };
@@ -21,7 +21,7 @@ async fn ok() {
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_email(FOO.user.email.clone().unwrap(), Some(FOO.clone()));
 
-    let user_reset_password = MockUserResetPasswordCommandService::new().with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new().with_reset_password(
         FOO.user.id,
         VERIFICATION_CODE_1.clone(),
         FOO_PASSWORD.clone(),
@@ -31,7 +31,7 @@ async fn ok() {
     let sut = UserFeatureServiceImpl {
         db,
         user_repo,
-        user_reset_password,
+        user_email_confirmation,
         ..Sut::default()
     };
 
@@ -83,17 +83,17 @@ async fn invalid_code() {
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_email(FOO.user.email.clone().unwrap(), Some(FOO.clone()));
 
-    let user_reset_password = MockUserResetPasswordCommandService::new().with_invoke(
+    let user_email_confirmation = MockUserEmailConfirmationService::new().with_reset_password(
         FOO.user.id,
         VERIFICATION_CODE_1.clone(),
         FOO_PASSWORD.clone(),
-        Err(UserResetPasswordCommandError::InvalidCode),
+        Err(UserEmailConfirmationResetPasswordError::InvalidCode),
     );
 
     let sut = UserFeatureServiceImpl {
         db,
         user_repo,
-        user_reset_password,
+        user_email_confirmation,
         ..Sut::default()
     };
 
