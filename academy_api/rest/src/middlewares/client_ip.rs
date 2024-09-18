@@ -3,10 +3,10 @@ use std::{
     sync::Arc,
 };
 
+use aide::axum::ApiRouter;
 use axum::{
     extract::{ConnectInfo, Request},
     middleware::{from_fn, Next},
-    Router,
 };
 use tracing::{debug, error, warn};
 
@@ -14,7 +14,7 @@ use crate::RealIpConfig;
 
 pub fn add<S: Clone + Send + Sync + 'static>(
     real_ip_config: Option<Arc<RealIpConfig>>,
-) -> impl FnOnce(Router<S>) -> Router<S> {
+) -> impl FnOnce(ApiRouter<S>) -> ApiRouter<S> {
     |router| {
         router.layer(from_fn(move |mut request: Request, next: Next| {
             let client_ip = ClientIp::from_request(&request, real_ip_config.as_deref());

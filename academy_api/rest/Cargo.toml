@@ -22,11 +22,13 @@ academy_core_user_contracts.workspace = true
 academy_di.workspace = true
 academy_models.workspace = true
 academy_utils.workspace = true
+aide = { version = "0.13.4", default-features = false, features = ["axum", "axum-extra"] }
 anyhow.workspace = true
 axum-extra.workspace = true
 axum.workspace = true
 base64.workspace = true
 futures.workspace = true
+schemars.workspace = true
 serde.workspace = true
 sha2.workspace = true
 tokio.workspace = true

@@ -43,7 +43,6 @@ testers.runNixOSTest {
 
     status = json.loads(machine.succeed("curl -s http://127.0.0.1:8000/health"))
     assert status == {
-      "http": True,
       "database": True,
       "cache": True,
       "email": True,

@@ -1,4 +1,7 @@
-use std::net::{IpAddr, SocketAddr};
+use std::{
+    net::{IpAddr, SocketAddr},
+    sync::Arc,
+};
 
 use academy_core_config_contracts::ConfigFeatureService;
 use academy_core_contact_contracts::ContactFeatureService;
@@ -10,9 +13,17 @@ use academy_core_session_contracts::SessionFeatureService;
 use academy_core_user_contracts::UserFeatureService;
 use academy_di::Build;
 use academy_utils::Apply;
-use axum::Router;
+use aide::{
+    axum::ApiRouter,
+    openapi::{Info, OpenApi},
+};
+use axum::{
+    response::{IntoResponse, Response},
+    Extension, Json,
+};
 use tokio::net::TcpListener;
 
+mod docs;
 mod extractors;
 mod middlewares;
 mod models;
@@ -48,20 +59,33 @@ where
         port: u16,
         real_ip_config: Option<RealIpConfig>,
     ) -> anyhow::Result<()> {
-        tracing::info!("test");
+        let mut api = OpenApi {
+            info: Info {
+                title: "Bootstrap Academy Backend".into(),
+                version: env!("CARGO_PKG_VERSION").into(),
+                description: Some(format!("GitHub: [{0}]({0})", env!("CARGO_PKG_REPOSITORY"))),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
         let router = self
             .router()
+            .route("/openapi.json", axum::routing::get(serve_api))
+            .merge(docs::router())
             .apply(middlewares::panic_handler::add)
             .apply(middlewares::trace::add)
             .apply(middlewares::request_id::add)
             .apply(middlewares::client_ip::add(real_ip_config.map(Into::into)))
+            .finish_api(&mut api)
+            .layer(Extension(Arc::new(api)))
             .into_make_service_with_connect_info::<SocketAddr>();
         let listener = TcpListener::bind((host, port)).await?;
         axum::serve(listener, router).await.map_err(Into::into)
     }
 
-    fn router(self) -> Router<()> {
-        Router::new()
+    fn router(self) -> ApiRouter<()> {
+        ApiRouter::new()
             .merge(routes::health::router(self.health.into()))
             .merge(routes::config::router(self.config.into()))
             .merge(routes::user::router(self.user.into()))
@@ -77,4 +101,8 @@ where
 pub struct RealIpConfig {
     pub header: String,
     pub set_from: IpAddr,
+}
+
+async fn serve_api(Extension(api): Extension<Arc<OpenApi>>) -> Response {
+    Json(&*api).into_response()
 }

@@ -1,17 +1,17 @@
 use std::panic::AssertUnwindSafe;
 
+use aide::axum::ApiRouter;
 use anyhow::anyhow;
 use axum::{
     extract::Request,
     middleware::{from_fn, Next},
     response::Response,
-    Router,
 };
 use futures::FutureExt;
 
 use crate::routes::internal_server_error;
 
-pub fn add<S: Clone + Send + Sync + 'static>(router: Router<S>) -> Router<S> {
+pub fn add<S: Clone + Send + Sync + 'static>(router: ApiRouter<S>) -> ApiRouter<S> {
     router.layer(from_fn(middleware))
 }
 

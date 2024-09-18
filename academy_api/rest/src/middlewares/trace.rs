@@ -1,12 +1,13 @@
 use std::time::Duration;
 
-use axum::{extract::Request, response::Response, Router};
+use aide::axum::ApiRouter;
+use axum::{extract::Request, response::Response};
 use tracing::{debug, Span};
 
 use super::request_id::RequestId;
 use crate::middlewares::client_ip::ClientIp;
 
-pub fn add<S: Clone + Send + Sync + 'static>(router: Router<S>) -> Router<S> {
+pub fn add<S: Clone + Send + Sync + 'static>(router: ApiRouter<S>) -> ApiRouter<S> {
     router.layer(
         tower_http::trace::TraceLayer::new_for_http()
             .make_span_with(make_span)

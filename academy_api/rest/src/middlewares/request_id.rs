@@ -1,13 +1,13 @@
+use aide::axum::ApiRouter;
 use axum::{
     extract::Request,
     middleware::{from_fn, Next},
     response::{IntoResponse, Response},
-    Router,
 };
 use base64::{display::Base64Display, engine::general_purpose::STANDARD_NO_PAD};
 use uuid::Uuid;
 
-pub fn add<S: Clone + Send + Sync + 'static>(router: Router<S>) -> Router<S> {
+pub fn add<S: Clone + Send + Sync + 'static>(router: ApiRouter<S>) -> ApiRouter<S> {
     router.layer(from_fn(middleware))
 }
 

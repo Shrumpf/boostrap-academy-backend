@@ -81,7 +81,7 @@ academy_utils.path = "academy_utils"
 academy_utils_derive.path = "academy_utils_derive"
 
 anyhow = { version = "1.0.89", default-features = false, features = ["std"] }
-axum = { version = "0.7.6", default-features = false, features = ["http1", "http2", "tokio", "json", "query", "form"] }
+axum = { version = "0.7.6", default-features = false, features = ["http1", "http2", "tokio", "json", "query", "form", "original-uri", "matched-path"] }
 axum-extra = { version = "0.9.4", default-features = false, features = ["typed-header"] }
 base64 = { version = "0.22.1", default-features = false }
 chrono = { version = "0.4.38", default-features = false, features = ["serde", "clock"] }
@@ -98,6 +98,7 @@ quote = { version = "1.0.37", default-features = false, features = ["proc-macro"
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 regex = { version = "1.10.6", default-features = false }
 reqwest = { version = "0.12.7", default-features = false, features = ["http2", "rustls-tls", "json"] }
+schemars = { version = "0.8.21", default-features = false }
 serde = { version = "1.0.210", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
 sha2 = { version = "0.10.8", default-features = false }
