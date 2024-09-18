@@ -8,19 +8,19 @@ use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 #[cfg_attr(test, derive(Default))]
 pub struct CaptchaServiceImpl<RecaptchaApi> {
     recaptcha_api: RecaptchaApi,
-    config: Arc<CaptchaServiceConfig>,
+    config: CaptchaServiceConfig,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum CaptchaServiceConfig {
     Disabled,
     Recaptcha(RecaptchaCaptchaServiceConfig),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RecaptchaCaptchaServiceConfig {
-    pub sitekey: String,
-    pub secret: String,
+    pub sitekey: Arc<str>,
+    pub secret: Arc<str>,
     pub min_score: f64,
 }
 
@@ -29,7 +29,7 @@ where
     RecaptchaApi: RecaptchaApiService,
 {
     fn get_recaptcha_sitekey(&self) -> Option<&str> {
-        match &*self.config {
+        match &self.config {
             CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig { sitekey, .. }) => {
                 Some(sitekey)
             }
@@ -42,7 +42,7 @@ where
             ref secret,
             min_score,
             ..
-        }) = *self.config
+        }) = self.config
         else {
             return Ok(());
         };
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn get_recaptcha_sitekey_disabled() {
         // Arrange
-        let config = CaptchaServiceConfig::Disabled.into();
+        let config = CaptchaServiceConfig::Disabled;
 
         let sut = CaptchaServiceImpl {
             config,
@@ -124,8 +124,7 @@ mod tests {
         let config = CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig {
             min_score: 0.0,
             ..Default::default()
-        })
-        .into();
+        });
 
         let recaptcha_api = MockRecaptchaApiService::new().with_siteverify(
             "captcha response".into(),
@@ -151,7 +150,7 @@ mod tests {
     #[tokio::test]
     async fn check_ok_disabled() {
         // Arrange
-        let config = CaptchaServiceConfig::Disabled.into();
+        let config = CaptchaServiceConfig::Disabled;
 
         let sut = CaptchaServiceImpl {
             config,
@@ -168,7 +167,7 @@ mod tests {
     #[tokio::test]
     async fn check_ok_disabled_no_response() {
         // Arrange
-        let config = CaptchaServiceConfig::Disabled.into();
+        let config = CaptchaServiceConfig::Disabled;
 
         let sut = CaptchaServiceImpl {
             config,

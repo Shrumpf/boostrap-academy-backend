@@ -8,7 +8,7 @@ use academy_persistence_contracts::{
 };
 use academy_shared_contracts::captcha::MockCaptchaService;
 
-use crate::{SessionFeatureServiceImpl, SessionServiceConfig};
+use crate::{SessionFeatureConfig, SessionFeatureServiceImpl};
 
 mod create_session;
 mod delete_by_user;
@@ -30,7 +30,7 @@ type Sut = SessionFeatureServiceImpl<
     MockSessionRepository<MockTransaction>,
 >;
 
-impl Default for SessionServiceConfig {
+impl Default for SessionFeatureConfig {
     fn default() -> Self {
         Self {
             login_fails_before_captcha: 3,

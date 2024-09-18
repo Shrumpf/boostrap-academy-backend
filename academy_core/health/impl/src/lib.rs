@@ -16,13 +16,13 @@ pub struct HealthFeatureServiceImpl<Time, Db, Cache, Email> {
     db: Db,
     cache: Cache,
     email: Email,
-    config: HealthServiceConfig,
+    config: HealthFeatureConfig,
     #[state]
     state: Arc<State>,
 }
 
 #[derive(Debug, Clone)]
-pub struct HealthServiceConfig {
+pub struct HealthFeatureConfig {
     pub cache_ttl: Duration,
 }
 

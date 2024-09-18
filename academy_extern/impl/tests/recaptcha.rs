@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use academy_config::RecaptchaConfig;
 use academy_di::{provider, Provides};
 use academy_extern_contracts::recaptcha::{RecaptchaApiService, RecaptchaSiteverifyResponse};
@@ -54,13 +52,12 @@ fn make_sut() -> (RecaptchaApiServiceImpl, String) {
     } = config.recaptcha.unwrap();
 
     provider! {
-        Provider { recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>, }
+        Provider { recaptcha_api_service_config: RecaptchaApiServiceConfig, }
     }
 
     let mut provider = Provider {
         _state: Default::default(),
-        recaptcha_api_service_config: RecaptchaApiServiceConfig::new(siteverify_endpoint_override)
-            .into(),
+        recaptcha_api_service_config: RecaptchaApiServiceConfig::new(siteverify_endpoint_override),
     };
 
     (provider.provide(), secret)

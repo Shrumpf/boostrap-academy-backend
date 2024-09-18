@@ -13,11 +13,11 @@ use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 pub struct ContactFeatureServiceImpl<Captcha, Email> {
     captcha: Captcha,
     email: Email,
-    config: ContactServiceConfig,
+    config: ContactFeatureConfig,
 }
 
 #[derive(Debug, Clone)]
-pub struct ContactServiceConfig {
+pub struct ContactFeatureConfig {
     pub email: Arc<EmailAddressWithName>,
 }
 
@@ -138,9 +138,9 @@ mod tests {
         assert_matches!(result, Err(ContactSendMessageError::Send));
     }
 
-    impl Default for ContactServiceConfig {
+    impl Default for ContactFeatureConfig {
         fn default() -> Self {
-            ContactServiceConfig {
+            ContactFeatureConfig {
                 email: Arc::new("contact@example.com".parse().unwrap()),
             }
         }

@@ -11,21 +11,22 @@ const SITEVERIFY_ENDPOINT: &str = "https://www.google.com/recaptcha/api/siteveri
 
 #[derive(Debug, Clone, Build)]
 pub struct RecaptchaApiServiceImpl {
-    config: Arc<RecaptchaApiServiceConfig>,
+    config: RecaptchaApiServiceConfig,
     #[state]
     client: HttpClient,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RecaptchaApiServiceConfig {
-    siteverify_endpoint: Url,
+    siteverify_endpoint: Arc<Url>,
 }
 
 impl RecaptchaApiServiceConfig {
     pub fn new(siteverify_endpoint_override: Option<Url>) -> Self {
         Self {
             siteverify_endpoint: siteverify_endpoint_override
-                .unwrap_or_else(|| SITEVERIFY_ENDPOINT.parse().unwrap()),
+                .unwrap_or_else(|| SITEVERIFY_ENDPOINT.parse().unwrap())
+                .into(),
         }
     }
 }
@@ -37,7 +38,7 @@ impl RecaptchaApiService for RecaptchaApiServiceImpl {
         secret: &str,
     ) -> anyhow::Result<RecaptchaSiteverifyResponse> {
         self.client
-            .post(self.config.siteverify_endpoint.clone())
+            .post((*self.config.siteverify_endpoint).clone())
             .form(&SiteverifyRequest { response, secret })
             .send()
             .await?

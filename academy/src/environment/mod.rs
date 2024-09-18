@@ -1,11 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use academy_auth_impl::AuthServiceConfig;
 use academy_config::Config;
-use academy_core_contact_impl::ContactServiceConfig;
-use academy_core_health_impl::HealthServiceConfig;
+use academy_core_contact_impl::ContactFeatureConfig;
+use academy_core_health_impl::HealthFeatureConfig;
 use academy_core_oauth2_impl::OAuth2ServiceConfig;
-use academy_core_session_impl::SessionServiceConfig;
+use academy_core_session_impl::SessionFeatureConfig;
 use academy_core_user_impl::UserFeatureConfig;
 use academy_di::provider;
 use academy_extern_impl::{
@@ -28,17 +28,24 @@ provider! {
         cache: Cache,
         email: Email,
         ..config: ConfigProvider {
-            AuthServiceConfig,
-            JwtServiceConfig,
-            HealthServiceConfig,
-            ContactServiceConfig,
-            TotpServiceConfig,
-            Arc<CaptchaServiceConfig>,
-            Arc<RecaptchaApiServiceConfig>,
-            SessionServiceConfig,
-            OAuth2ServiceConfig,
+            // Extern
             InternalApiServiceConfig,
+            RecaptchaApiServiceConfig,
             VatApiServiceConfig,
+
+            // Shared
+            CaptchaServiceConfig,
+            JwtServiceConfig,
+            OAuth2ServiceConfig,
+            TotpServiceConfig,
+
+            // Auth
+            AuthServiceConfig,
+
+            // Core
+            ContactFeatureConfig,
+            HealthFeatureConfig,
+            SessionFeatureConfig,
             UserFeatureConfig,
         }
     }
@@ -58,60 +65,56 @@ impl Provider {
 
 provider! {
     pub ConfigProvider {
-        auth_service_config: AuthServiceConfig,
-        jwt_service_config: JwtServiceConfig,
-        health_service_config: HealthServiceConfig,
-        contact_service_config: ContactServiceConfig,
-        totp_service_config: TotpServiceConfig,
-        captcha_service_config: Arc<CaptchaServiceConfig>,
-        recaptcha_api_service_config: Arc<RecaptchaApiServiceConfig>,
-        session_service_config: SessionServiceConfig,
-        oauth2_service_config: OAuth2ServiceConfig,
+        // Extern
         internal_api_service_config: InternalApiServiceConfig,
+        recaptcha_api_service_config: RecaptchaApiServiceConfig,
         vat_api_service_config: VatApiServiceConfig,
+
+        // Shared
+        captcha_service_config: CaptchaServiceConfig,
+        jwt_service_config: JwtServiceConfig,
+        oauth2_service_config: OAuth2ServiceConfig,
+        totp_service_config: TotpServiceConfig,
+
+        // Auth
+        auth_service_config: AuthServiceConfig,
+
+        // Core
+        contact_feature_config: ContactFeatureConfig,
+        health_feature_config: HealthFeatureConfig,
+        session_feature_config: SessionFeatureConfig,
         user_feature_config: UserFeatureConfig,
     }
 }
 
 impl ConfigProvider {
     pub fn new(config: &Config) -> anyhow::Result<Self> {
-        let auth_service_config = AuthServiceConfig {
-            access_token_ttl: config.session.access_token_ttl.into(),
-            refresh_token_ttl: config.session.refresh_token_ttl.into(),
-            refresh_token_length: config.session.refresh_token_length,
-            internal_token_ttl: config.internal.jwt_ttl.into(),
-        };
-        let jwt_service_config = JwtServiceConfig::new(&config.jwt.secret)?;
-        let health_service_config = HealthServiceConfig {
-            cache_ttl: config.health.cache_ttl.into(),
-        };
-        let contact_service_config = ContactServiceConfig {
-            email: config.contact.email.clone().into(),
-        };
-        let totp_service_config = TotpServiceConfig {
-            secret_length: config.totp.secret_length,
+        // Extern
+        let internal_api_service_config = InternalApiServiceConfig {
+            shop_url: config.internal.shop_url.clone(),
         };
 
-        let captcha_service_config = match config.recaptcha.as_ref() {
-            Some(recaptcha) => CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig {
-                sitekey: recaptcha.sitekey.clone(),
-                secret: recaptcha.secret.clone(),
-                min_score: recaptcha.min_score,
-            }),
-            None => CaptchaServiceConfig::Disabled,
-        }
-        .into();
         let recaptcha_api_service_config = RecaptchaApiServiceConfig::new(
             config
                 .recaptcha
                 .as_ref()
                 .and_then(|recaptcha| recaptcha.siteverify_endpoint_override.clone()),
-        )
-        .into();
+        );
 
-        let session_service_config = SessionServiceConfig {
-            login_fails_before_captcha: config.session.login_fails_before_captcha,
+        let vat_api_service_config =
+            VatApiServiceConfig::new(config.vat.validate_endpoint_override.clone());
+
+        // Shared
+        let captcha_service_config = match config.recaptcha.as_ref() {
+            Some(recaptcha) => CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig {
+                sitekey: recaptcha.sitekey.clone().into(),
+                secret: recaptcha.secret.clone().into(),
+                min_score: recaptcha.min_score,
+            }),
+            None => CaptchaServiceConfig::Disabled,
         };
+
+        let jwt_service_config = JwtServiceConfig::new(&config.jwt.secret)?;
 
         let oauth2_service_config = OAuth2ServiceConfig {
             registration_token_ttl: config
@@ -143,12 +146,30 @@ impl ConfigProvider {
                 .into(),
         };
 
-        let internal_api_service_config = InternalApiServiceConfig {
-            shop_url: config.internal.shop_url.clone(),
+        let totp_service_config = TotpServiceConfig {
+            secret_length: config.totp.secret_length,
         };
 
-        let vat_api_service_config =
-            VatApiServiceConfig::new(config.vat.validate_endpoint_override.clone());
+        // Auth
+        let auth_service_config = AuthServiceConfig {
+            access_token_ttl: config.session.access_token_ttl.into(),
+            refresh_token_ttl: config.session.refresh_token_ttl.into(),
+            refresh_token_length: config.session.refresh_token_length,
+            internal_token_ttl: config.internal.jwt_ttl.into(),
+        };
+
+        // Core
+        let contact_feature_config = ContactFeatureConfig {
+            email: config.contact.email.clone().into(),
+        };
+
+        let health_feature_config = HealthFeatureConfig {
+            cache_ttl: config.health.cache_ttl.into(),
+        };
+
+        let session_feature_config = SessionFeatureConfig {
+            login_fails_before_captcha: config.session.login_fails_before_captcha,
+        };
 
         let user_feature_config = UserFeatureConfig {
             name_change_rate_limit: config.user.name_change_rate_limit.into(),
@@ -166,17 +187,25 @@ impl ConfigProvider {
 
         Ok(Self {
             _state: Default::default(),
-            auth_service_config,
+
+            // Extern
+            internal_api_service_config,
+            recaptcha_api_service_config,
+            vat_api_service_config,
+
+            // Shared
             jwt_service_config,
-            health_service_config,
-            contact_service_config,
             totp_service_config,
             captcha_service_config,
-            recaptcha_api_service_config,
-            session_service_config,
             oauth2_service_config,
-            internal_api_service_config,
-            vat_api_service_config,
+
+            // Auth
+            auth_service_config,
+
+            // Core
+            contact_feature_config,
+            health_feature_config,
+            session_feature_config,
             user_feature_config,
         })
     }

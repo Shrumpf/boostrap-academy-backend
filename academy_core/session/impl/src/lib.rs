@@ -54,11 +54,11 @@ pub struct SessionFeatureServiceImpl<
     mfa_authenticate: MfaAuthenticate,
     user_repo: UserRepo,
     session_repo: SessionRepo,
-    config: SessionServiceConfig,
+    config: SessionFeatureConfig,
 }
 
 #[derive(Debug, Clone)]
-pub struct SessionServiceConfig {
+pub struct SessionFeatureConfig {
     pub login_fails_before_captcha: u64,
 }
 
