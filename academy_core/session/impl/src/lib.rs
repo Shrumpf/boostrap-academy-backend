@@ -1,8 +1,3 @@
-#![expect(
-    clippy::self_named_module_files,
-    reason = "false positive in session module"
-)]
-
 use academy_auth_contracts::{
     AuthResultExt, AuthService, AuthenticateByPasswordError, AuthenticateByRefreshTokenError,
 };

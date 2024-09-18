@@ -37,7 +37,6 @@ allow_attributes_without_reason = "warn"
 clone_on_ref_ptr = "warn"
 dbg_macro = "warn"
 renamed_function_params = "warn"
-self_named_module_files = "warn"
 todo = "warn"
 
 [workspace.dependencies]

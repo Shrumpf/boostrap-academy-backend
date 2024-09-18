@@ -1,8 +1,3 @@
-#![expect(
-    clippy::self_named_module_files,
-    reason = "false positive in session module"
-)]
-
 use std::future::Future;
 
 use academy_models::{
