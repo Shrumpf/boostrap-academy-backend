@@ -48,6 +48,11 @@ testers.runNixOSTest {
       "email": True,
     }
 
+    openapi = json.loads(machine.succeed("curl -s http://127.0.0.1:8000/openapi.json"))
+    assert openapi["info"]["title"] == "Bootstrap Academy Backend"
+    assert openapi["info"]["version"] == "${lib.pipe ../../Cargo.toml [builtins.readFile fromTOML (lib.getAttrFromPath ["workspace" "package" "version"])]}"
+    assert "https://github.com/Bootstrap-Academy" in openapi["info"]["description"]
+
     machine.succeed("academy admin user create --admin --verified admin admin@example.com supersecureadminpassword")
     login = json.loads(machine.succeed("curl -s http://127.0.0.1:8000/auth/sessions -X POST -H 'Content-Type: application/json' -d '{\"name_or_email\": \"admin\", \"password\": \"supersecureadminpassword\"}'"))
     assert login["user"]["admin"]
