@@ -15,6 +15,18 @@ macro_rules! id {
             Deserialize,
         ))]
         pub struct $ident(::uuid::Uuid);
+
+        impl ::schemars::JsonSchema for $ident {
+            fn schema_name() -> ::std::string::String {
+                ::core::stringify!($ident).into()
+            }
+
+            fn json_schema(
+                gen: &mut ::schemars::gen::SchemaGenerator,
+            ) -> ::schemars::schema::Schema {
+                <::uuid::Uuid as ::schemars::JsonSchema>::json_schema(gen)
+            }
+        }
     };
 }
 
@@ -32,7 +44,7 @@ macro_rules! nutype_string {
             $(sanitize($($sanitize)*),)?
             validate($($validate)*),
             derive(
-                Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deref, TryFrom, Serialize, Deserialize,
+                Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deref, TryFrom, Serialize, Deserialize, JsonSchema,
                 $($($derive)*)?
             ),
             $(default = $default,)?
@@ -47,7 +59,7 @@ macro_rules! nutype_string {
         #[nutype(
             $(sanitize($($sanitize)*),)?
             derive(
-                Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deref, From, Serialize, Deserialize,
+                Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deref, From, Serialize, Deserialize, JsonSchema,
                 $($($derive)*)?
             ),
             $(default = $default,)?

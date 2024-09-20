@@ -1,5 +1,10 @@
 use std::str::FromStr;
 
+use schemars::{
+    gen::SchemaGenerator,
+    schema::{Schema, SchemaObject},
+    JsonSchema,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -48,5 +53,19 @@ impl TryFrom<&str> for EmailAddress {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         value.parse()
+    }
+}
+
+impl JsonSchema for EmailAddress {
+    fn schema_name() -> String {
+        "EmailAddress".into()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            format: Some("email".into()),
+            ..Default::default()
+        }
+        .into()
     }
 }

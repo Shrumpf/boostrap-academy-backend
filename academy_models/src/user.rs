@@ -4,6 +4,7 @@ use academy_utils::patch::Patch;
 use chrono::{DateTime, Utc};
 use nutype::nutype;
 use regex::Regex;
+use schemars::{gen::SchemaGenerator, schema::Schema, JsonSchema};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -144,6 +145,16 @@ nutype_string!(UserTag(validate(len_char_min = 1, len_char_max = 64)));
     default = Vec::new(),
 )]
 pub struct UserTags(Vec<UserTag>);
+
+impl JsonSchema for UserTags {
+    fn schema_name() -> String {
+        stringify!(UserTags).into()
+    }
+
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        Vec::<UserTag>::json_schema(gen)
+    }
+}
 
 nutype_string!(UserFirstName(validate(len_char_max = 128)));
 nutype_string!(UserLastName(validate(len_char_max = 128)));

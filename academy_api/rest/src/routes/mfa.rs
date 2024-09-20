@@ -12,8 +12,13 @@ use axum::{
 };
 use serde::Deserialize;
 
-use super::{auth_error, error, internal_server_error};
-use crate::{extractors::auth::ApiToken, models::user::ApiUserIdOrSelf};
+use crate::{
+    errors::{auth_error, error, internal_server_error},
+    extractors::auth::ApiToken,
+    models::user::ApiUserIdOrSelf,
+};
+
+pub const TAG: &str = "MFA";
 
 pub fn router(service: Arc<impl MfaFeatureService>) -> Router<()> {
     Router::new()

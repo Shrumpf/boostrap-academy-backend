@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use academy_models::{
     email_address::EmailAddress,
     user::{
@@ -7,11 +9,12 @@ use academy_models::{
     },
     SearchTerm,
 };
+use schemars::{gen::SchemaGenerator, schema::Schema, JsonSchema};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use url::Url;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct ApiUser {
     pub id: UserId,
     pub name: UserName,
@@ -144,6 +147,24 @@ impl<'de> Deserialize<'de> for ApiUserIdOrSelf {
     }
 }
 
+impl JsonSchema for ApiUserIdOrSelf {
+    fn schema_name() -> String {
+        UserId::schema_name()
+    }
+
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        UserId::json_schema(gen)
+    }
+
+    fn is_referenceable() -> bool {
+        UserId::is_referenceable()
+    }
+
+    fn schema_id() -> Cow<'static, str> {
+        UserId::schema_id()
+    }
+}
+
 impl From<ApiUserIdOrSelf> for UserIdOrSelf {
     fn from(value: ApiUserIdOrSelf) -> Self {
         match value {
@@ -151,6 +172,16 @@ impl From<ApiUserIdOrSelf> for UserIdOrSelf {
             ApiUserIdOrSelf::Slf => Self::Slf,
         }
     }
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct PathUserId {
+    pub user_id: UserId,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct PathUserIdOrSelf {
+    pub user_id: ApiUserIdOrSelf,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]

@@ -9,7 +9,7 @@ use axum::{
 };
 use futures::FutureExt;
 
-use crate::routes::internal_server_error;
+use crate::errors::internal_server_error;
 
 pub fn add<S: Clone + Send + Sync + 'static>(router: ApiRouter<S>) -> ApiRouter<S> {
     router.layer(from_fn(middleware))

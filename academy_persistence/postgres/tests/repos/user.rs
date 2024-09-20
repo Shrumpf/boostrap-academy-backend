@@ -62,7 +62,7 @@ async fn count() {
 
     for (filter, expected) in &*FILTER_TESTS {
         let count = REPO.count(&mut txn, filter).await.unwrap();
-        assert_eq!(count, expected.len() as _);
+        assert_eq!(count, expected.len() as u64);
     }
 }
 

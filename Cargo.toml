@@ -91,14 +91,14 @@ futures = { version = "0.3.30", default-features = false, features = ["std"] }
 hex = { version = "0.4.3", default-features = false, features = ["std"] }
 lettre = { version = "0.11.9", default-features = false, features = ["builder", "hostname", "pool", "rustls-tls", "serde", "smtp-transport", "tokio1", "tokio1-rustls-tls", "tracing"] }
 mockall = { version = "0.13.0", default-features = false }
-nutype = { version = "0.5.0", default-features = false, features = ["std", "regex", "serde"] }
+nutype = { version = "0.5.0", default-features = false, features = ["std", "regex", "serde", "schemars08"] }
 oauth2 = { version = "4.4.2", default-features = false, features = ["reqwest", "rustls-tls"] }
 pretty_assertions = { version = "1.4.1", default-features = false, features = ["std"] }
 quote = { version = "1.0.37", default-features = false, features = ["proc-macro"] }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
 regex = { version = "1.10.6", default-features = false }
 reqwest = { version = "0.12.7", default-features = false, features = ["http2", "rustls-tls", "json"] }
-schemars = { version = "0.8.21", default-features = false }
+schemars = { version = "0.8.21", default-features = false, features = ["derive", "preserve_order", "uuid1", "url"] }
 serde = { version = "1.0.210", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "1.0.128", default-features = false, features = ["std"] }
 sha2 = { version = "0.10.8", default-features = false }

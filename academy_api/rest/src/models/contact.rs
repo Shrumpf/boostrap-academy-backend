@@ -5,9 +5,10 @@ use academy_models::{
     },
     email_address::EmailAddress,
 };
+use schemars::JsonSchema;
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct ApiContactMessage {
     pub name: ContactMessageAuthorName,
     pub email: EmailAddress,

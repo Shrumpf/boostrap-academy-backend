@@ -8,7 +8,7 @@ pub struct PaginationSlice {
 
 #[nutype(
     validate(less_or_equal = PaginationLimit::MAX),
-    derive(Debug, Clone, Copy, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize)
+    derive(Debug, Clone, Copy, PartialEq, Eq, Deref, TryFrom, Serialize, Deserialize, JsonSchema)
 )]
 pub struct PaginationLimit(u64);
 

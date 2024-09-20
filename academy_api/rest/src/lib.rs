@@ -15,7 +15,7 @@ use academy_di::Build;
 use academy_utils::Apply;
 use aide::{
     axum::ApiRouter,
-    openapi::{Info, OpenApi},
+    openapi::{Components, Info, OpenApi, ReferenceOr, SecurityScheme, Tag},
 };
 use axum::{
     response::{IntoResponse, Response},
@@ -24,7 +24,9 @@ use axum::{
 use tokio::net::TcpListener;
 
 mod docs;
+mod errors;
 mod extractors;
+mod macros;
 mod middlewares;
 mod models;
 mod routes;
@@ -66,6 +68,46 @@ where
                 description: Some(format!("GitHub: [{0}]({0})", env!("CARGO_PKG_REPOSITORY"))),
                 ..Default::default()
             },
+            tags: [
+                routes::health::TAG,
+                routes::config::TAG,
+                routes::contact::TAG,
+                routes::user::TAG,
+                routes::session::TAG,
+                routes::mfa::TAG,
+                routes::oauth2::TAG,
+                routes::internal::TAG,
+            ]
+            .into_iter()
+            .map(|tag| Tag {
+                name: tag.into(),
+                ..Default::default()
+            })
+            .collect(),
+            components: Some(Components {
+                security_schemes: [
+                    (
+                        "Token".into(),
+                        ReferenceOr::Item(SecurityScheme::Http {
+                            scheme: "bearer".into(),
+                            bearer_format: None,
+                            description: None,
+                            extensions: Default::default(),
+                        }),
+                    ),
+                    (
+                        "InternalToken".into(),
+                        ReferenceOr::Item(SecurityScheme::Http {
+                            scheme: "bearer".into(),
+                            bearer_format: None,
+                            description: None,
+                            extensions: Default::default(),
+                        }),
+                    ),
+                ]
+                .into(),
+                ..Default::default()
+            }),
             ..Default::default()
         };
 

@@ -16,8 +16,8 @@ use axum::{
 };
 use serde::Serialize;
 
-use super::{auth_error, error, internal_server_error};
 use crate::{
+    errors::{auth_error, error, internal_server_error},
     extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
         oauth2::{ApiOAuth2Link, ApiOAuth2Login, ApiOAuth2ProviderSummary},
@@ -25,6 +25,8 @@ use crate::{
         user::ApiUserIdOrSelf,
     },
 };
+
+pub const TAG: &str = "OAuth2";
 
 pub fn router(service: Arc<impl OAuth2FeatureService>) -> Router<()> {
     Router::new()

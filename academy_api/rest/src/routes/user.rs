@@ -26,8 +26,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::{auth_error, error, internal_server_error};
 use crate::{
+    errors::{auth_error, error, internal_server_error},
     extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
         session::ApiLogin,
@@ -35,6 +35,8 @@ use crate::{
         ApiPaginationSlice, StringOption,
     },
 };
+
+pub const TAG: &str = "User";
 
 pub fn router(service: Arc<impl UserFeatureService>) -> Router<()> {
     Router::new()

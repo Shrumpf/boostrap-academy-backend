@@ -14,7 +14,7 @@ use axum::{
 use schemars::JsonSchema;
 use serde::Serialize;
 
-const TAG: &str = "Health";
+pub const TAG: &str = "Health";
 
 pub fn router(service: Arc<impl HealthFeatureService>) -> ApiRouter<()> {
     ApiRouter::new()

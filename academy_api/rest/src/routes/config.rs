@@ -11,7 +11,7 @@ use axum::{
     Json,
 };
 
-const TAG: &str = "Config";
+pub const TAG: &str = "Config";
 
 pub fn router(service: Arc<impl ConfigFeatureService>) -> ApiRouter<()> {
     ApiRouter::new()

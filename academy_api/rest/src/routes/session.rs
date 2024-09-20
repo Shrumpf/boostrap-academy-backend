@@ -19,8 +19,8 @@ use axum::{
 };
 use serde::Deserialize;
 
-use super::{auth_error, error, internal_server_error};
 use crate::{
+    errors::{auth_error, error, internal_server_error},
     extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
         session::{ApiLogin, ApiSession},
@@ -28,6 +28,8 @@ use crate::{
         StringOption,
     },
 };
+
+pub const TAG: &str = "Session";
 
 pub fn router(service: Arc<impl SessionFeatureService>) -> Router<()> {
     Router::new()

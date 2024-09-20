@@ -1,17 +1,21 @@
+use std::borrow::Cow;
+
 use academy_models::pagination::{PaginationLimit, PaginationSlice};
-use serde::{Deserialize, Serialize};
+use schemars::{gen::SchemaGenerator, schema::Schema, JsonSchema};
+use serde::Deserialize;
+
+use crate::const_schema;
 
 pub mod contact;
 pub mod oauth2;
 pub mod session;
 pub mod user;
 
-#[derive(Serialize)]
-pub struct ApiError {
-    pub detail: &'static str,
+const_schema! {
+    pub OkResponse(true);
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 pub struct ApiPaginationSlice {
     #[serde(default)]
     pub limit: PaginationLimit,
@@ -50,6 +54,24 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for StringOption<T> {
             Some(Inner::Some(x)) => Ok(Self::Some(x)),
             Some(Inner::Empty) | None => Ok(Self::None),
         }
+    }
+}
+
+impl<T: JsonSchema> JsonSchema for StringOption<T> {
+    fn schema_name() -> String {
+        <Option<T> as JsonSchema>::schema_name()
+    }
+
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        <Option<T> as JsonSchema>::json_schema(gen)
+    }
+
+    fn is_referenceable() -> bool {
+        <Option<T> as JsonSchema>::is_referenceable()
+    }
+
+    fn schema_id() -> Cow<'static, str> {
+        <Option<T> as JsonSchema>::schema_id()
     }
 }
 
