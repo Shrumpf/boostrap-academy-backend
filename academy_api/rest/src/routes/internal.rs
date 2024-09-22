@@ -19,7 +19,11 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
-    errors::{error, internal_server_error, ApiError, InvalidTokenDetail, UserNotFoundDetail},
+    docs::TransformOperationExt,
+    errors::{
+        error, internal_server_error, internal_server_error_docs, ApiError, InvalidTokenDetail,
+        UserNotFoundDetail,
+    },
     extractors::auth::{ApiToken, InternalApiToken},
     models::user::{ApiUser, PathUserId},
 };
@@ -37,6 +41,7 @@ pub fn router(service: Arc<impl InternalService>) -> ApiRouter<()> {
             routing::get_with(get_user_by_email, get_user_by_email_docs),
         )
         .with_state(service)
+        .with_path_items(|op| op.tag(TAG))
 }
 
 async fn get_user(
@@ -56,10 +61,13 @@ async fn get_user(
 
 fn get_user_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Return the user with the given id.")
-        .response::<200, Json<ApiUser>>()
-        .response::<404, Json<ApiError<UserNotFoundDetail>>>()
-        .response::<401, Json<ApiError<InvalidTokenDetail>>>()
-        .tag(TAG)
+        .add_response::<ApiUser>(StatusCode::OK, None)
+        .add_response::<ApiError<UserNotFoundDetail>>(
+            StatusCode::NOT_FOUND,
+            "The user does not exist.",
+        )
+        .with(internal_auth_error_docs)
+        .with(internal_server_error_docs)
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -77,17 +85,33 @@ async fn get_user_by_email(
         Err(InternalGetUserByEmailError::NotFound) => {
             error(StatusCode::NOT_FOUND, UserNotFoundDetail)
         }
-        Err(InternalGetUserByEmailError::Auth(AuthInternalAuthenticateError::InvalidToken)) => {
-            error(StatusCode::UNAUTHORIZED, InvalidTokenDetail)
-        }
+        Err(InternalGetUserByEmailError::Auth(err)) => internal_auth_error(err),
         Err(InternalGetUserByEmailError::Other(err)) => internal_server_error(err),
     }
 }
 
 fn get_user_by_email_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Return the user with the given email address.")
-        .response::<200, Json<ApiUser>>()
-        .response::<404, Json<ApiError<UserNotFoundDetail>>>()
-        .response::<401, Json<ApiError<InvalidTokenDetail>>>()
-        .tag(TAG)
+        .add_response::<ApiUser>(StatusCode::OK, None)
+        .add_response::<ApiError<UserNotFoundDetail>>(
+            StatusCode::NOT_FOUND,
+            "The user does not exist.",
+        )
+        .with(internal_auth_error_docs)
+        .with(internal_server_error_docs)
+}
+
+fn internal_auth_error(err: AuthInternalAuthenticateError) -> Response {
+    match err {
+        AuthInternalAuthenticateError::InvalidToken => {
+            error(StatusCode::UNAUTHORIZED, InvalidTokenDetail)
+        }
+    }
+}
+
+fn internal_auth_error_docs(op: TransformOperation) -> TransformOperation {
+    op.add_response::<ApiError<InvalidTokenDetail>>(
+        StatusCode::UNAUTHORIZED,
+        "The internal authentication token is invalid or has expired.",
+    )
 }

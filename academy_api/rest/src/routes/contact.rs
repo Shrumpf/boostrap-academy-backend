@@ -16,8 +16,10 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
+    docs::TransformOperationExt,
     errors::{
-        error, internal_server_error, ApiError, CoundNotSendMessageDetail, RecaptchaFailedDetail,
+        error, internal_server_error, internal_server_error_docs, recaptcha_error_docs, ApiError,
+        CoundNotSendMessageDetail, RecaptchaFailedDetail,
     },
     models::{contact::ApiContactMessage, OkResponse, StringOption},
 };
@@ -31,6 +33,7 @@ pub fn router(service: Arc<impl ContactFeatureService>) -> ApiRouter<()> {
             routing::post_with(send_message, send_message_docs),
         )
         .with_state(service)
+        .with_path_items(|op| op.tag(TAG))
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -65,14 +68,11 @@ async fn send_message(
 fn send_message_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Send a message to the support team.")
         .description("A reCAPTCHA response is required if reCAPTCHA is enabled.")
-        .response::<200, Json<OkResponse>>()
-        .response_with::<412, Json<ApiError<RecaptchaFailedDetail>>, _>(|op| {
-            op.description(
-                "reCAPTCHA is enabled but no valid reCAPTCHA response has been provided.",
-            )
-        })
-        .response_with::<500, Json<ApiError<CoundNotSendMessageDetail>>, _>(|op| {
-            op.description("The message could not be sent.")
-        })
-        .tag(TAG)
+        .add_response::<OkResponse>(StatusCode::OK, "The message has been sent.")
+        .with(recaptcha_error_docs)
+        .add_response::<ApiError<CoundNotSendMessageDetail>>(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "The message could not be sent.",
+        )
+        .with(internal_server_error_docs)
 }

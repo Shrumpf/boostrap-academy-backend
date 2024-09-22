@@ -18,49 +18,67 @@ use academy_models::{
     },
     RecaptchaResponse, VerificationCode,
 };
+use aide::{
+    axum::{routing, ApiRouter},
+    transform::TransformOperation,
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing, Json, Router,
+    Json,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    errors::{auth_error, error, internal_server_error},
+    docs::TransformOperationExt,
+    errors::{
+        auth_error, auth_error_docs, error, internal_server_error, internal_server_error_docs,
+        recaptcha_error_docs, ApiError, EmailAlreadyExistsDetail, InvalidOAuthTokenDetail,
+        NoLoginMethodDetail, RecaptchaFailedDetail, RemoteAlreadyLinkedDetail,
+        UserAlreadyExistsDetail, UserNotFoundDetail,
+    },
     extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
         session::ApiLogin,
-        user::{ApiUser, ApiUserFilter, ApiUserIdOrSelf, ApiUserPasswordOrEmpty},
+        user::{ApiUser, ApiUserFilter, ApiUserIdOrSelf, ApiUserPasswordOrEmpty, PathUserIdOrSelf},
         ApiPaginationSlice, StringOption,
     },
 };
 
 pub const TAG: &str = "User";
 
-pub fn router(service: Arc<impl UserFeatureService>) -> Router<()> {
-    Router::new()
-        .route("/auth/users", routing::get(list).post(create))
-        .route(
+pub fn router(service: Arc<impl UserFeatureService>) -> ApiRouter<()> {
+    ApiRouter::new()
+        .api_route(
+            "/auth/users",
+            routing::get_with(list, list_docs).post_with(create, create_docs),
+        )
+        .api_route(
             "/auth/users/:user_id",
             routing::get(get).patch(update).delete(delete),
         )
-        .route(
+        .api_route(
             "/auth/users/:user_id/email",
             routing::post(request_verification_email).put(verify_email),
         )
-        .route(
+        .api_route(
             "/auth/users/:user_id/newsletter",
-            routing::put(verify_newsletter_subscription),
+            routing::put_with(
+                verify_newsletter_subscription,
+                verify_newsletter_subscription_docs,
+            ),
         )
-        .route(
+        .api_route(
             "/auth/password_reset",
             routing::post(request_password_reset).put(reset_password),
         )
         .with_state(service)
+        .with_path_items(|op| op.tag(TAG))
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 struct ListResult {
     total: u64,
     users: Vec<ApiUser>,
@@ -95,6 +113,13 @@ async fn list(
     }
 }
 
+fn list_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Return a list of all users matching the given query.")
+        .add_response::<ListResult>(StatusCode::OK, None)
+        .with(auth_error_docs)
+        .with(internal_server_error_docs)
+}
+
 async fn get(
     user_service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
@@ -108,7 +133,7 @@ async fn get(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 struct CreateRequest {
     name: UserName,
     display_name: UserDisplayName,
@@ -145,25 +170,55 @@ async fn create(
         .await
     {
         Ok(result) => Json(ApiLogin::from(result)).into_response(),
-        Err(UserCreateError::NameConflict) => error(StatusCode::CONFLICT, "User already exists"),
-        Err(UserCreateError::EmailConflict) => error(StatusCode::CONFLICT, "Email already exists"),
+        Err(UserCreateError::NameConflict) => error(StatusCode::CONFLICT, UserAlreadyExistsDetail),
+        Err(UserCreateError::EmailConflict) => {
+            error(StatusCode::CONFLICT, EmailAlreadyExistsDetail)
+        }
         Err(UserCreateError::Recaptcha) => {
-            error(StatusCode::PRECONDITION_FAILED, "Recaptcha failed")
+            error(StatusCode::PRECONDITION_FAILED, RecaptchaFailedDetail)
         }
         Err(UserCreateError::NoLoginMethod) => {
-            error(StatusCode::PRECONDITION_FAILED, "No login method")
+            error(StatusCode::PRECONDITION_FAILED, NoLoginMethodDetail)
         }
         Err(UserCreateError::InvalidOAuthRegistrationToken) => {
-            error(StatusCode::UNAUTHORIZED, "Invalid OAuth token")
+            error(StatusCode::UNAUTHORIZED, InvalidOAuthTokenDetail)
         }
         Err(UserCreateError::RemoteAlreadyLinked) => {
-            error(StatusCode::CONFLICT, "Remote already linked")
+            error(StatusCode::CONFLICT, RemoteAlreadyLinkedDetail)
         }
         Err(UserCreateError::Other(err)) => internal_server_error(err),
     }
 }
 
-#[derive(Deserialize)]
+fn create_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Create a new user account.")
+        .description("Also creates a session for the new user.")
+        .add_response::<ApiLogin>(StatusCode::OK, None)
+        .add_response::<ApiError<UserAlreadyExistsDetail>>(
+            StatusCode::CONFLICT,
+            "A user with this name already exists.",
+        )
+        .add_response::<ApiError<EmailAlreadyExistsDetail>>(
+            StatusCode::CONFLICT,
+            "A user with this email address already exists.",
+        )
+        .with(recaptcha_error_docs)
+        .add_response::<ApiError<NoLoginMethodDetail>>(
+            StatusCode::PRECONDITION_FAILED,
+            "No login method was provided.",
+        )
+        .add_response::<ApiError<InvalidOAuthTokenDetail>>(
+            StatusCode::UNAUTHORIZED,
+            "The OAuth2 registration token is invalid or has expired.",
+        )
+        .add_response::<ApiError<RemoteAlreadyLinkedDetail>>(
+            StatusCode::CONFLICT,
+            "The remote user has already been linked to another account.",
+        )
+        .with(internal_server_error_docs)
+}
+
+#[derive(Deserialize, JsonSchema)]
 struct UpdateRequest {
     name: StringOption<UserName>,
     display_name: StringOption<UserDisplayName>,
@@ -304,7 +359,7 @@ async fn request_verification_email(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 struct VerifyEmailRequest {
     code: VerificationCode,
 }
@@ -327,7 +382,7 @@ async fn verify_email(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 struct VerifyNewsletterSubscriptionRequest {
     code: VerificationCode,
 }
@@ -335,7 +390,7 @@ struct VerifyNewsletterSubscriptionRequest {
 async fn verify_newsletter_subscription(
     service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
-    Path(user_id): Path<ApiUserIdOrSelf>,
+    Path(PathUserIdOrSelf { user_id }): Path<PathUserIdOrSelf>,
     Json(VerifyNewsletterSubscriptionRequest { code }): Json<VerifyNewsletterSubscriptionRequest>,
 ) -> Response {
     match service
@@ -344,7 +399,7 @@ async fn verify_newsletter_subscription(
     {
         Ok(user) => Json(ApiUser::from(user)).into_response(),
         Err(UserVerifyNewsletterSubscriptionError::NotFound) => {
-            error(StatusCode::NOT_FOUND, "User not found")
+            error(StatusCode::NOT_FOUND, UserNotFoundDetail)
         }
         Err(UserVerifyNewsletterSubscriptionError::AlreadySubscribed) => {
             error(StatusCode::CONFLICT, "Newsletter already subscribed")
@@ -357,7 +412,12 @@ async fn verify_newsletter_subscription(
     }
 }
 
-#[derive(Deserialize)]
+fn verify_newsletter_subscription_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Verify the newsletter subscription using a verification code.")
+        .add_response::<ApiUser>(StatusCode::OK, None)
+}
+
+#[derive(Deserialize, JsonSchema)]
 struct RequestPasswordResetRequest {
     email: EmailAddress,
     recaptcha_response: StringOption<RecaptchaResponse>,
@@ -382,7 +442,7 @@ async fn request_password_reset(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 struct ResetPasswordRequest {
     email: EmailAddress,
     code: VerificationCode,

@@ -20,5 +20,8 @@ macro_rules! const_schema {
             where S: ::serde::Serializer,
             { ::serde::Serialize::serialize(&Self::value(), serializer) }
         }
+        impl ::core::default::Default for $ident {
+            fn default() -> Self { Self }
+        }
     )* };
 }

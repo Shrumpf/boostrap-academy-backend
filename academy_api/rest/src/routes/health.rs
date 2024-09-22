@@ -14,12 +14,15 @@ use axum::{
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::docs::TransformOperationExt;
+
 pub const TAG: &str = "Health";
 
 pub fn router(service: Arc<impl HealthFeatureService>) -> ApiRouter<()> {
     ApiRouter::new()
         .api_route("/health", routing::get_with(health, health_docs))
         .with_state(service)
+        .with_path_items(|op| op.tag(TAG))
 }
 
 macro_rules! health {
@@ -68,13 +71,12 @@ fn health_docs(op: TransformOperation) -> TransformOperation {
              status is `200 OK` if all components are healthy and `500 INTERNAL SERVER ERROR` \
              otherwise.",
         )
-        .response_with::<200, Json<HealthResponse>, _>(|op| {
-            op.description("All components are healthy")
-                .example(HEALTHY)
+        .add_response_with::<HealthResponse>(StatusCode::OK, "All components are healthy", |op| {
+            op.example(HEALTHY)
         })
-        .response_with::<500, Json<HealthResponse>, _>(|op| {
-            op.description("Some components are unhealthy")
-                .example(UNHEALTHY)
-        })
-        .tag(TAG)
+        .add_response_with::<HealthResponse>(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Some components are unhealthy",
+            |op| op.example(UNHEALTHY),
+        )
 }

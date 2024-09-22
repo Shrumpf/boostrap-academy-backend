@@ -93,7 +93,7 @@ impl From<UserComposite> for ApiUser {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 pub struct ApiUserFilter {
     pub name: Option<SearchTerm>,
     pub email: Option<SearchTerm>,
@@ -184,7 +184,7 @@ pub struct PathUserIdOrSelf {
     pub user_id: ApiUserIdOrSelf,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, JsonSchema)]
 pub enum ApiUserPasswordOrEmpty {
     #[serde(rename = "")]
     Empty,

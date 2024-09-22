@@ -3,11 +3,12 @@ use academy_models::{
     session::{DeviceName, Session, SessionId},
     user::UserId,
 };
-use serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
+use serde::Serialize;
 
 use super::user::ApiUser;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct ApiSession {
     pub id: SessionId,
     pub user_id: UserId,
@@ -26,7 +27,7 @@ impl From<Session> for ApiSession {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 pub struct ApiLogin {
     user: ApiUser,
     session: ApiSession,
