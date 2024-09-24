@@ -52,9 +52,7 @@ async fn get_user(
     match service.get_user(&token.0, user_id).await {
         Ok(user) => Json(ApiUser::from(user)).into_response(),
         Err(InternalGetUserError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
-        Err(InternalGetUserError::Auth(AuthInternalAuthenticateError::InvalidToken)) => {
-            error(StatusCode::UNAUTHORIZED, InvalidTokenDetail)
-        }
+        Err(InternalGetUserError::Auth(err)) => internal_auth_error(err),
         Err(InternalGetUserError::Other(err)) => internal_server_error(err),
     }
 }

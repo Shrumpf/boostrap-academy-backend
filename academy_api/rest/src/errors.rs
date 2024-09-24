@@ -82,11 +82,28 @@ const_schema! {
     // Contact
     pub CoundNotSendMessageDetail("Could not send message");
 
+    // MFA
+    pub MfaAlreadyEnabledDetail("MFA already enabled");
+    pub MfaNotInitializedDetail("MFA not initialized");
+    pub InvalidCodeDetail("Invalid code");
+    pub MfaNotEnabledDetail("MFA not enabled");
+
+    // OAuth2
+    pub ProviderNotFoundDetail("Provider not found");
+    pub RemoteAlreadyLinkedDetail("Remote already linked");
+    pub ConnectionNotFoundDetail("Connection not found");
+    pub CannotDeleteLastLoginMethodDetail("Cannot delete last login method");
+
+    // Session
+    pub InvalidCredentialsDetail("Invalid credentials");
+    pub InvalidRefreshTokenDetail("Invalid refresh token");
+    pub SessionNotFoundDetail("Session not found");
+
     // User
     pub UserNotFoundDetail("User not found");
     pub UserAlreadyExistsDetail("User already exists");
     pub EmailAlreadyExistsDetail("Email already exists");
     pub NoLoginMethodDetail("No login method");
     pub InvalidOAuthTokenDetail("Invalid OAuth token");
-    pub RemoteAlreadyLinkedDetail("Remote already linked");
+    pub UserDisabledDetail("User disabled");
 }

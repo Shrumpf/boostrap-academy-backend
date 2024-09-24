@@ -17,8 +17,10 @@ const_schema! {
 
 #[derive(Deserialize, JsonSchema)]
 pub struct ApiPaginationSlice {
+    /// The number of items to select.
     #[serde(default)]
     pub limit: PaginationLimit,
+    /// The number of items to skip.
     #[serde(default)]
     pub offset: u64,
 }
@@ -35,6 +37,12 @@ impl From<ApiPaginationSlice> for PaginationSlice {
 pub enum StringOption<T> {
     Some(T),
     None,
+}
+
+impl<T> Default for StringOption<T> {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for StringOption<T> {

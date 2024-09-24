@@ -6,10 +6,14 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct ApiOAuth2ProviderSummary {
+    /// OAuth2 provider ID
     pub id: OAuth2ProviderId,
+    /// Display name
     pub name: OAuth2ProviderName,
+    /// Remote authorize endpoint URL *without* `state` and `redirect_uri`
+    /// parameters
     pub authorize_url: Url,
 }
 
@@ -23,10 +27,13 @@ impl From<OAuth2ProviderSummary> for ApiOAuth2ProviderSummary {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct ApiOAuth2Link {
+    /// OAuth2 link ID
     pub id: OAuth2LinkId,
+    /// OAuth2 provider ID
     pub provider_id: OAuth2ProviderId,
+    /// Display name of the remote user account
     pub display_name: OAuth2RemoteUserName,
 }
 
@@ -42,8 +49,11 @@ impl From<OAuth2Link> for ApiOAuth2Link {
 
 #[derive(Deserialize, JsonSchema)]
 pub struct ApiOAuth2Login {
+    /// OAuth2 provider ID
     pub provider_id: OAuth2ProviderId,
+    /// Authorization code returned by the OAuth2 provider
     pub code: OAuth2AuthorizationCode,
+    /// Redirect URI that was used for this authentication.
     pub redirect_uri: Url,
 }
 

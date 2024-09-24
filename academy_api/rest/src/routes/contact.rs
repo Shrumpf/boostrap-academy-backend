@@ -40,6 +40,8 @@ pub fn router(service: Arc<impl ContactFeatureService>) -> ApiRouter<()> {
 struct SendMessageRequest {
     #[serde(flatten)]
     message: ApiContactMessage,
+    /// reCAPTCHA response. Required if reCAPTCHA is enabled.
+    #[serde(default)]
     recaptcha_response: StringOption<RecaptchaResponse>,
 }
 

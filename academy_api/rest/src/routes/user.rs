@@ -57,11 +57,14 @@ pub fn router(service: Arc<impl UserFeatureService>) -> ApiRouter<()> {
         )
         .api_route(
             "/auth/users/:user_id",
-            routing::get(get).patch(update).delete(delete),
+            routing::get_with(get, get_docs)
+                .patch_with(update, update_docs)
+                .delete_with(delete, delete_docs),
         )
         .api_route(
             "/auth/users/:user_id/email",
-            routing::post(request_verification_email).put(verify_email),
+            routing::post_with(request_verification_email, request_verification_email_docs)
+                .put_with(verify_email, verify_email_docs),
         )
         .api_route(
             "/auth/users/:user_id/newsletter",
@@ -72,7 +75,8 @@ pub fn router(service: Arc<impl UserFeatureService>) -> ApiRouter<()> {
         )
         .api_route(
             "/auth/password_reset",
-            routing::post(request_password_reset).put(reset_password),
+            routing::post_with(request_password_reset, request_password_reset_docs)
+                .put_with(reset_password, reset_password_docs),
         )
         .with_state(service)
         .with_path_items(|op| op.tag(TAG))
@@ -80,7 +84,9 @@ pub fn router(service: Arc<impl UserFeatureService>) -> ApiRouter<()> {
 
 #[derive(Serialize, JsonSchema)]
 struct ListResult {
+    /// The total number of users matching the given query
     total: u64,
+    /// The paginated list of users matching the given query
     users: Vec<ApiUser>,
 }
 
@@ -123,14 +129,18 @@ fn list_docs(op: TransformOperation) -> TransformOperation {
 async fn get(
     user_service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
-    Path(user_id): Path<ApiUserIdOrSelf>,
+    Path(PathUserIdOrSelf { user_id }): Path<PathUserIdOrSelf>,
 ) -> Response {
     match user_service.get_user(&token.0, user_id.into()).await {
         Ok(user) => Json(ApiUser::from(user)).into_response(),
         Err(UserGetError::Auth(err)) => auth_error(err),
-        Err(UserGetError::NotFound) => error(StatusCode::NOT_FOUND, "User not found"),
+        Err(UserGetError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
         Err(UserGetError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn get_docs(op: TransformOperation) -> TransformOperation {
+    op
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -322,6 +332,10 @@ async fn update(
     }
 }
 
+fn update_docs(op: TransformOperation) -> TransformOperation {
+    op
+}
+
 async fn delete(
     user_service: State<Arc<impl UserFeatureService>>,
     token: ApiToken,
@@ -333,6 +347,10 @@ async fn delete(
         Err(UserDeleteError::Auth(err)) => auth_error(err),
         Err(UserDeleteError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn delete_docs(op: TransformOperation) -> TransformOperation {
+    op
 }
 
 async fn request_verification_email(
@@ -359,6 +377,10 @@ async fn request_verification_email(
     }
 }
 
+fn request_verification_email_docs(op: TransformOperation) -> TransformOperation {
+    op
+}
+
 #[derive(Deserialize, JsonSchema)]
 struct VerifyEmailRequest {
     code: VerificationCode,
@@ -380,6 +402,10 @@ async fn verify_email(
         }
         Err(UserVerifyEmailError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn verify_email_docs(op: TransformOperation) -> TransformOperation {
+    op
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -442,6 +468,10 @@ async fn request_password_reset(
     }
 }
 
+fn request_password_reset_docs(op: TransformOperation) -> TransformOperation {
+    op
+}
+
 #[derive(Deserialize, JsonSchema)]
 struct ResetPasswordRequest {
     email: EmailAddress,
@@ -464,4 +494,8 @@ async fn reset_password(
         }
         Err(UserResetPasswordError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn reset_password_docs(op: TransformOperation) -> TransformOperation {
+    op
 }

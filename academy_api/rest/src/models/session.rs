@@ -10,9 +10,13 @@ use super::user::ApiUser;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct ApiSession {
+    /// Session ID
     pub id: SessionId,
+    /// User ID
     pub user_id: UserId,
+    /// Device Name
     pub device_name: Option<DeviceName>,
+    /// Timestamp of last refresh
     pub last_update: i64,
 }
 

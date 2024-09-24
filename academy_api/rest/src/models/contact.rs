@@ -10,14 +10,15 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct ApiContactMessage {
+    /// Full name of the user
     pub name: ContactMessageAuthorName,
+    /// Email address of the user
     pub email: EmailAddress,
+    /// Subject of the message
     pub subject: ContactMessageSubject,
+    /// Content of the message
     pub message: ContactMessageContent,
 }
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct ApiContactMessageAuthor {}
 
 impl From<ApiContactMessage> for ContactMessage {
     fn from(value: ApiContactMessage) -> Self {

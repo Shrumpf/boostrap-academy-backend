@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use academy_models::{
     email_address::EmailAddress,
     user::{
@@ -9,38 +7,72 @@ use academy_models::{
     },
     SearchTerm,
 };
-use schemars::{gen::SchemaGenerator, schema::Schema, JsonSchema};
+use schemars::{
+    gen::SchemaGenerator,
+    schema::{Schema, SchemaObject, SubschemaValidation},
+    JsonSchema,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use url::Url;
 
+use crate::const_schema;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct ApiUser {
+    /// User ID
     pub id: UserId,
+    /// Unique user name (used for login, case insensitive)
     pub name: UserName,
+    /// Display name (not necessarily unique)
     pub display_name: UserDisplayName,
+    /// Email address (always set for new accounts, may be null for old
+    /// accounts migrated from the coding challenges platform)
     pub email: Option<EmailAddress>,
+    /// Whether the email address has been verified
     pub email_verified: bool,
+    /// Timestamp of creation
     pub registration: i64,
+    /// Timestamp of last successful login
     pub last_login: Option<i64>,
+    /// Timestamp of last `name` change
     pub last_name_change: Option<i64>,
+    /// Whether the user account is enabled (disabled users cannot login)
     pub enabled: bool,
+    /// Whether the user is an administrator
     pub admin: bool,
+    /// Whether the user has set a password (if not, login is only possible via
+    /// OAuth2)
     pub password: bool,
+    /// Whether the user has enabled MFA
     pub mfa_enabled: bool,
+    /// Bio of the user profile
     pub description: UserBio,
+    /// Tags of the user profile
     pub tags: UserTags,
+    /// Whether the user is subscribed to the newsletter
     pub newsletter: bool,
+    /// Whether the user represents a business instead of a private person
     pub business: Option<bool>,
+    /// First name of the user
     pub first_name: Option<UserFirstName>,
+    /// Last name of the user
     pub last_name: Option<UserLastName>,
+    /// Street of the user's address
     pub street: Option<UserStreet>,
+    /// Zip code of the user's address
     pub zip_code: Option<UserZipCode>,
+    /// City of the user's address
     pub city: Option<UserCity>,
+    /// Country of the user's address
     pub country: Option<UserCountry>,
+    /// Vat ID of the user
     pub vat_id: Option<UserVatId>,
+    /// Whether the user can buy coins
     pub can_buy_coins: bool,
+    /// Whether the user can receive coins
     pub can_receive_coins: bool,
+    /// URL of the user's avatar
     pub avatar_url: Option<Url>,
 }
 
@@ -95,12 +127,19 @@ impl From<UserComposite> for ApiUser {
 
 #[derive(Deserialize, JsonSchema)]
 pub struct ApiUserFilter {
+    /// Filter by `name` and `display_name`
     pub name: Option<SearchTerm>,
+    /// Filter by `email`
     pub email: Option<SearchTerm>,
+    /// Filter by `enabled`
     pub enabled: Option<bool>,
+    /// Filter by `admin`
     pub admin: Option<bool>,
+    /// Filter by `mfa_enabled`
     pub mfa_enabled: Option<bool>,
+    /// Filter by `email_verified`
     pub email_verified: Option<bool>,
+    /// Filter by `newsletter`
     pub newsletter: Option<bool>,
 }
 
@@ -149,19 +188,30 @@ impl<'de> Deserialize<'de> for ApiUserIdOrSelf {
 
 impl JsonSchema for ApiUserIdOrSelf {
     fn schema_name() -> String {
-        UserId::schema_name()
+        "UserIdOrSelf".into()
     }
 
     fn json_schema(gen: &mut SchemaGenerator) -> Schema {
-        UserId::json_schema(gen)
-    }
+        const_schema! {
+            Me("me");
+            Slf("self");
+        }
 
-    fn is_referenceable() -> bool {
-        UserId::is_referenceable()
-    }
-
-    fn schema_id() -> Cow<'static, str> {
-        UserId::schema_id()
+        SchemaObject {
+            subschemas: Some(
+                SubschemaValidation {
+                    one_of: Some(vec![
+                        Me::json_schema(gen),
+                        Slf::json_schema(gen),
+                        UserId::json_schema(gen),
+                    ]),
+                    ..Default::default()
+                }
+                .into(),
+            ),
+            ..Default::default()
+        }
+        .into()
     }
 }
 

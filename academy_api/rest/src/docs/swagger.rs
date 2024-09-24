@@ -9,7 +9,8 @@ const SWAGGER_UI_HTML: &str = concat!(
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>API Documentation - Bootstrap Academy</title>
+    <title>Swagger UI - Bootstrap Academy</title>
+    <link rel="icon" href="https://static.bootstrap.academy/logo.svg">
     <style type="text/css">
 "#,
     include_str!(concat!(

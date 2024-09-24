@@ -8,10 +8,13 @@ use academy_core_session_contracts::{
 use academy_models::{
     mfa::{MfaAuthentication, MfaRecoveryCode, TotpCode},
     session::{DeviceName, SessionId},
-    user::{UserId, UserNameOrEmailAddress, UserPassword},
+    user::{UserNameOrEmailAddress, UserPassword},
     RecaptchaResponse,
 };
-use aide::axum::{routing, ApiRouter};
+use aide::{
+    axum::{routing, ApiRouter},
+    transform::TransformOperation,
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -22,12 +25,18 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
-    errors::{auth_error, error, internal_server_error},
+    docs::TransformOperationExt,
+    errors::{
+        auth_error, auth_error_docs, error, internal_server_error, internal_server_error_docs,
+        recaptcha_error_docs, ApiError, InvalidCodeDetail, InvalidCredentialsDetail,
+        InvalidRefreshTokenDetail, RecaptchaFailedDetail, SessionNotFoundDetail,
+        UserDisabledDetail, UserNotFoundDetail,
+    },
     extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
         session::{ApiLogin, ApiSession},
-        user::ApiUserIdOrSelf,
-        StringOption,
+        user::{ApiUserIdOrSelf, PathUserId, PathUserIdOrSelf},
+        OkResponse, StringOption,
     },
 };
 
@@ -37,20 +46,20 @@ pub fn router(service: Arc<impl SessionFeatureService>) -> ApiRouter<()> {
     ApiRouter::new()
         .api_route(
             "/auth/session",
-            routing::get(get_current)
-                .put(refresh)
-                .delete(delete_current),
+            routing::get_with(get_current, get_current_docs)
+                .put_with(refresh, refresh_docs)
+                .delete_with(delete_current, delete_current_docs),
         )
-        .api_route("/auth/sessions", routing::post(create))
+        .api_route("/auth/sessions", routing::post_with(create, create_docs))
         .api_route(
             "/auth/sessions/:user_id",
-            routing::get(list_by_user)
-                .post(impersonate)
-                .delete(delete_by_user),
+            routing::get_with(list_by_user, list_by_user_docs)
+                .post_with(impersonate, impersonate_docs)
+                .delete_with(delete_by_user, delete_by_user_docs),
         )
         .api_route(
             "/auth/sessions/:user_id/:session_id",
-            routing::delete(delete),
+            routing::delete_with(delete, delete_docs),
         )
         .with_state(service)
         .with_path_items(|op| op.tag(TAG))
@@ -67,10 +76,17 @@ async fn get_current(
     }
 }
 
+fn get_current_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Return the currently authenticated session.")
+        .add_response::<ApiSession>(StatusCode::OK, None)
+        .with(auth_error_docs)
+        .with(internal_server_error_docs)
+}
+
 async fn list_by_user(
     session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
-    Path(user_id): Path<ApiUserIdOrSelf>,
+    Path(PathUserIdOrSelf { user_id }): Path<PathUserIdOrSelf>,
 ) -> Response {
     match session_service.list_by_user(&token.0, user_id.into()).await {
         Ok(sessions) => Json(
@@ -83,6 +99,13 @@ async fn list_by_user(
         Err(SessionListByUserError::Auth(err)) => auth_error(err),
         Err(SessionListByUserError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn list_by_user_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Return a list of all sessions of the given user.")
+        .add_response::<Vec<ApiSession>>(StatusCode::OK, None)
+        .with(auth_error_docs)
+        .with(internal_server_error_docs)
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -122,30 +145,65 @@ async fn create(
     {
         Ok(result) => Json(ApiLogin::from(result)).into_response(),
         Err(SessionCreateError::InvalidCredentials) => {
-            error(StatusCode::UNAUTHORIZED, "Invalid credentials")
+            error(StatusCode::UNAUTHORIZED, InvalidCredentialsDetail)
         }
         Err(SessionCreateError::MfaFailed) => {
-            error(StatusCode::PRECONDITION_FAILED, "Invalid code")
+            error(StatusCode::PRECONDITION_FAILED, InvalidCodeDetail)
         }
-        Err(SessionCreateError::UserDisabled) => error(StatusCode::FORBIDDEN, "User disabled"),
+        Err(SessionCreateError::UserDisabled) => error(StatusCode::FORBIDDEN, UserDisabledDetail),
         Err(SessionCreateError::Recaptcha) => {
-            error(StatusCode::PRECONDITION_FAILED, "Recaptcha failed")
+            error(StatusCode::PRECONDITION_FAILED, RecaptchaFailedDetail)
         }
         Err(SessionCreateError::Other(err)) => internal_server_error(err),
     }
 }
 
+fn create_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Create a new session via username/password authentication.")
+        .description(
+            "If the user has MFA enabled, the current TOTP needs to provided. Alternatively, the \
+             recovery code can be used to disable MFA.\n\nAfter too many failed login attempts, a \
+             valid reCAPTCHA response is required, if reCAPTCHA is enabled.",
+        )
+        .add_response::<ApiLogin>(StatusCode::OK, "A new session has been created.")
+        .add_response::<ApiError<InvalidCredentialsDetail>>(
+            StatusCode::UNAUTHORIZED,
+            "The user does not exist or the password is incorrect.",
+        )
+        .add_response::<ApiError<InvalidCodeDetail>>(
+            StatusCode::PRECONDITION_FAILED,
+            "The user has MFA enabled but no valid authentication was provided.",
+        )
+        .add_response::<ApiError<UserDisabledDetail>>(
+            StatusCode::FORBIDDEN,
+            "The user account has been disabled.",
+        )
+        .with(recaptcha_error_docs)
+        .with(internal_server_error_docs)
+}
+
 async fn impersonate(
     session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
-    Path(user_id): Path<UserId>,
+    Path(PathUserId { user_id }): Path<PathUserId>,
 ) -> Response {
     match session_service.impersonate(&token.0, user_id).await {
         Ok(login) => Json(ApiLogin::from(login)).into_response(),
-        Err(SessionImpersonateError::NotFound) => error(StatusCode::NOT_FOUND, "User not found"),
+        Err(SessionImpersonateError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
         Err(SessionImpersonateError::Auth(err)) => auth_error(err),
         Err(SessionImpersonateError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn impersonate_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Create a new session for the given user.")
+        .add_response::<ApiLogin>(StatusCode::OK, "A new session has been created.")
+        .add_response::<ApiError<UserNotFoundDetail>>(
+            StatusCode::NOT_FOUND,
+            "The user does not exist.",
+        )
+        .with(auth_error_docs)
+        .with(internal_server_error_docs)
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -160,26 +218,59 @@ async fn refresh(
     match session_service.refresh_session(&refresh_token).await {
         Ok(login) => Json(ApiLogin::from(login)).into_response(),
         Err(SessionRefreshError::InvalidRefreshToken) => {
-            error(StatusCode::UNAUTHORIZED, "Invalid refresh token")
+            error(StatusCode::UNAUTHORIZED, InvalidRefreshTokenDetail)
         }
         Err(SessionRefreshError::Other(err)) => internal_server_error(err),
     }
 }
 
+fn refresh_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Refresh session via refresh token")
+        .description(
+            "Generates and returns a new access/refresh token pair and invalidates the old tokens.",
+        )
+        .add_response::<ApiLogin>(StatusCode::OK, "The session has been refreshed.")
+        .add_response::<ApiError<InvalidRefreshTokenDetail>>(
+            StatusCode::UNAUTHORIZED,
+            "The refresh token is invalid or has expired.",
+        )
+        .with(internal_server_error_docs)
+}
+
+#[derive(Deserialize, JsonSchema)]
+struct DeletePath {
+    user_id: ApiUserIdOrSelf,
+    session_id: SessionId,
+}
+
 async fn delete(
     session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
-    Path((user_id, session_id)): Path<(ApiUserIdOrSelf, SessionId)>,
+    Path(DeletePath {
+        user_id,
+        session_id,
+    }): Path<DeletePath>,
 ) -> Response {
     match session_service
         .delete_session(&token.0, user_id.into(), session_id)
         .await
     {
-        Ok(()) => Json(true).into_response(),
-        Err(SessionDeleteError::NotFound) => error(StatusCode::NOT_FOUND, "Session not found"),
+        Ok(()) => Json(OkResponse).into_response(),
+        Err(SessionDeleteError::NotFound) => error(StatusCode::NOT_FOUND, SessionNotFoundDetail),
         Err(SessionDeleteError::Auth(err)) => auth_error(err),
         Err(SessionDeleteError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn delete_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Delete the given session.")
+        .description("Invalidates the access/refresh token pair.")
+        .add_response::<ApiError<SessionNotFoundDetail>>(
+            StatusCode::NOT_FOUND,
+            "The session does not exist.",
+        )
+        .with(auth_error_docs)
+        .with(internal_server_error_docs)
 }
 
 async fn delete_current(
@@ -187,16 +278,23 @@ async fn delete_current(
     token: ApiToken,
 ) -> Response {
     match session_service.delete_current_session(&token.0).await {
-        Ok(()) => Json(true).into_response(),
+        Ok(()) => Json(OkResponse).into_response(),
         Err(SessionDeleteCurrentError::Auth(err)) => auth_error(err),
         Err(SessionDeleteCurrentError::Other(err)) => internal_server_error(err),
     }
 }
 
+fn delete_current_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Delete the currently authenticated session.")
+        .description("Invalidates the access/refresh token pair.")
+        .with(auth_error_docs)
+        .with(internal_server_error_docs)
+}
+
 async fn delete_by_user(
     session_service: State<Arc<impl SessionFeatureService>>,
     token: ApiToken,
-    Path(user_id): Path<ApiUserIdOrSelf>,
+    Path(PathUserIdOrSelf { user_id }): Path<PathUserIdOrSelf>,
 ) -> Response {
     match session_service
         .delete_by_user(&token.0, user_id.into())
@@ -206,4 +304,11 @@ async fn delete_by_user(
         Err(SessionDeleteByUserError::Auth(err)) => auth_error(err),
         Err(SessionDeleteByUserError::Other(err)) => internal_server_error(err),
     }
+}
+
+fn delete_by_user_docs(op: TransformOperation) -> TransformOperation {
+    op.summary("Delete all sessions of the given user.")
+        .description("Invalidates any associated access/refresh token pair.")
+        .with(auth_error_docs)
+        .with(internal_server_error_docs)
 }
