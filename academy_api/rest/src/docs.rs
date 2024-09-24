@@ -12,10 +12,13 @@ use schemars::{
     JsonSchema,
 };
 
+mod redoc;
 mod swagger;
 
 pub fn router() -> Router<()> {
-    swagger::router()
+    Router::new()
+        .merge(swagger::router())
+        .merge(redoc::router())
 }
 
 pub trait TransformOperationExt {
