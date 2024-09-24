@@ -2,6 +2,7 @@ use academy_models::oauth2::{
     OAuth2AuthorizationCode, OAuth2Link, OAuth2LinkId, OAuth2Login, OAuth2ProviderId,
     OAuth2ProviderName, OAuth2ProviderSummary, OAuth2RemoteUserName,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -39,7 +40,7 @@ impl From<OAuth2Link> for ApiOAuth2Link {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 pub struct ApiOAuth2Login {
     pub provider_id: OAuth2ProviderId,
     pub code: OAuth2AuthorizationCode,

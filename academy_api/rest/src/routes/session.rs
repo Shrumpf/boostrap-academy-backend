@@ -11,12 +11,14 @@ use academy_models::{
     user::{UserId, UserNameOrEmailAddress, UserPassword},
     RecaptchaResponse,
 };
+use aide::axum::{routing, ApiRouter};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing, Json, Router,
+    Json,
 };
+use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
@@ -31,26 +33,27 @@ use crate::{
 
 pub const TAG: &str = "Session";
 
-pub fn router(service: Arc<impl SessionFeatureService>) -> Router<()> {
-    Router::new()
-        .route(
+pub fn router(service: Arc<impl SessionFeatureService>) -> ApiRouter<()> {
+    ApiRouter::new()
+        .api_route(
             "/auth/session",
             routing::get(get_current)
                 .put(refresh)
                 .delete(delete_current),
         )
-        .route("/auth/sessions", routing::post(create))
-        .route(
+        .api_route("/auth/sessions", routing::post(create))
+        .api_route(
             "/auth/sessions/:user_id",
             routing::get(list_by_user)
                 .post(impersonate)
                 .delete(delete_by_user),
         )
-        .route(
+        .api_route(
             "/auth/sessions/:user_id/:session_id",
             routing::delete(delete),
         )
         .with_state(service)
+        .with_path_items(|op| op.tag(TAG))
 }
 
 async fn get_current(
@@ -82,7 +85,7 @@ async fn list_by_user(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 struct CreateRequest {
     name_or_email: UserNameOrEmailAddress,
     password: UserPassword,
@@ -145,7 +148,7 @@ async fn impersonate(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 struct RefreshRequest {
     refresh_token: String,
 }

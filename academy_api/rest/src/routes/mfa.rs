@@ -4,12 +4,14 @@ use academy_core_mfa_contracts::{
     MfaDisableError, MfaEnableError, MfaFeatureService, MfaInitializeError,
 };
 use academy_models::mfa::TotpCode;
+use aide::axum::{routing, ApiRouter};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing, Json, Router,
+    Json,
 };
+use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
@@ -20,13 +22,14 @@ use crate::{
 
 pub const TAG: &str = "MFA";
 
-pub fn router(service: Arc<impl MfaFeatureService>) -> Router<()> {
-    Router::new()
-        .route(
+pub fn router(service: Arc<impl MfaFeatureService>) -> ApiRouter<()> {
+    ApiRouter::new()
+        .api_route(
             "/auth/users/:user_id/mfa",
             routing::post(initialize).put(enable).delete(disable),
         )
         .with_state(service)
+        .with_path_items(|op| op.tag(TAG))
 }
 
 async fn initialize(
@@ -45,7 +48,7 @@ async fn initialize(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 struct EnableRequest {
     code: TotpCode,
 }

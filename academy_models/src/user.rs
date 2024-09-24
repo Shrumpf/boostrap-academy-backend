@@ -124,7 +124,7 @@ impl UserPassword {
     pub const MAX_LENGTH: usize = 4096;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub enum UserNameOrEmailAddress {
     Name(UserName),

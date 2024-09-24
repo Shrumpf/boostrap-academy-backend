@@ -8,11 +8,12 @@ use academy_models::{
     oauth2::{OAuth2LinkId, OAuth2RegistrationToken},
     session::DeviceName,
 };
+use aide::axum::{routing, ApiRouter};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing, Json, Router,
+    Json,
 };
 use serde::Serialize;
 
@@ -28,19 +29,20 @@ use crate::{
 
 pub const TAG: &str = "OAuth2";
 
-pub fn router(service: Arc<impl OAuth2FeatureService>) -> Router<()> {
-    Router::new()
-        .route("/auth/oauth/providers", routing::get(list_providers))
-        .route(
+pub fn router(service: Arc<impl OAuth2FeatureService>) -> ApiRouter<()> {
+    ApiRouter::new()
+        .api_route("/auth/oauth/providers", routing::get(list_providers))
+        .api_route(
             "/auth/oauth/links/:user_id",
             routing::get(list_links).post(create_link),
         )
-        .route(
+        .api_route(
             "/auth/oauth/links/:user_id/:link_id",
             routing::delete(delete_link),
         )
-        .route("/auth/sessions/oauth", routing::post(create_session))
+        .api_route("/auth/sessions/oauth", routing::post(create_session))
         .with_state(service)
+        .with_path_items(|op| op.tag(TAG))
 }
 
 async fn list_providers(service: State<Arc<impl OAuth2FeatureService>>) -> Response {
