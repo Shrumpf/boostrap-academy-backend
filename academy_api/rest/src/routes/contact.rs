@@ -17,10 +17,8 @@ use serde::Deserialize;
 
 use crate::{
     docs::TransformOperationExt,
-    errors::{
-        error, internal_server_error, internal_server_error_docs, recaptcha_error_docs, ApiError,
-        CoundNotSendMessageDetail, RecaptchaFailedDetail,
-    },
+    error_code,
+    errors::{internal_server_error, internal_server_error_docs, RecaptchaFailedError},
     models::{contact::ApiContactMessage, OkResponse, StringOption},
 };
 
@@ -57,12 +55,8 @@ async fn send_message(
         .await
     {
         Ok(()) => Json(OkResponse).into_response(),
-        Err(ContactSendMessageError::Recaptcha) => {
-            error(StatusCode::PRECONDITION_FAILED, RecaptchaFailedDetail)
-        }
-        Err(ContactSendMessageError::Send) => {
-            error(StatusCode::INTERNAL_SERVER_ERROR, CoundNotSendMessageDetail)
-        }
+        Err(ContactSendMessageError::Recaptcha) => RecaptchaFailedError.into_response(),
+        Err(ContactSendMessageError::Send) => CouldNotSendMessageError.into_response(),
         Err(ContactSendMessageError::Other(err)) => internal_server_error(err),
     }
 }
@@ -71,10 +65,12 @@ fn send_message_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Send a message to the support team.")
         .description("A reCAPTCHA response is required if reCAPTCHA is enabled.")
         .add_response::<OkResponse>(StatusCode::OK, "The message has been sent.")
-        .with(recaptcha_error_docs)
-        .add_response::<ApiError<CoundNotSendMessageDetail>>(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "The message could not be sent.",
-        )
+        .add_error::<RecaptchaFailedError>()
+        .add_error::<CouldNotSendMessageError>()
         .with(internal_server_error_docs)
+}
+
+error_code! {
+    /// The message could not be sent.
+    CouldNotSendMessageError(INTERNAL_SERVER_ERROR, "Could not send message");
 }

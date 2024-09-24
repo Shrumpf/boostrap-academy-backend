@@ -25,3 +25,30 @@ macro_rules! const_schema {
         }
     )* };
 }
+
+#[macro_export]
+macro_rules! error_code {
+    ($($(#[doc=$doc:literal])* $vis:vis $ident:ident($status:ident, $detail:literal));* $(;)*) => {
+        $crate::const_schema! { $(
+            $vis $ident($detail);
+        )* }
+
+        $(
+            impl $crate::errors::ApiErrorCode for $ident {
+                const DESCRIPTION: &str = ::core::concat!($($doc),*);
+                const STATUS_CODE: StatusCode = ::axum::http::StatusCode::$status;
+            }
+
+            impl ::axum::response::IntoResponse for $ident {
+                fn into_response(self) -> ::axum::response::Response {
+                    ::axum::response::IntoResponse::into_response((
+                        <Self as $crate::errors::ApiErrorCode>::STATUS_CODE,
+                        ::axum::Json($crate::errors::ApiError {
+                            code: self,
+                        }),
+                    ))
+                }
+            }
+        )*
+    };
+}

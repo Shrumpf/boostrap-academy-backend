@@ -24,13 +24,16 @@ use axum::{
 use schemars::JsonSchema;
 use serde::Deserialize;
 
+use super::{
+    mfa::InvalidMfaCodeError,
+    user::{UserDisabledError, UserNotFoundError},
+};
 use crate::{
     docs::TransformOperationExt,
+    error_code,
     errors::{
-        auth_error, auth_error_docs, error, internal_server_error, internal_server_error_docs,
-        recaptcha_error_docs, ApiError, InvalidCodeDetail, InvalidCredentialsDetail,
-        InvalidRefreshTokenDetail, RecaptchaFailedDetail, SessionNotFoundDetail,
-        UserDisabledDetail, UserNotFoundDetail,
+        auth_error, auth_error_docs, internal_server_error, internal_server_error_docs,
+        RecaptchaFailedError,
     },
     extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
@@ -144,16 +147,10 @@ async fn create(
         .await
     {
         Ok(result) => Json(ApiLogin::from(result)).into_response(),
-        Err(SessionCreateError::InvalidCredentials) => {
-            error(StatusCode::UNAUTHORIZED, InvalidCredentialsDetail)
-        }
-        Err(SessionCreateError::MfaFailed) => {
-            error(StatusCode::PRECONDITION_FAILED, InvalidCodeDetail)
-        }
-        Err(SessionCreateError::UserDisabled) => error(StatusCode::FORBIDDEN, UserDisabledDetail),
-        Err(SessionCreateError::Recaptcha) => {
-            error(StatusCode::PRECONDITION_FAILED, RecaptchaFailedDetail)
-        }
+        Err(SessionCreateError::InvalidCredentials) => InvalidCredentialsError.into_response(),
+        Err(SessionCreateError::MfaFailed) => InvalidMfaCodeError.into_response(),
+        Err(SessionCreateError::UserDisabled) => UserDisabledError.into_response(),
+        Err(SessionCreateError::Recaptcha) => RecaptchaFailedError.into_response(),
         Err(SessionCreateError::Other(err)) => internal_server_error(err),
     }
 }
@@ -166,19 +163,10 @@ fn create_docs(op: TransformOperation) -> TransformOperation {
              valid reCAPTCHA response is required, if reCAPTCHA is enabled.",
         )
         .add_response::<ApiLogin>(StatusCode::OK, "A new session has been created.")
-        .add_response::<ApiError<InvalidCredentialsDetail>>(
-            StatusCode::UNAUTHORIZED,
-            "The user does not exist or the password is incorrect.",
-        )
-        .add_response::<ApiError<InvalidCodeDetail>>(
-            StatusCode::PRECONDITION_FAILED,
-            "The user has MFA enabled but no valid authentication was provided.",
-        )
-        .add_response::<ApiError<UserDisabledDetail>>(
-            StatusCode::FORBIDDEN,
-            "The user account has been disabled.",
-        )
-        .with(recaptcha_error_docs)
+        .add_error::<InvalidCredentialsError>()
+        .add_error::<InvalidMfaCodeError>()
+        .add_error::<UserDisabledError>()
+        .add_error::<RecaptchaFailedError>()
         .with(internal_server_error_docs)
 }
 
@@ -189,7 +177,7 @@ async fn impersonate(
 ) -> Response {
     match session_service.impersonate(&token.0, user_id).await {
         Ok(login) => Json(ApiLogin::from(login)).into_response(),
-        Err(SessionImpersonateError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
+        Err(SessionImpersonateError::NotFound) => UserNotFoundError.into_response(),
         Err(SessionImpersonateError::Auth(err)) => auth_error(err),
         Err(SessionImpersonateError::Other(err)) => internal_server_error(err),
     }
@@ -198,10 +186,7 @@ async fn impersonate(
 fn impersonate_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Create a new session for the given user.")
         .add_response::<ApiLogin>(StatusCode::OK, "A new session has been created.")
-        .add_response::<ApiError<UserNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The user does not exist.",
-        )
+        .add_error::<UserNotFoundError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
 }
@@ -217,9 +202,7 @@ async fn refresh(
 ) -> Response {
     match session_service.refresh_session(&refresh_token).await {
         Ok(login) => Json(ApiLogin::from(login)).into_response(),
-        Err(SessionRefreshError::InvalidRefreshToken) => {
-            error(StatusCode::UNAUTHORIZED, InvalidRefreshTokenDetail)
-        }
+        Err(SessionRefreshError::InvalidRefreshToken) => InvalidRefreshTokenError.into_response(),
         Err(SessionRefreshError::Other(err)) => internal_server_error(err),
     }
 }
@@ -230,10 +213,7 @@ fn refresh_docs(op: TransformOperation) -> TransformOperation {
             "Generates and returns a new access/refresh token pair and invalidates the old tokens.",
         )
         .add_response::<ApiLogin>(StatusCode::OK, "The session has been refreshed.")
-        .add_response::<ApiError<InvalidRefreshTokenDetail>>(
-            StatusCode::UNAUTHORIZED,
-            "The refresh token is invalid or has expired.",
-        )
+        .add_error::<InvalidRefreshTokenError>()
         .with(internal_server_error_docs)
 }
 
@@ -256,7 +236,7 @@ async fn delete(
         .await
     {
         Ok(()) => Json(OkResponse).into_response(),
-        Err(SessionDeleteError::NotFound) => error(StatusCode::NOT_FOUND, SessionNotFoundDetail),
+        Err(SessionDeleteError::NotFound) => SessionNotFoundError.into_response(),
         Err(SessionDeleteError::Auth(err)) => auth_error(err),
         Err(SessionDeleteError::Other(err)) => internal_server_error(err),
     }
@@ -265,10 +245,7 @@ async fn delete(
 fn delete_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Delete the given session.")
         .description("Invalidates the access/refresh token pair.")
-        .add_response::<ApiError<SessionNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The session does not exist.",
-        )
+        .add_error::<SessionNotFoundError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
 }
@@ -311,4 +288,13 @@ fn delete_by_user_docs(op: TransformOperation) -> TransformOperation {
         .description("Invalidates any associated access/refresh token pair.")
         .with(auth_error_docs)
         .with(internal_server_error_docs)
+}
+
+error_code! {
+    /// The user does not exist or the password is incorrect.
+    InvalidCredentialsError(UNAUTHORIZED, "Invalid credentials");
+    /// The session does not exist.
+    SessionNotFoundError(NOT_FOUND, "Session not found");
+    /// The refresh token is invalid or has expired.
+    InvalidRefreshTokenError(UNAUTHORIZED, "Invalid refresh token");
 }

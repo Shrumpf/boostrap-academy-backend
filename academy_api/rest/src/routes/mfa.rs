@@ -17,13 +17,11 @@ use axum::{
 use schemars::JsonSchema;
 use serde::Deserialize;
 
+use super::user::UserNotFoundError;
 use crate::{
     docs::TransformOperationExt,
-    errors::{
-        auth_error, auth_error_docs, error, internal_server_error, internal_server_error_docs,
-        ApiError, InvalidCodeDetail, MfaAlreadyEnabledDetail, MfaNotEnabledDetail,
-        MfaNotInitializedDetail, UserNotFoundDetail,
-    },
+    error_code,
+    errors::{auth_error, auth_error_docs, internal_server_error, internal_server_error_docs},
     extractors::auth::ApiToken,
     models::{user::PathUserIdOrSelf, OkResponse},
 };
@@ -49,10 +47,8 @@ async fn initialize(
 ) -> Response {
     match service.initialize(&token.0, user_id.into()).await {
         Ok(setup) => Json(setup.secret).into_response(),
-        Err(MfaInitializeError::AlreadyEnabled) => {
-            error(StatusCode::CONFLICT, MfaAlreadyEnabledDetail)
-        }
-        Err(MfaInitializeError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
+        Err(MfaInitializeError::AlreadyEnabled) => MfaAlreadyEnabledError.into_response(),
+        Err(MfaInitializeError::NotFound) => UserNotFoundError.into_response(),
         Err(MfaInitializeError::Auth(err)) => auth_error(err),
         Err(MfaInitializeError::Other(err)) => internal_server_error(err),
     }
@@ -67,14 +63,8 @@ fn initialize_docs(op: TransformOperation) -> TransformOperation {
         .add_response_with::<String>(StatusCode::OK, "MFA has been initialized.", |op| {
             op.example("randomtotpsecret")
         })
-        .add_response::<ApiError<MfaAlreadyEnabledDetail>>(
-            StatusCode::CONFLICT,
-            "The user has already enabled MFA.",
-        )
-        .add_response::<ApiError<UserNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The user does not exist.",
-        )
+        .add_error::<MfaAlreadyEnabledError>()
+        .add_error::<UserNotFoundError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
 }
@@ -93,14 +83,10 @@ async fn enable(
 ) -> Response {
     match service.enable(&token.0, user_id.into(), code).await {
         Ok(recovery_code) => Json(recovery_code).into_response(),
-        Err(MfaEnableError::AlreadyEnabled) => error(StatusCode::CONFLICT, MfaAlreadyEnabledDetail),
-        Err(MfaEnableError::NotInitialized) => {
-            error(StatusCode::PRECONDITION_FAILED, MfaNotInitializedDetail)
-        }
-        Err(MfaEnableError::InvalidCode) => {
-            error(StatusCode::PRECONDITION_FAILED, InvalidCodeDetail)
-        }
-        Err(MfaEnableError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
+        Err(MfaEnableError::AlreadyEnabled) => MfaAlreadyEnabledError.into_response(),
+        Err(MfaEnableError::NotInitialized) => MfaNotInitializedError.into_response(),
+        Err(MfaEnableError::InvalidCode) => InvalidMfaCodeError.into_response(),
+        Err(MfaEnableError::NotFound) => UserNotFoundError.into_response(),
         Err(MfaEnableError::Auth(err)) => auth_error(err),
         Err(MfaEnableError::Other(err)) => internal_server_error(err),
     }
@@ -116,22 +102,10 @@ fn enable_docs(op: TransformOperation) -> TransformOperation {
         .add_response_with::<String>(StatusCode::OK, "MFA has been enabled.", |op| {
             op.example("mfa-recovery-code")
         })
-        .add_response::<ApiError<MfaAlreadyEnabledDetail>>(
-            StatusCode::CONFLICT,
-            "The user has already enabled MFA.",
-        )
-        .add_response::<ApiError<MfaNotInitializedDetail>>(
-            StatusCode::PRECONDITION_FAILED,
-            "MFA has not yet been initialized.",
-        )
-        .add_response::<ApiError<InvalidCodeDetail>>(
-            StatusCode::PRECONDITION_FAILED,
-            "The TOTP code is invalid or has expired.",
-        )
-        .add_response::<ApiError<UserNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The user does not exist.",
-        )
+        .add_error::<MfaAlreadyEnabledError>()
+        .add_error::<MfaNotInitializedError>()
+        .add_error::<InvalidMfaCodeError>()
+        .add_error::<UserNotFoundError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
 }
@@ -143,10 +117,8 @@ async fn disable(
 ) -> Response {
     match service.disable(&token.0, user_id.into()).await {
         Ok(()) => Json(OkResponse).into_response(),
-        Err(MfaDisableError::NotEnabled) => {
-            error(StatusCode::PRECONDITION_FAILED, MfaNotEnabledDetail)
-        }
-        Err(MfaDisableError::NotFound) => error(StatusCode::NOT_FOUND, "User not found"),
+        Err(MfaDisableError::NotEnabled) => MfaNotEnabledError.into_response(),
+        Err(MfaDisableError::NotFound) => UserNotFoundError.into_response(),
         Err(MfaDisableError::Auth(err)) => auth_error(err),
         Err(MfaDisableError::Other(err)) => internal_server_error(err),
     }
@@ -155,14 +127,19 @@ async fn disable(
 fn disable_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Disable MFA for the given user.")
         .add_response::<OkResponse>(StatusCode::OK, "MFA has been disabled.")
-        .add_response::<ApiError<MfaNotEnabledDetail>>(
-            StatusCode::PRECONDITION_FAILED,
-            "The user has not enabled MFA.",
-        )
-        .add_response::<ApiError<UserNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The user does not exist.",
-        )
+        .add_error::<MfaNotEnabledError>()
+        .add_error::<UserNotFoundError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
+}
+
+error_code! {
+    /// The user has already enabled MFA.
+    MfaAlreadyEnabledError(CONFLICT, "MFA already enabled");
+    /// MFA has not yet been initialized.
+    MfaNotInitializedError(PRECONDITION_FAILED, "MFA not initialized");
+    /// The TOTP code is invalid or has expired.
+    pub InvalidMfaCodeError(PRECONDITION_FAILED, "Invalid code");
+    /// The user has not enabled MFA.
+    MfaNotEnabledError(PRECONDITION_FAILED, "MFA not enabled");
 }

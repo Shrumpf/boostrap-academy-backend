@@ -93,6 +93,7 @@ lettre = { version = "0.11.9", default-features = false, features = ["builder", 
 mockall = { version = "0.13.0", default-features = false }
 nutype = { version = "0.5.0", default-features = false, features = ["std", "regex", "serde", "schemars08"] }
 oauth2 = { version = "4.4.2", default-features = false, features = ["reqwest", "rustls-tls"] }
+paste = { version = "1.0.15", default-features = false }
 pretty_assertions = { version = "1.4.1", default-features = false, features = ["std"] }
 quote = { version = "1.0.37", default-features = false, features = ["proc-macro"] }
 rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }

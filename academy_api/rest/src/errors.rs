@@ -3,107 +3,64 @@ use aide::transform::TransformOperation;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::{const_schema, docs::TransformOperationExt};
+use crate::{docs::TransformOperationExt, error_code};
 
 pub fn internal_server_error(err: impl Into<anyhow::Error>) -> Response {
     let err = err.into();
     tracing::error!("internal server error: {err}");
-    error(StatusCode::INTERNAL_SERVER_ERROR, InternalServerErrorDetail)
+    InternalServerError.into_response()
 }
 
 pub fn internal_server_error_docs(op: TransformOperation) -> TransformOperation {
-    op.add_response::<ApiError<InternalServerErrorDetail>>(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Internal server error",
-    )
+    op.add_error::<InternalServerError>()
 }
 
 pub fn auth_error(err: impl Into<AuthError>) -> Response {
     match err.into() {
         AuthError::Authenticate(AuthenticateError::InvalidToken) => {
-            error(StatusCode::UNAUTHORIZED, InvalidTokenDetail)
+            InvalidTokenError.into_response()
         }
         AuthError::Authenticate(AuthenticateError::Other(err)) => internal_server_error(err),
-        AuthError::Authorize(AuthorizeError::Admin) => {
-            error(StatusCode::FORBIDDEN, PermissionDeniedDetail).into_response()
-        }
+        AuthError::Authorize(AuthorizeError::Admin) => PermissionDeniedError.into_response(),
         AuthError::Authorize(AuthorizeError::EmailVerified) => {
-            error(StatusCode::FORBIDDEN, EmailNotVerifiedDetail).into_response()
+            EmailNotVerifiedError.into_response()
         }
     }
 }
 
 pub fn auth_error_docs(op: TransformOperation) -> TransformOperation {
-    op.add_response::<ApiError<InvalidTokenDetail>>(
-        StatusCode::UNAUTHORIZED,
-        "The authentication token is invalid or has expired.",
-    )
-    .with(internal_server_error_docs)
-    .add_response::<ApiError<PermissionDeniedDetail>>(
-        StatusCode::FORBIDDEN,
-        "The authenticated user is not allowed to perform this action.",
-    )
-    .add_response::<ApiError<EmailNotVerifiedDetail>>(
-        StatusCode::FORBIDDEN,
-        "The authenticated user has not verified their email address.",
-    )
-}
-
-pub fn recaptcha_error_docs(op: TransformOperation) -> TransformOperation {
-    op.add_response::<ApiError<RecaptchaFailedDetail>>(
-        StatusCode::PRECONDITION_FAILED,
-        "reCAPTCHA is enabled but no valid reCAPTCHA response has been provided.",
-    )
-}
-
-pub fn error(code: StatusCode, detail: impl Serialize) -> Response {
-    (code, Json(ApiError { detail })).into_response()
+    op.add_error::<InvalidTokenError>()
+        .with(internal_server_error_docs)
+        .add_error::<PermissionDeniedError>()
+        .add_error::<EmailNotVerifiedError>()
 }
 
 #[derive(Serialize, JsonSchema, Default)]
-pub struct ApiError<D> {
-    pub detail: D,
+pub struct ApiError<C> {
+    #[serde(rename = "detail")]
+    pub code: C,
 }
 
-const_schema! {
-    pub InternalServerErrorDetail("Internal server error");
-    pub RecaptchaFailedDetail("Recaptcha failed");
+pub trait ApiErrorCode: Serialize + JsonSchema {
+    const DESCRIPTION: &str;
+    const STATUS_CODE: StatusCode;
+}
 
-    // Auth
-    pub InvalidTokenDetail("Invalid token");
-    pub PermissionDeniedDetail("Permission denied");
-    pub EmailNotVerifiedDetail("Email not verified");
+error_code! {
+    /// Internal server error
+    InternalServerError(INTERNAL_SERVER_ERROR, "Internal server error");
 
-    // Contact
-    pub CoundNotSendMessageDetail("Could not send message");
+    /// The authentication token is invalid or has expired.
+    InvalidTokenError(UNAUTHORIZED, "Invalid token");
+    /// The authenticated user is not allowed to perform this action.
+    pub PermissionDeniedError(FORBIDDEN, "Permission denied");
+    /// The authenticated user has not verified their email address.
+    EmailNotVerifiedError(FORBIDDEN, "Email not verified");
 
-    // MFA
-    pub MfaAlreadyEnabledDetail("MFA already enabled");
-    pub MfaNotInitializedDetail("MFA not initialized");
-    pub InvalidCodeDetail("Invalid code");
-    pub MfaNotEnabledDetail("MFA not enabled");
-
-    // OAuth2
-    pub ProviderNotFoundDetail("Provider not found");
-    pub RemoteAlreadyLinkedDetail("Remote already linked");
-    pub ConnectionNotFoundDetail("Connection not found");
-    pub CannotDeleteLastLoginMethodDetail("Cannot delete last login method");
-
-    // Session
-    pub InvalidCredentialsDetail("Invalid credentials");
-    pub InvalidRefreshTokenDetail("Invalid refresh token");
-    pub SessionNotFoundDetail("Session not found");
-
-    // User
-    pub UserNotFoundDetail("User not found");
-    pub UserAlreadyExistsDetail("User already exists");
-    pub EmailAlreadyExistsDetail("Email already exists");
-    pub NoLoginMethodDetail("No login method");
-    pub InvalidOAuthTokenDetail("Invalid OAuth token");
-    pub UserDisabledDetail("User disabled");
+    /// reCAPTCHA is enabled but no valid reCAPTCHA response has been provided.
+    pub RecaptchaFailedError(PRECONDITION_FAILED, "Recaptcha failed");
 }

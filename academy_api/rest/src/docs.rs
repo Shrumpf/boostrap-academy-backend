@@ -12,6 +12,8 @@ use schemars::{
     JsonSchema,
 };
 
+use crate::errors::{ApiError, ApiErrorCode};
+
 mod redoc;
 mod swagger;
 
@@ -36,6 +38,16 @@ pub trait TransformOperationExt {
             TransformResponse<<Json<R> as OperationOutput>::Inner>,
         ) -> TransformResponse<<Json<R> as OperationOutput>::Inner>,
     ) -> Self;
+
+    fn add_error<C: ApiErrorCode>(self) -> Self
+    where
+        Self: Sized,
+    {
+        self.add_response::<ApiError<C>>(
+            C::STATUS_CODE,
+            Some(C::DESCRIPTION).filter(|d| !d.is_empty()),
+        )
+    }
 }
 
 impl TransformOperationExt for TransformOperation<'_> {

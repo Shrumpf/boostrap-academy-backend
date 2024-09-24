@@ -21,13 +21,11 @@ use axum::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use super::user::{CannotDeleteLastLoginMethodError, UserDisabledError, UserNotFoundError};
 use crate::{
     docs::TransformOperationExt,
-    errors::{
-        auth_error, auth_error_docs, error, internal_server_error, internal_server_error_docs,
-        ApiError, CannotDeleteLastLoginMethodDetail, ConnectionNotFoundDetail, InvalidCodeDetail,
-        ProviderNotFoundDetail, RemoteAlreadyLinkedDetail, UserDisabledDetail, UserNotFoundDetail,
-    },
+    error_code,
+    errors::{auth_error, auth_error_docs, internal_server_error, internal_server_error_docs},
     extractors::{auth::ApiToken, user_agent::UserAgent},
     models::{
         oauth2::{ApiOAuth2Link, ApiOAuth2Login, ApiOAuth2ProviderSummary},
@@ -90,7 +88,7 @@ async fn list_links(
                 .collect::<Vec<ApiOAuth2Link>>(),
         )
         .into_response(),
-        Err(OAuth2ListLinksError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
+        Err(OAuth2ListLinksError::NotFound) => UserNotFoundError.into_response(),
         Err(OAuth2ListLinksError::Auth(err)) => auth_error(err),
         Err(OAuth2ListLinksError::Other(err)) => internal_server_error(err),
     }
@@ -99,10 +97,7 @@ async fn list_links(
 fn list_links_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Return a list of all OAuth2 links of the given user.")
         .add_response::<Vec<ApiOAuth2Link>>(StatusCode::OK, None)
-        .add_response::<ApiError<UserNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The user does not exist.",
-        )
+        .add_error::<UserNotFoundError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
 }
@@ -118,16 +113,10 @@ async fn create_link(
         .await
     {
         Ok(link) => Json(ApiOAuth2Link::from(link)).into_response(),
-        Err(OAuth2CreateLinkError::InvalidProvider) => {
-            error(StatusCode::NOT_FOUND, ProviderNotFoundDetail)
-        }
-        Err(OAuth2CreateLinkError::InvalidCode) => {
-            error(StatusCode::UNAUTHORIZED, InvalidCodeDetail)
-        }
-        Err(OAuth2CreateLinkError::RemoteAlreadyLinked) => {
-            error(StatusCode::CONFLICT, RemoteAlreadyLinkedDetail)
-        }
-        Err(OAuth2CreateLinkError::NotFound) => error(StatusCode::NOT_FOUND, UserNotFoundDetail),
+        Err(OAuth2CreateLinkError::InvalidProvider) => ProviderNotFoundError.into_response(),
+        Err(OAuth2CreateLinkError::InvalidCode) => InvalidCodeError.into_response(),
+        Err(OAuth2CreateLinkError::RemoteAlreadyLinked) => RemoteAlreadyLinkedError.into_response(),
+        Err(OAuth2CreateLinkError::NotFound) => UserNotFoundError.into_response(),
         Err(OAuth2CreateLinkError::Auth(err)) => auth_error(err),
         Err(OAuth2CreateLinkError::Other(err)) => internal_server_error(err),
     }
@@ -136,22 +125,10 @@ async fn create_link(
 fn create_link_docs(op: TransformOperation) -> TransformOperation {
     op.summary("Create a new OAuth2 link for the given user.")
         .add_response::<ApiOAuth2Link>(StatusCode::OK, "OAuth2 link has been created.")
-        .add_response::<ApiError<ProviderNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The OAuth2 provider does not exist.",
-        )
-        .add_response::<ApiError<InvalidCodeDetail>>(
-            StatusCode::UNAUTHORIZED,
-            "The authorization code is invalid.",
-        )
-        .add_response::<ApiError<RemoteAlreadyLinkedDetail>>(
-            StatusCode::CONFLICT,
-            "The remote user has already been linked to another account.",
-        )
-        .add_response::<ApiError<UserNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The user does not exist.",
-        )
+        .add_error::<ProviderNotFoundError>()
+        .add_error::<InvalidCodeError>()
+        .add_error::<RemoteAlreadyLinkedError>()
+        .add_error::<UserNotFoundError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
 }
@@ -169,11 +146,9 @@ async fn delete_link(
 ) -> Response {
     match service.delete_link(&token.0, user_id.into(), link_id).await {
         Ok(()) => Json(OkResponse).into_response(),
-        Err(OAuth2DeleteLinkError::NotFound) => {
-            error(StatusCode::NOT_FOUND, ConnectionNotFoundDetail)
-        }
+        Err(OAuth2DeleteLinkError::NotFound) => LinkNotFoundError.into_response(),
         Err(OAuth2DeleteLinkError::CannotRemoveLink) => {
-            error(StatusCode::FORBIDDEN, CannotDeleteLastLoginMethodDetail)
+            CannotDeleteLastLoginMethodError.into_response()
         }
         Err(OAuth2DeleteLinkError::Auth(err)) => auth_error(err),
         Err(OAuth2DeleteLinkError::Other(err)) => internal_server_error(err),
@@ -186,14 +161,8 @@ fn delete_link_docs(op: TransformOperation) -> TransformOperation {
             "Deleting the last link is only possible if the user has set a password for login.",
         )
         .add_response::<OkResponse>(StatusCode::OK, "OAuth2 link has been deleted.")
-        .add_response::<ApiError<ConnectionNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The OAuth2 link does not exist.",
-        )
-        .add_response::<ApiError<CannotDeleteLastLoginMethodDetail>>(
-            StatusCode::FORBIDDEN,
-            "The last OAuth2 link cannot be deleted if no password is set.",
-        )
+        .add_error::<LinkNotFoundError>()
+        .add_error::<CannotDeleteLastLoginMethodError>()
         .with(auth_error_docs)
         .with(internal_server_error_docs)
 }
@@ -227,15 +196,9 @@ async fn create_session(
         Ok(OAuth2CreateSessionResponse::RegistrationToken(register_token)) => {
             Json(CreateSessionRegistrationTokenResponse { register_token }).into_response()
         }
-        Err(OAuth2CreateSessionError::InvalidProvider) => {
-            error(StatusCode::NOT_FOUND, ProviderNotFoundDetail)
-        }
-        Err(OAuth2CreateSessionError::InvalidCode) => {
-            error(StatusCode::UNAUTHORIZED, InvalidCodeDetail)
-        }
-        Err(OAuth2CreateSessionError::UserDisabled) => {
-            error(StatusCode::FORBIDDEN, UserDisabledDetail)
-        }
+        Err(OAuth2CreateSessionError::InvalidProvider) => ProviderNotFoundError.into_response(),
+        Err(OAuth2CreateSessionError::InvalidCode) => InvalidCodeError.into_response(),
+        Err(OAuth2CreateSessionError::UserDisabled) => UserDisabledError.into_response(),
         Err(OAuth2CreateSessionError::Other(err)) => internal_server_error(err),
     }
 }
@@ -254,17 +217,19 @@ fn create_session_docs(op: TransformOperation) -> TransformOperation {
             StatusCode::OK,
             "A registration token has been generated.",
         )
-        .add_response::<ApiError<ProviderNotFoundDetail>>(
-            StatusCode::NOT_FOUND,
-            "The OAuth2 provider does not exist.",
-        )
-        .add_response::<ApiError<InvalidCodeDetail>>(
-            StatusCode::UNAUTHORIZED,
-            "The authorization code is invalid.",
-        )
-        .add_response::<ApiError<UserDisabledDetail>>(
-            StatusCode::FORBIDDEN,
-            "The user account has been disabled.",
-        )
+        .add_error::<ProviderNotFoundError>()
+        .add_error::<InvalidCodeError>()
+        .add_error::<UserDisabledError>()
         .with(internal_server_error_docs)
+}
+
+error_code! {
+    /// The OAuth2 provider does not exist.
+    ProviderNotFoundError(NOT_FOUND, "Provider not found");
+    /// The authorization code is invalid.
+    InvalidCodeError(UNAUTHORIZED, "Invalid code");
+    /// The remote user has already been linked to another account.
+    pub RemoteAlreadyLinkedError(CONFLICT, "Remote already linked");
+    /// The OAuth2 link does not exist.
+    LinkNotFoundError(NOT_FOUND, "Connection not found");
 }
