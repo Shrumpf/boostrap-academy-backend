@@ -52,6 +52,8 @@
         modules = [./nix/dev.nix];
       };
     });
+
+    formatter = eachDefaultSystem (system: (importNixpkgs system).alejandra);
   };
 
   nixConfig = {

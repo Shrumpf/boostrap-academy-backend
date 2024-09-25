@@ -12,6 +12,7 @@
   };
 
   packages = with pkgs; [
+    alejandra
     just
     cargo-llvm-cov
     lcov
