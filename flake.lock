@@ -1071,11 +1071,11 @@
     },
     "nixpkgs-smtp4dev": {
       "locked": {
-        "lastModified": 1724236515,
-        "narHash": "sha256-r8CE/P3vffRfv/5hNac7Ias1Gji5va6FStRF2D0ERGI=",
+        "lastModified": 1727294567,
+        "narHash": "sha256-4FnnYe9w+3/06NPByJD6lg6jAxuxWXWAGRz5Deymg8k=",
         "owner": "Rucadi",
         "repo": "nixpkgs",
-        "rev": "098f35edefee4050bec9496053b1ade67bdc59a9",
+        "rev": "eacaf543eabf347990342e9a6f1214ce207ac0ed",
         "type": "github"
       },
       "original": {
