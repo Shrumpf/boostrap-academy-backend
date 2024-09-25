@@ -1,11 +1,15 @@
 {
   config,
+  fenix,
   lib,
   pkgs,
   testing,
   ...
 }: {
-  languages.rust.enable = builtins.getEnv "DEVENV_RUST" != "0";
+  languages.rust = {
+    enable = builtins.getEnv "DEVENV_RUST" != "0";
+    toolchain = fenix.packages.${pkgs.system}.stable;
+  };
 
   packages = with pkgs; [
     just
