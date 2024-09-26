@@ -4,55 +4,61 @@ use academy::commands::{
 };
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
-use tracing_subscriber::EnvFilter;
+use sentry::integrations::tracing::EventFilter;
+use tracing::Level;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
-
     let cli = Cli::parse();
 
+    if let Command::Completion { shell } = cli.command {
+        clap_complete::generate(
+            shell,
+            &mut Cli::command(),
+            env!("CARGO_BIN_NAME"),
+            &mut std::io::stdout(),
+        );
+        return Ok(());
+    }
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer().with_filter(EnvFilter::from_default_env()))
+        .with(
+            sentry::integrations::tracing::layer().event_filter(|meta| match *meta.level() {
+                Level::ERROR => EventFilter::Exception,
+                Level::WARN => EventFilter::Event,
+                Level::INFO | Level::DEBUG | Level::TRACE => EventFilter::Breadcrumb,
+            }),
+        )
+        .init();
+
+    let config = academy_config::load()?;
+
+    let _sentry_guard = config.sentry.as_ref().map(|sentry_config| {
+        sentry::init((
+            sentry_config.dsn.as_str(),
+            sentry::ClientOptions {
+                release: Some(env!("CARGO_PKG_VERSION").into()),
+                attach_stacktrace: true,
+                ..Default::default()
+            },
+        ))
+    });
+
     match cli.command {
-        Command::Serve => {
-            let config = academy_config::load()?;
-            serve(config).await?
-        }
-        Command::Migrate { command } => {
-            let config = academy_config::load()?;
-            command.invoke(config).await?
-        }
-        Command::Admin { command } => {
-            let config = academy_config::load()?;
-            command.invoke(config).await?
-        }
-        Command::Jwt { command } => {
-            let config = academy_config::load()?;
-            command.invoke(config).await?
-        }
-        Command::Email { command } => {
-            let config = academy_config::load()?;
-            command.invoke(config).await?
-        }
-        Command::Task { command } => {
-            let config = academy_config::load()?;
-            command.invoke(config).await?
-        }
+        Command::Serve => serve(config).await?,
+        Command::Migrate { command } => command.invoke(config).await?,
+        Command::Admin { command } => command.invoke(config).await?,
+        Command::Jwt { command } => command.invoke(config).await?,
+        Command::Email { command } => command.invoke(config).await?,
+        Command::Task { command } => command.invoke(config).await?,
         Command::CheckConfig { verbose } => {
-            let config = academy_config::load()?;
             if verbose {
                 println!("{config:#?}");
             }
         }
-        Command::Completion { shell } => {
-            clap_complete::generate(
-                shell,
-                &mut Cli::command(),
-                env!("CARGO_BIN_NAME"),
-                &mut std::io::stdout(),
-            );
-        }
+        Command::Completion { .. } => unreachable!(),
     }
 
     Ok(())

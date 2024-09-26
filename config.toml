@@ -64,6 +64,10 @@ min_score = 0.5
 [vat]
 # validate_endpoint_override = ""
 
+# [sentry]
+# enable = true
+# dsn = ""
+
 [oauth2]
 enable = true
 registration_token_ttl = "10m"

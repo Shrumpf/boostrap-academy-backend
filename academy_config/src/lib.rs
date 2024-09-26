@@ -58,6 +58,8 @@ fn load_paths(paths: &[impl AsRef<Path>], overrides: &[&str]) -> anyhow::Result<
                 .recaptcha
                 .take_if(|recaptcha| recaptcha.enable == Some(false));
 
+            config.sentry.take_if(|sentry| sentry.enable == Some(false));
+
             if let Some(oauth2) = &mut config.oauth2 {
                 oauth2.providers.retain(|_, p| p.enable != Some(false));
             }
@@ -84,6 +86,7 @@ pub struct Config {
     pub contact: ContactConfig,
     pub recaptcha: Option<RecaptchaConfig>,
     pub vat: VatConfig,
+    pub sentry: Option<SentryConfig>,
     pub oauth2: Option<OAuth2Config>,
 }
 
@@ -183,6 +186,12 @@ pub struct RecaptchaConfig {
 #[derive(Debug, Deserialize)]
 pub struct VatConfig {
     pub validate_endpoint_override: Option<Url>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SentryConfig {
+    pub enable: Option<bool>,
+    pub dsn: Url,
 }
 
 #[derive(Debug, Deserialize)]
