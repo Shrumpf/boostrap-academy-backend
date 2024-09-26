@@ -1021,6 +1021,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-master": {
+      "locked": {
+        "lastModified": 1727356200,
+        "narHash": "sha256-sL2tLIRo2vcFTs6bL3BBK52CpRv24RDPHo6h11Y0hJA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d860680e32525cc72bff6c00512d0dae2ebe37de",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "master",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-regression": {
       "locked": {
         "lastModified": 1643052045,
@@ -1069,22 +1085,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-smtp4dev": {
-      "locked": {
-        "lastModified": 1727294567,
-        "narHash": "sha256-4FnnYe9w+3/06NPByJD6lg6jAxuxWXWAGRz5Deymg8k=",
-        "owner": "Rucadi",
-        "repo": "nixpkgs",
-        "rev": "eacaf543eabf347990342e9a6f1214ce207ac0ed",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Rucadi",
-        "ref": "smtp4dev",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1720386169,
@@ -1103,16 +1103,16 @@
     },
     "nixpkgs_10": {
       "locked": {
-        "lastModified": 1726871744,
-        "narHash": "sha256-V5LpfdHyQkUF7RfOaDPrZDP+oqz88lTJrMT1+stXNwo=",
+        "lastModified": 1727122398,
+        "narHash": "sha256-o8VBeCWHBxGd4kVMceIayf5GApqTavJbTa44Xcg5Rrk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a1d92660c6b3b7c26fb883500a80ea9d33321be2",
+        "rev": "30439d93eb8b19861ccbe3e581abf97bdc91b093",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -1433,7 +1433,7 @@
         "devenv": "devenv",
         "fenix": "fenix",
         "nixpkgs": "nixpkgs_10",
-        "nixpkgs-smtp4dev": "nixpkgs-smtp4dev"
+        "nixpkgs-master": "nixpkgs-master"
       }
     },
     "rust-analyzer-src": {

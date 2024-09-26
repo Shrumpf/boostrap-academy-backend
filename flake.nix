@@ -1,22 +1,22 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     fenix.url = "github:nix-community/fenix";
     crate2nix.url = "github:nix-community/crate2nix";
     devenv = {
       url = "github:cachix/devenv";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixpkgs-smtp4dev.url = "github:Rucadi/nixpkgs/smtp4dev";
   };
 
   outputs = {
     self,
     nixpkgs,
+    nixpkgs-master,
     fenix,
     crate2nix,
     devenv,
-    nixpkgs-smtp4dev,
     ...
   } @ inputs: let
     inherit (nixpkgs) lib;
@@ -28,7 +28,7 @@
     eachDefaultSystem = lib.genAttrs defaultSystems;
 
     overlays = [
-      (final: prev: {inherit (nixpkgs-smtp4dev.legacyPackages.${final.system}) smtp4dev;})
+      (final: prev: {inherit (nixpkgs-master.legacyPackages.${final.system}) smtp4dev;})
     ];
     importNixpkgs = system: import nixpkgs {inherit system overlays;};
   in {
