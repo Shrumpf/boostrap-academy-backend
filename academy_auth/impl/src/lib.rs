@@ -117,8 +117,8 @@ where
     }
 
     fn issue_tokens(&self, user: &User, session_id: SessionId) -> anyhow::Result<Tokens> {
-        let (refresh_token, refresh_token_hash) = self.auth_refresh_token.issue();
-
+        let refresh_token = self.auth_refresh_token.issue();
+        let refresh_token_hash = self.auth_refresh_token.hash(&refresh_token);
         let access_token = self
             .auth_access_token
             .issue(user, session_id, refresh_token_hash)?;

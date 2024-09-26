@@ -9,6 +9,7 @@ use crate::Authentication;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait AuthAccessTokenService: Send + Sync + 'static {
+    /// Generate a new access token for the given user and session.
     fn issue(
         &self,
         user: &User,
@@ -16,13 +17,16 @@ pub trait AuthAccessTokenService: Send + Sync + 'static {
         refresh_token_hash: SessionRefreshTokenHash,
     ) -> anyhow::Result<String>;
 
+    /// Verify the given access token and return its content if it is valid.
     fn verify(&self, access_token: &str) -> Option<Authentication>;
 
+    /// Manually invalidate a previously issued access token before it expires.
     fn invalidate(
         &self,
         refresh_token_hash: SessionRefreshTokenHash,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Return whether an access token has been manually invalidated.
     fn is_invalidated(
         &self,
         refresh_token_hash: SessionRefreshTokenHash,

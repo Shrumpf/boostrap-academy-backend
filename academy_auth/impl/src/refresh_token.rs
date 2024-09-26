@@ -18,10 +18,8 @@ where
     Secret: SecretService,
     Hash: HashService,
 {
-    fn issue(&self) -> (String, SessionRefreshTokenHash) {
-        let refresh_token = self.secret.generate(self.config.refresh_token_length);
-        let refresh_token_hash = self.hash(&refresh_token);
-        (refresh_token, refresh_token_hash)
+    fn issue(&self) -> String {
+        self.secret.generate(self.config.refresh_token_length)
     }
 
     fn hash(&self, refresh_token: &str) -> SessionRefreshTokenHash {
@@ -47,19 +45,18 @@ mod tests {
 
         let secret = MockSecretService::new()
             .with_generate(config.refresh_token_length, refresh_token.into());
-        let hash = MockHashService::new().with_sha256(refresh_token.into(), *SHA256HASH1);
 
         let sut = AuthRefreshTokenServiceImpl {
             secret,
-            hash,
             config,
+            ..Sut::default()
         };
 
         // Act
         let result = sut.issue();
 
         // Assert
-        assert_eq!(result, (refresh_token.into(), (*SHA256HASH1).into()));
+        assert_eq!(result, refresh_token);
     }
 
     #[test]

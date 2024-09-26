@@ -74,11 +74,11 @@ struct Token {
     uid: UserId,
     sid: SessionId,
     rt: SessionRefreshTokenHash,
-    data: Data,
+    data: TokenData,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-struct Data {
+struct TokenData {
     admin: bool,
     email_verified: bool,
 }
@@ -101,7 +101,7 @@ impl From<Authentication> for Token {
             uid: value.user_id,
             sid: value.session_id,
             rt: value.refresh_token_hash,
-            data: Data {
+            data: TokenData {
                 admin: value.admin,
                 email_verified: value.email_verified,
             },

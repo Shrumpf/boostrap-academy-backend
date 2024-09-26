@@ -25,7 +25,8 @@ async fn ok() {
     );
 
     let auth_refresh_token = MockAuthRefreshTokenService::new()
-        .with_issue(expected.refresh_token.clone(), expected.refresh_token_hash);
+        .with_issue(expected.refresh_token.clone())
+        .with_hash(expected.refresh_token.clone(), expected.refresh_token_hash);
 
     let sut = AuthServiceImpl {
         config,

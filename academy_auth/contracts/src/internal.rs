@@ -2,8 +2,10 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait AuthInternalService: Send + Sync + 'static {
+    /// Generate a new internal authentication token.
     fn issue_token(&self, audience: &str) -> anyhow::Result<String>;
 
+    /// Verify an internal authentication token.
     fn authenticate(
         &self,
         token: &str,

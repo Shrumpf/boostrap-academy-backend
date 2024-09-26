@@ -80,16 +80,21 @@ pub enum AuthenticateByRefreshTokenError {
 }
 
 impl Authentication {
+    /// Return an error if the authenticated user is not an administrator.
     pub fn ensure_admin(&self) -> Result<(), AuthorizeError> {
         self.admin.then_some(()).ok_or(AuthorizeError::Admin)
     }
 
+    /// Return an error if the authenticated user has not verified their email
+    /// address.
     pub fn ensure_email_verified(&self) -> Result<(), AuthorizeError> {
         self.email_verified
             .then_some(())
             .ok_or(AuthorizeError::EmailVerified)
     }
 
+    /// Return an error if the authenticated user is neither the same as the one
+    /// identified by the given `user_id` nor an administrator.
     pub fn ensure_self_or_admin(&self, user_id: UserId) -> Result<(), AuthorizeError> {
         (self.user_id == user_id || self.admin)
             .then_some(())
