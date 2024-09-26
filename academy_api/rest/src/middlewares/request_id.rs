@@ -1,3 +1,5 @@
+//! Assign each request a unique ID
+
 use aide::axum::ApiRouter;
 use axum::{
     extract::Request,

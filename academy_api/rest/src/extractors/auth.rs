@@ -7,6 +7,7 @@ use axum::{
     http::{header::AUTHORIZATION, request::Parts},
 };
 
+/// Extract Bearer API tokens from the Authorization header
 pub struct ApiToken<T: ApiTokenType = UserApiToken>(pub String, PhantomData<T>);
 
 pub trait ApiTokenType: private::Sealed {

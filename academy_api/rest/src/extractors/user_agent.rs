@@ -7,6 +7,7 @@ use axum::{
     http::{header::USER_AGENT, request::Parts},
 };
 
+/// Extract the contents of the User-Agent header
 pub struct UserAgent(pub Option<String>);
 
 #[async_trait]

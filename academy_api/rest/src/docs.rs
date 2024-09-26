@@ -23,22 +23,32 @@ pub fn router() -> Router<()> {
         .merge(redoc::router())
 }
 
+/// Extension trait for [`TransformOperation`]
 pub trait TransformOperationExt {
+    /// Add a [`Json`] response to the operation.
+    ///
+    /// Different responses with the same status code are automatically merged.
     fn add_response<R: JsonSchema>(
         self,
         code: StatusCode,
         description: impl Into<Option<&'static str>>,
-    ) -> Self;
+    ) -> Self
+    where
+        Self: Sized,
+    {
+        self.add_response_with::<R>(code, description, |op| op)
+    }
 
+    /// Same as [`TransformOperationExt::add_response`], additionally accepting
+    /// a transform function.
     fn add_response_with<R: JsonSchema>(
         self,
         code: StatusCode,
         description: impl Into<Option<&'static str>>,
-        transform: impl FnOnce(
-            TransformResponse<<Json<R> as OperationOutput>::Inner>,
-        ) -> TransformResponse<<Json<R> as OperationOutput>::Inner>,
+        transform: impl FnOnce(TransformResponse<R>) -> TransformResponse<R>,
     ) -> Self;
 
+    /// Add an [`ApiError`] response by its [`ApiErrorCode`].
     fn add_error<C: ApiErrorCode>(self) -> Self
     where
         Self: Sized,
@@ -51,21 +61,11 @@ pub trait TransformOperationExt {
 }
 
 impl TransformOperationExt for TransformOperation<'_> {
-    fn add_response<R: JsonSchema>(
-        self,
-        code: StatusCode,
-        description: impl Into<Option<&'static str>>,
-    ) -> Self {
-        self.add_response_with::<R>(code, description, |op| op)
-    }
-
     fn add_response_with<R: JsonSchema>(
         mut self,
         code: StatusCode,
         description: impl Into<Option<&'static str>>,
-        transform: impl FnOnce(
-            TransformResponse<<Json<R> as OperationOutput>::Inner>,
-        ) -> TransformResponse<<Json<R> as OperationOutput>::Inner>,
+        transform: impl FnOnce(TransformResponse<R>) -> TransformResponse<R>,
     ) -> Self {
         let mut response =
             in_context(|ctx| Json::<R>::operation_response(ctx, &mut Default::default()).unwrap());
@@ -86,12 +86,14 @@ impl TransformOperationExt for TransformOperation<'_> {
     }
 }
 
+/// Merge the `src` [`Response`] into the `dst` [`Responses`]
 fn merge_into_responses(code: StatusCode, src: Response, dst: &mut Responses) {
     let code = aide::openapi::StatusCode::Code(code.as_u16());
 
     let dst = match dst.responses.get_mut(&code) {
         Some(dst) => dst,
         None => {
+            // no merging necessary if `dst` does not contain any response for `code` yet
             dst.responses.insert(code, ReferenceOr::Item(src));
             return;
         }
@@ -101,24 +103,36 @@ fn merge_into_responses(code: StatusCode, src: Response, dst: &mut Responses) {
         unimplemented!("cannot merge references yet")
     };
 
-    for (k, v) in src.content {
-        let d = dst.content.entry(k).or_insert_with(Default::default);
-        match d.schema.take() {
-            Some(s) => {
-                let s = s.json_schema.into_object();
-                let mut schemas = if s
+    // merge each media type individually
+    for (media_type_name, src_media_type) in src.content {
+        let dst_media_type = dst
+            .content
+            .entry(media_type_name)
+            .or_insert_with(Default::default);
+        match dst_media_type.schema.take() {
+            // the media type already exists on `dst`, so merging is necessary
+            Some(schema) => {
+                // convert the aide SchemaObject into a schemars SchemaObject
+                let schema = schema.json_schema.into_object();
+
+                // extract the schemas that already exist in `dst`
+                let mut schemas = if schema
                     .subschemas
                     .as_ref()
                     .and_then(|s| s.any_of.as_ref())
                     .is_some_and(|s| !s.is_empty())
                 {
-                    s.subschemas.unwrap().any_of.unwrap()
+                    // `dst` already contains multiple schemas
+                    schema.subschemas.unwrap().any_of.unwrap()
                 } else {
-                    vec![schema_with_description(s, dst.description.clone())]
+                    // `dst` is a single schema
+                    vec![schema_with_description(schema, dst.description.clone())]
                 };
 
+                // add the schema from `src` if `dst` does not already contain it
                 schemas.extend(
-                    v.schema
+                    src_media_type
+                        .schema
                         .map(|v| {
                             schema_with_description(
                                 v.json_schema.into_object(),
@@ -128,6 +142,7 @@ fn merge_into_responses(code: StatusCode, src: Response, dst: &mut Responses) {
                         .filter(|v| !schemas.contains(v)),
                 );
 
+                // build the description of the new (maybe combined) response
                 let descriptions = schemas
                     .iter()
                     .map(|s| {
@@ -149,7 +164,7 @@ fn merge_into_responses(code: StatusCode, src: Response, dst: &mut Responses) {
                     }
                 }
 
-                d.schema = Some(aide::openapi::SchemaObject {
+                dst_media_type.schema = Some(aide::openapi::SchemaObject {
                     json_schema: SchemaObject {
                         subschemas: Some(
                             SubschemaValidation {
@@ -165,11 +180,13 @@ fn merge_into_responses(code: StatusCode, src: Response, dst: &mut Responses) {
                     example: None,
                 });
             }
-            None => d.schema = v.schema,
+            // the media type does not yet exist on `dst`, so no merging required
+            None => dst_media_type.schema = src_media_type.schema,
         }
     }
 }
 
+/// Convert a [`SchemaObject`] into a [`Schema`] with the given `description`
 fn schema_with_description(schema_object: SchemaObject, description: String) -> Schema {
     SchemaObject {
         metadata: Some(

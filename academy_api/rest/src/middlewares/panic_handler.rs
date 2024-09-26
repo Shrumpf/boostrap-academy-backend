@@ -1,3 +1,5 @@
+//! Gracefully handle panics in request handlers
+
 use std::panic::AssertUnwindSafe;
 
 use aide::axum::ApiRouter;

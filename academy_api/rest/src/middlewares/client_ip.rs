@@ -1,3 +1,8 @@
+//! Extract the client's IP address from the request.
+//!
+//! Uses the contents of a configured header (e.g. `X-Real-Ip`) or as a fallback
+//! the socket address of the TCP client.
+
 use std::{
     net::{IpAddr, SocketAddr},
     sync::Arc,
@@ -24,6 +29,7 @@ pub fn add<S: Clone + Send + Sync + 'static>(
     }
 }
 
+/// The IP address of the HTTP client
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ClientIp(pub IpAddr);
 
@@ -36,12 +42,14 @@ impl ClientIp {
             .ip();
 
         let Some(RealIpConfig { header, set_from }) = real_ip_config else {
+            // no real ip header configured, fall back to socket address
             return Self(client_ip);
         };
 
         let header_value = request.headers().get(header);
 
         if *set_from != client_ip {
+            // client is not trusted, fall back to socket address
             if let Some(header_value) = header_value {
                 debug!(%client_ip, ?header_value, "ignoring real ip header value from untrusted source");
             }
@@ -49,6 +57,8 @@ impl ClientIp {
         }
 
         let Some(header_value) = header_value else {
+            // client did not include the expected real ip header,
+            // fall back to socket address
             warn!(%client_ip, "real ip header not found");
             return Self(client_ip);
         };
@@ -58,6 +68,7 @@ impl ClientIp {
             .ok()
             .and_then(|real_ip| real_ip.parse().ok())
         else {
+            // invalid real ip header value, fall back to socket address
             error!(%client_ip, ?header_value, "failed to parse real ip header value");
             return Self(client_ip);
         };

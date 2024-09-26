@@ -1,3 +1,4 @@
+/// Define unit structs that serialize into constant values
 #[macro_export]
 macro_rules! const_schema {
     ($($vis:vis $ident:ident($expr:expr));* $(;)*) => { $(
@@ -26,6 +27,7 @@ macro_rules! const_schema {
     )* };
 }
 
+/// Define unit structs that implement [`ApiErrorCode`]
 #[macro_export]
 macro_rules! error_code {
     ($($(#[doc=$doc:literal])* $vis:vis $ident:ident($status:ident, $detail:literal));* $(;)*) => {

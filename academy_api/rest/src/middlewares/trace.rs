@@ -1,3 +1,5 @@
+//! Trace incoming requests
+
 use std::time::Duration;
 
 use aide::axum::ApiRouter;

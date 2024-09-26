@@ -9,6 +9,7 @@ use serde::Serialize;
 
 use crate::{docs::TransformOperationExt, error_code};
 
+/// Handle an internal server error
 pub fn internal_server_error(err: impl Into<anyhow::Error>) -> Response {
     let err = err.into();
     tracing::error!("internal server error: {err}");
@@ -19,8 +20,8 @@ pub fn internal_server_error_docs(op: TransformOperation) -> TransformOperation 
     op.add_error::<InternalServerError>()
 }
 
-pub fn auth_error(err: impl Into<AuthError>) -> Response {
-    match err.into() {
+pub fn auth_error(err: AuthError) -> Response {
+    match err {
         AuthError::Authenticate(AuthenticateError::InvalidToken) => {
             InvalidTokenError.into_response()
         }
@@ -39,13 +40,14 @@ pub fn auth_error_docs(op: TransformOperation) -> TransformOperation {
         .add_error::<EmailNotVerifiedError>()
 }
 
+/// A simple error response containing only the error code
 #[derive(Serialize, JsonSchema, Default)]
-pub struct ApiError<C> {
+pub struct ApiError<C: ApiErrorCode> {
     #[serde(rename = "detail")]
     pub code: C,
 }
 
-pub trait ApiErrorCode: Serialize + JsonSchema {
+pub trait ApiErrorCode: Serialize + JsonSchema + Default {
     const DESCRIPTION: &str;
     const STATUS_CODE: StatusCode;
 }
