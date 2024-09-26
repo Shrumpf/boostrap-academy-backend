@@ -362,6 +362,8 @@ dependencies = [
  "academy_models",
  "academy_persistence_contracts",
  "anyhow",
+ "argon2",
+ "base32 0.5.1",
  "chrono",
  "hex",
  "uuid",

@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use academy_demo::{
     oauth2::FOO_OAUTH2_LINK_1,
-    user::{ADMIN, ALL_USERS, BAR, FOO},
+    user::{ADMIN, ADMIN2, ALL_USERS, BAR, FOO},
     UUID1,
 };
 use academy_models::user::{User, UserComposite, UserDetails, UserFilter};
@@ -32,26 +32,26 @@ macro_rules! filter {
 static FILTER_TESTS: LazyLock<Vec<(UserFilter, Vec<&UserComposite>)>> = LazyLock::new(|| {
     vec![
         (filter!(), ALL_USERS.clone()),
-        (filter!(name: "A"), vec![&ADMIN, &BAR]),
+        (filter!(name: "A"), vec![&ADMIN, &ADMIN2, &BAR]),
         (filter!(name: ""), ALL_USERS.clone()),
         (filter!(name: "does not exist"), vec![]),
-        (filter!(name: "administrator"), vec![&ADMIN]),
+        (filter!(name: "administrator"), vec![&ADMIN, &ADMIN2]),
         (filter!(name: " "), vec![&FOO]),
-        (filter!(email: "EXAMPLE.com"), vec![&ADMIN, &FOO]),
-        (filter!(email: ""), vec![&ADMIN, &FOO]),
-        (filter!(email: "admin"), vec![&ADMIN]),
-        (filter!(email_verified: true), vec![&ADMIN, &FOO]),
+        (filter!(email: "EXAMPLE.com"), vec![&ADMIN, &ADMIN2, &FOO]),
+        (filter!(email: ""), vec![&ADMIN, &ADMIN2, &FOO]),
+        (filter!(email: "admin"), vec![&ADMIN, &ADMIN2]),
+        (filter!(email_verified: true), vec![&ADMIN, &ADMIN2, &FOO]),
         (filter!(email_verified: false), vec![&BAR]),
-        (filter!(admin: true), vec![&ADMIN]),
+        (filter!(admin: true), vec![&ADMIN, &ADMIN2]),
         (filter!(admin: false), vec![&FOO, &BAR]),
-        (filter!(enabled: true), vec![&ADMIN, &FOO]),
+        (filter!(enabled: true), vec![&ADMIN, &ADMIN2, &FOO]),
         (filter!(enabled: false), vec![&BAR]),
-        (filter!(mfa_enabled: true), vec![&ADMIN]),
-        (filter!(mfa_enabled: false), vec![&FOO, &BAR]),
-        (filter!(newsletter: true), vec![&FOO]),
+        (filter!(mfa_enabled: true), vec![&ADMIN2]),
+        (filter!(mfa_enabled: false), vec![&ADMIN, &FOO, &BAR]),
+        (filter!(newsletter: true), vec![&ADMIN2, &FOO]),
         (filter!(newsletter: false), vec![&ADMIN, &BAR]),
         (filter!(admin: false, enabled: true), vec![&FOO]),
-        (filter!(name: "A", admin: true), vec![&ADMIN]),
+        (filter!(name: "2", admin: true), vec![&ADMIN2]),
     ]
 });
 

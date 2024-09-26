@@ -4,10 +4,15 @@ use academy_models::user::{
     User, UserComposite, UserDetails, UserInvoiceInfo, UserPassword, UserProfile,
 };
 use academy_persistence_contracts::user::UserRepository;
+use argon2::{
+    password_hash::{rand_core::OsRng, SaltString},
+    Argon2, PasswordHasher,
+};
 use chrono::{TimeZone, Utc};
 use uuid::uuid;
 
-pub static ALL_USERS: LazyLock<Vec<&UserComposite>> = LazyLock::new(|| vec![&ADMIN, &FOO, &BAR]);
+pub static ALL_USERS: LazyLock<Vec<&UserComposite>> =
+    LazyLock::new(|| vec![&ADMIN, &ADMIN2, &FOO, &BAR]);
 
 pub static ADMIN: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
     user: User {
@@ -28,7 +33,7 @@ pub static ADMIN: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
         tags: Default::default(),
     },
     details: UserDetails {
-        mfa_enabled: true,
+        mfa_enabled: false,
         password_login: true,
         oauth2_login: false,
     },
@@ -37,6 +42,35 @@ pub static ADMIN: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
 
 pub static ADMIN_PASSWORD: LazyLock<UserPassword> =
     LazyLock::new(|| "secure admin password".try_into().unwrap());
+
+pub static ADMIN2: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
+    user: User {
+        id: uuid!("4670f4e0-f227-4b8d-a95f-22806acb27ee").into(),
+        name: "admin2".try_into().unwrap(),
+        email: Some("admin2@example.com".parse().unwrap()),
+        email_verified: true,
+        created_at: Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap(),
+        last_login: Some(Utc.with_ymd_and_hms(2024, 4, 7, 10, 23, 0).unwrap()),
+        last_name_change: None,
+        enabled: true,
+        admin: true,
+        newsletter: true,
+    },
+    profile: UserProfile {
+        display_name: "Administrator2".try_into().unwrap(),
+        bio: Default::default(),
+        tags: Default::default(),
+    },
+    details: UserDetails {
+        mfa_enabled: true,
+        password_login: true,
+        oauth2_login: false,
+    },
+    invoice_info: UserInvoiceInfo::default(),
+});
+
+pub static ADMIN2_PASSWORD: LazyLock<UserPassword> =
+    LazyLock::new(|| "secure admin2 password".try_into().unwrap());
 
 pub static FOO: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
     user: User {
@@ -127,11 +161,22 @@ pub async fn create<Txn: Send + Sync + 'static>(
             .unwrap();
     }
 
-    repo.save_password_hash(txn, ADMIN.user.id, ADMIN_PASSWORD.clone().into_inner())
+    fn hash(password: &str) -> anyhow::Result<String> {
+        let argon2 = Argon2::default();
+        let salt = SaltString::generate(&mut OsRng);
+        argon2
+            .hash_password(password.as_bytes(), &salt)
+            .map(|hash| hash.to_string())
+            .map_err(Into::into)
+    }
+
+    repo.save_password_hash(txn, ADMIN.user.id, hash(&ADMIN_PASSWORD)?)
         .await?;
-    repo.save_password_hash(txn, FOO.user.id, FOO_PASSWORD.clone().into_inner())
+    repo.save_password_hash(txn, ADMIN2.user.id, hash(&ADMIN2_PASSWORD)?)
         .await?;
-    repo.save_password_hash(txn, BAR.user.id, BAR_PASSWORD.clone().into_inner())
+    repo.save_password_hash(txn, FOO.user.id, hash(&FOO_PASSWORD)?)
+        .await?;
+    repo.save_password_hash(txn, BAR.user.id, hash(&BAR_PASSWORD)?)
         .await?;
 
     Ok(())

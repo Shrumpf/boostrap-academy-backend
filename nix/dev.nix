@@ -17,6 +17,7 @@
     cargo-llvm-cov
     lcov
     smtp4dev
+    oath-toolkit
     (python3.withPackages (p: with p; [httpx pyotp]))
   ];
 

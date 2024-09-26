@@ -16,7 +16,7 @@ academy_extern_contracts.workspace = true
 academy_models.workspace = true
 academy_shared_contracts.workspace = true
 anyhow.workspace = true
-argon2 = { version = "0.5.3", default-features = false, features = ["std", "password-hash"] }
+argon2.workspace = true
 chrono.workspace = true
 hex.workspace = true
 hmac = { version = "0.12.1", default-features = false }

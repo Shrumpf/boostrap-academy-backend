@@ -1,6 +1,6 @@
 use academy_demo::{
-    mfa::{ADMIN_TOTP_1, FOO_TOTP_1},
-    user::{ADMIN, BAR, FOO},
+    mfa::{ADMIN2_TOTP_1, FOO_TOTP_1},
+    user::{ADMIN2, BAR, FOO},
     SHA256HASH1, UUID1,
 };
 use academy_models::mfa::{MfaRecoveryCodeHash, TotpDevice, TotpDevicePatchRef, TotpSecret};
@@ -18,10 +18,10 @@ async fn list_totp_devices_by_user() {
     let mut txn = db.begin_transaction().await.unwrap();
 
     let result = REPO
-        .list_totp_devices_by_user(&mut txn, ADMIN.user.id)
+        .list_totp_devices_by_user(&mut txn, ADMIN2.user.id)
         .await
         .unwrap();
-    assert_eq!(result, [ADMIN_TOTP_1.clone()]);
+    assert_eq!(result, [ADMIN2_TOTP_1.clone()]);
 
     let result = REPO
         .list_totp_devices_by_user(&mut txn, FOO.user.id)
@@ -139,12 +139,12 @@ async fn list_enabled_totp_device_secrets() {
     let mut txn = db.begin_transaction().await.unwrap();
 
     let admin_secret = REPO
-        .get_totp_device_secret(&mut txn, ADMIN_TOTP_1.id)
+        .get_totp_device_secret(&mut txn, ADMIN2_TOTP_1.id)
         .await
         .unwrap();
 
     let result = REPO
-        .list_enabled_totp_device_secrets_by_user(&mut txn, ADMIN_TOTP_1.user_id)
+        .list_enabled_totp_device_secrets_by_user(&mut txn, ADMIN2_TOTP_1.user_id)
         .await
         .unwrap();
     assert_eq!(result, [admin_secret]);
