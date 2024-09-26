@@ -1,3 +1,5 @@
+//! Type aliases for production implementations of all service traits
+
 use academy_auth_impl::{
     access_token::AuthAccessTokenServiceImpl, internal::AuthInternalServiceImpl,
     refresh_token::AuthRefreshTokenServiceImpl, AuthServiceImpl,

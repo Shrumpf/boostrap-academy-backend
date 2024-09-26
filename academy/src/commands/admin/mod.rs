@@ -6,6 +6,7 @@ mod user;
 
 #[derive(Debug, Subcommand)]
 pub enum AdminCommand {
+    /// Manager user accounts
     #[command(aliases(["u"]))]
     User {
         #[command(subcommand)]

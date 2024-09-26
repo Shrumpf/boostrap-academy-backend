@@ -1,6 +1,7 @@
 use academy_config::DatabaseConfig;
 use academy_persistence_postgres::{PostgresDatabase, PostgresDatabaseConfig};
 
+/// Connect to Postgres
 pub async fn connect(config: &DatabaseConfig) -> anyhow::Result<PostgresDatabase> {
     PostgresDatabase::connect(&PostgresDatabaseConfig {
         url: config.url.clone(),

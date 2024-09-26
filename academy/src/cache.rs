@@ -1,6 +1,7 @@
 use academy_cache_valkey::{ValkeyCache, ValkeyCacheConfig};
 use academy_config::CacheConfig;
 
+/// Connect to Valkey
 pub async fn connect(config: &CacheConfig) -> anyhow::Result<ValkeyCache> {
     ValkeyCache::connect(&ValkeyCacheConfig {
         url: config.url.clone(),

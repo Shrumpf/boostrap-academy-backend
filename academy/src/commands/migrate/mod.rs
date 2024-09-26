@@ -20,27 +20,30 @@ pub enum MigrateCommand {
     /// Apply all pending migrations
     #[command(aliases(["u"]))]
     Up {
+        /// Only apply the next `n` migrations
         #[arg(short = 'n', long)]
         count: Option<usize>,
     },
     /// Revert the last migration
     #[command(aliases(["d"]))]
     Down {
-        #[arg(short = 'n', long)]
-        count: Option<usize>,
-        #[arg(short, long, required = true)]
+        /// Revert the last `n` migrations
+        #[arg(short = 'n', long, default_value = "1")]
+        count: usize,
+        #[arg(long, required = true)]
         force: bool,
     },
     /// Reset the database and delete all data
     Reset {
-        #[arg(short, long, required = true)]
+        #[arg(long, required = true)]
         force: bool,
     },
     /// Reset the database and fill it with the demo dataset
     Demo {
-        #[arg(short, long, required = true)]
+        #[arg(long, required = true)]
         force: bool,
     },
+    /// Import data from the old backend
     Load {
         #[command(subcommand)]
         command: LoadCommand,
@@ -53,7 +56,7 @@ impl MigrateCommand {
         match self {
             Self::List => list(db).await,
             Self::Up { count } => up(db, count).await,
-            Self::Down { count, force: _ } => down(db, count).await,
+            Self::Down { count, force: _ } => down(db, Some(count)).await,
             Self::Reset { force: _ } => reset(db).await,
             Self::Demo { force: _ } => demo(db).await,
             Self::Load { command } => command.invoke(db).await,

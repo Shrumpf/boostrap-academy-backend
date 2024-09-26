@@ -23,6 +23,7 @@ use types::{Cache, Database, Email};
 pub mod types;
 
 provider! {
+    /// The default provider, capable of providing all the dependencies
     pub Provider {
         database: Database,
         cache: Cache,
@@ -64,6 +65,7 @@ impl Provider {
 }
 
 provider! {
+    /// Reduced provider, capable of providing services that only depend on the configuration
     pub ConfigProvider {
         // Extern
         internal_api_service_config: InternalApiServiceConfig,

@@ -1,9 +1,10 @@
 #[macro_export]
 macro_rules! provider {
-    ($vis:vis $ident:ident {
+    ($(#[doc=$doc:literal])* $vis:vis $ident:ident {
         $( $field:ident: $ty:ty, )*
         $( .. $bfield:ident: $base:ty { $($ity:ty,)* $(,)? } )*
     }) => {
+        $(#[doc=$doc])*
         $vis struct $ident {
             _state: $crate::ProviderState,
             $( $field: $ty, )*

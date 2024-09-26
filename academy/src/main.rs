@@ -73,37 +73,42 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Run the backend server
+    /// Start the REST API server to serve the Bootstrap Academy backend
     #[command(aliases(["run", "start", "r", "s"]))]
     Serve,
-    /// Run database migrations
+    /// Manage database and migrations
     #[command(aliases(["mig", "m"]))]
     Migrate {
         #[command(subcommand)]
         command: MigrateCommand,
     },
+    /// Perform administrative actions
     #[command(aliases(["a"]))]
     Admin {
         #[command(subcommand)]
         command: AdminCommand,
     },
+    /// Issue JSON Web Tokens
     #[command(aliases(["j"]))]
     Jwt {
         #[command(subcommand)]
         command: JwtCommand,
     },
+    /// Test email deliverability
     #[command(aliases(["e"]))]
     Email {
         #[command(subcommand)]
         command: EmailCommand,
     },
+    /// Invoke scheduled tasks
     #[command(aliases(["t"]))]
     Task {
         #[command(subcommand)]
         command: TaskCommand,
     },
-    /// Validate config files
+    /// Validate configuration
     CheckConfig {
+        /// Print a debug representation of the config
         #[arg(short, long)]
         verbose: bool,
     },

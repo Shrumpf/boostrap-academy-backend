@@ -9,7 +9,11 @@ mod auth;
 
 #[derive(Debug, Subcommand)]
 pub enum LoadCommand {
-    Auth { url: String },
+    /// Import data from the old auth microservice
+    Auth {
+        /// The connection string of the old auth-ms database
+        url: String,
+    },
 }
 
 impl LoadCommand {

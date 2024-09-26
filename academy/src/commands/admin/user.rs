@@ -17,14 +17,20 @@ pub enum AdminUserCommand {
     /// Create a new user account
     #[command(aliases(["c", "new", "n", "+"]))]
     Create {
+        /// Grant the new user admin privileges
         #[arg(long)]
         admin: bool,
+        /// Disable the new user account
         #[arg(long)]
         disabled: bool,
+        /// Mark the email address of the new user as verified
         #[arg(long)]
         verified: bool,
+        /// The login and display name of the new user
         name: String,
+        /// The email address of the new user
         email: String,
+        /// The password of the new user
         password: String,
     },
 }

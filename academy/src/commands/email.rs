@@ -7,8 +7,11 @@ use clap::Subcommand;
 
 #[derive(Debug, Subcommand)]
 pub enum EmailCommand {
-    /// Test email deliverability
-    Test { recipient: EmailAddressWithName },
+    /// Test email deliverability by sending a test email
+    Test {
+        /// The address to which the test email should be sent
+        recipient: EmailAddressWithName,
+    },
 }
 
 impl EmailCommand {
