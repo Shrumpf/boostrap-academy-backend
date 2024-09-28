@@ -9,12 +9,14 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait InternalService: Send + Sync + 'static {
+    /// Return the user with the given id.
     fn get_user(
         &self,
         token: &str,
         user_id: UserId,
     ) -> impl Future<Output = Result<UserComposite, InternalGetUserError>> + Send;
 
+    /// Return the user with the given email address.
     fn get_user_by_email(
         &self,
         token: &str,
