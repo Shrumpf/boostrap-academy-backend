@@ -1,4 +1,4 @@
-use academy_cache_contracts::MockCacheService;
+use academy_core_oauth2_contracts::registration::MockOAuth2RegistrationService;
 use academy_core_session_contracts::session::MockSessionService;
 use academy_core_user_contracts::{
     user::{MockUserService, UserCreateCommand},
@@ -9,7 +9,10 @@ use academy_demo::{
     session::FOO_1,
     user::FOO,
 };
-use academy_models::{auth::Login, oauth2::OAuth2Registration};
+use academy_models::{
+    auth::Login,
+    oauth2::{OAuth2Registration, OAuth2RegistrationToken},
+};
 use academy_persistence_contracts::MockDatabase;
 use academy_shared_contracts::captcha::{CaptchaCheckError, MockCaptchaService};
 use academy_utils::assert_matches;
@@ -71,16 +74,17 @@ async fn ok() {
 #[tokio::test]
 async fn ok_oauth2() {
     // Arrange
+    let token = OAuth2RegistrationToken::try_new(
+        "K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB",
+    )
+    .unwrap();
+
     let request = UserCreateRequest {
         name: FOO.user.name.clone(),
         display_name: FOO.profile.display_name.clone(),
         email: FOO.user.email.clone().unwrap(),
         password: None,
-        oauth2_registration_token: Some(
-            "K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB"
-                .try_into()
-                .unwrap(),
-        ),
+        oauth2_registration_token: Some(token.clone()),
     };
 
     let expected = Login {
@@ -94,17 +98,15 @@ async fn ok_oauth2() {
 
     let captcha = MockCaptchaService::new().with_check(Some("resp"), Ok(()));
 
-    let cache_key =
-        "oauth2_registration:K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB";
-    let cache = MockCacheService::new()
+    let oauth2_registration = MockOAuth2RegistrationService::new()
         .with_get(
-            cache_key.into(),
+            token.clone(),
             Some(OAuth2Registration {
                 provider_id: TEST_OAUTH2_PROVIDER_ID.clone(),
                 remote_user: FOO_OAUTH2_LINK_1.remote_user.clone(),
             }),
         )
-        .with_remove(cache_key.into());
+        .with_remove(token);
 
     let user = MockUserService::new().with_create(req_to_cmd(&request), Ok(FOO.clone()));
 
@@ -117,9 +119,9 @@ async fn ok_oauth2() {
 
     let sut = UserFeatureServiceImpl {
         db,
-        cache,
         captcha,
         user,
+        oauth2_registration,
         session,
         ..Sut::default()
     };
@@ -266,29 +268,25 @@ async fn email_conflict() {
 #[tokio::test]
 async fn oauth2_invalid_registration_token() {
     // Arrange
+    let token = OAuth2RegistrationToken::try_new(
+        "K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB",
+    )
+    .unwrap();
     let request = UserCreateRequest {
         name: FOO.user.name.clone(),
         display_name: FOO.profile.display_name.clone(),
         email: FOO.user.email.clone().unwrap(),
         password: None,
-        oauth2_registration_token: Some(
-            "K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB"
-                .try_into()
-                .unwrap(),
-        ),
+        oauth2_registration_token: Some(token.clone()),
     };
 
     let captcha = MockCaptchaService::new().with_check(Some("resp"), Ok(()));
 
-    let cache = MockCacheService::new().with_get(
-        "oauth2_registration:K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB"
-            .into(),
-        None::<OAuth2Registration>,
-    );
+    let oauth2_registration = MockOAuth2RegistrationService::new().with_get(token, None);
 
     let sut = UserFeatureServiceImpl {
-        cache,
         captcha,
+        oauth2_registration,
         ..Sut::default()
     };
 
@@ -308,6 +306,10 @@ async fn oauth2_invalid_registration_token() {
 #[tokio::test]
 async fn oauth2_remote_already_linked() {
     // Arrange
+    let token = OAuth2RegistrationToken::try_new(
+        "K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB",
+    )
+    .unwrap();
     let request = UserCreateRequest {
         name: FOO.user.name.clone(),
         display_name: FOO.profile.display_name.clone(),
@@ -324,10 +326,8 @@ async fn oauth2_remote_already_linked() {
 
     let captcha = MockCaptchaService::new().with_check(Some("resp"), Ok(()));
 
-    let cache_key =
-        "oauth2_registration:K7oACiokVoyttnGgYxJwCc2VCvDbQI10Bewthc5exlyQly2JZCViycDereak92oB";
-    let cache = MockCacheService::new().with_get(
-        cache_key.into(),
+    let oauth2_registration = MockOAuth2RegistrationService::new().with_get(
+        token,
         Some(OAuth2Registration {
             provider_id: TEST_OAUTH2_PROVIDER_ID.clone(),
             remote_user: FOO_OAUTH2_LINK_1.remote_user.clone(),
@@ -341,9 +341,9 @@ async fn oauth2_remote_already_linked() {
 
     let sut = UserFeatureServiceImpl {
         db,
-        cache,
         captcha,
         user,
+        oauth2_registration,
         ..Sut::default()
     };
 

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use academy_auth_contracts::MockAuthService;
-use academy_cache_contracts::MockCacheService;
+use academy_core_oauth2_contracts::registration::MockOAuth2RegistrationService;
 use academy_core_session_contracts::session::MockSessionService;
 use academy_core_user_contracts::{
     email_confirmation::MockUserEmailConfirmationService, update::MockUserUpdateService,
@@ -27,7 +27,6 @@ mod verify_newsletter_subscription;
 type Sut = UserFeatureServiceImpl<
     MockDatabase,
     MockAuthService<MockTransaction>,
-    MockCacheService,
     MockCaptchaService,
     MockVatApiService,
     MockInternalApiService,
@@ -35,6 +34,7 @@ type Sut = UserFeatureServiceImpl<
     MockUserEmailConfirmationService<MockTransaction>,
     MockUserUpdateService<MockTransaction>,
     MockSessionService<MockTransaction>,
+    MockOAuth2RegistrationService,
     MockUserRepository<MockTransaction>,
 >;
 

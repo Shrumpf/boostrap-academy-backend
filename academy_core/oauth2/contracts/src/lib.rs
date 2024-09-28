@@ -10,18 +10,22 @@ use academy_models::{
 };
 use thiserror::Error;
 
-pub mod create_link;
+pub mod link;
 pub mod login;
+pub mod registration;
 
 pub trait OAuth2FeatureService: Send + Sync + 'static {
+    /// Return a list of all available OAuth2 providers.
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary>;
 
+    /// Return a list of all OAuth2 links of the given user.
     fn list_links(
         &self,
         token: &str,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<Vec<OAuth2Link>, OAuth2ListLinksError>> + Send;
 
+    /// Create a new OAuth2 for the given user.
     fn create_link(
         &self,
         token: &str,
@@ -29,6 +33,7 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
         login: OAuth2Login,
     ) -> impl Future<Output = Result<OAuth2Link, OAuth2CreateLinkError>> + Send;
 
+    /// Delete the given OAuth2 link.
     fn delete_link(
         &self,
         token: &str,
@@ -36,6 +41,7 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
         link_id: OAuth2LinkId,
     ) -> impl Future<Output = Result<(), OAuth2DeleteLinkError>> + Send;
 
+    /// Create a session via OAuth2.
     fn create_session(
         &self,
         login: OAuth2Login,
@@ -99,8 +105,4 @@ pub enum OAuth2CreateSessionError {
     UserDisabled,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
-}
-
-pub fn oauth2_registration_cache_key(registration_token: &OAuth2RegistrationToken) -> String {
-    format!("oauth2_registration:{}", **registration_token)
 }

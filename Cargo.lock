@@ -285,6 +285,7 @@ dependencies = [
  "academy_persistence_contracts",
  "academy_shared_contracts",
  "academy_utils",
+ "anyhow",
  "tokio",
  "url",
 ]

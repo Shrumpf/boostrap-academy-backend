@@ -1,9 +1,9 @@
 use std::{collections::HashMap, time::Duration};
 
 use academy_auth_contracts::MockAuthService;
-use academy_cache_contracts::MockCacheService;
 use academy_core_oauth2_contracts::{
-    create_link::MockOAuth2CreateLinkService, login::MockOAuth2LoginService,
+    link::MockOAuth2LinkService, login::MockOAuth2LoginService,
+    registration::MockOAuth2RegistrationService,
 };
 use academy_core_session_contracts::session::MockSessionService;
 use academy_demo::oauth2::{TEST_OAUTH2_PROVIDER, TEST_OAUTH2_PROVIDER_ID};
@@ -11,9 +11,8 @@ use academy_extern_contracts::oauth2::MockOAuth2ApiService;
 use academy_persistence_contracts::{
     oauth2::MockOAuth2Repository, user::MockUserRepository, MockDatabase, MockTransaction,
 };
-use academy_shared_contracts::secret::MockSecretService;
 
-use crate::{OAuth2FeatureServiceImpl, OAuth2ServiceConfig};
+use crate::{OAuth2FeatureConfig, OAuth2FeatureServiceImpl};
 
 mod create_link;
 mod create_session;
@@ -24,17 +23,16 @@ mod list_providers;
 type Sut = OAuth2FeatureServiceImpl<
     MockDatabase,
     MockAuthService<MockTransaction>,
-    MockCacheService,
-    MockSecretService,
     MockOAuth2ApiService,
     MockUserRepository<MockTransaction>,
     MockOAuth2Repository<MockTransaction>,
-    MockOAuth2CreateLinkService<MockTransaction>,
+    MockOAuth2LinkService<MockTransaction>,
     MockOAuth2LoginService,
+    MockOAuth2RegistrationService,
     MockSessionService<MockTransaction>,
 >;
 
-impl Default for OAuth2ServiceConfig {
+impl Default for OAuth2FeatureConfig {
     fn default() -> Self {
         Self {
             registration_token_ttl: Duration::from_secs(600),

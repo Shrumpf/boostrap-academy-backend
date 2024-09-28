@@ -1,8 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use academy_auth_contracts::{AuthResultExt, AuthService};
-use academy_cache_contracts::CacheService;
-use academy_core_oauth2_contracts::oauth2_registration_cache_key;
+use academy_core_oauth2_contracts::registration::OAuth2RegistrationService;
 use academy_core_session_contracts::session::SessionService;
 use academy_core_user_contracts::{
     email_confirmation::{
@@ -23,7 +22,6 @@ use academy_extern_contracts::{internal::InternalApiService, vat::VatApiService}
 use academy_models::{
     auth::Login,
     email_address::EmailAddress,
-    oauth2::OAuth2Registration,
     session::DeviceName,
     user::{UserComposite, UserIdOrSelf, UserInvoiceInfoPatch, UserPassword, UserPatchRef},
     RecaptchaResponse, VerificationCode,
@@ -44,7 +42,6 @@ mod tests;
 pub struct UserFeatureServiceImpl<
     Db,
     Auth,
-    Cache,
     Captcha,
     VatApi,
     InternalApi,
@@ -52,11 +49,11 @@ pub struct UserFeatureServiceImpl<
     UserEmailConfirmation,
     UserUpdate,
     Session,
+    OAuth2Registration,
     UserRepo,
 > {
     db: Db,
     auth: Auth,
-    cache: Cache,
     captcha: Captcha,
     vat_api: VatApi,
     internal_api: InternalApi,
@@ -64,6 +61,7 @@ pub struct UserFeatureServiceImpl<
     user_email_confirmation: UserEmailConfirmation,
     user_update: UserUpdate,
     session: Session,
+    oauth2_registration: OAuth2Registration,
     user_repo: UserRepo,
 }
 
@@ -81,7 +79,6 @@ pub struct UserFeatureConfig {
 impl<
         Db,
         Auth,
-        Cache,
         Captcha,
         VatApi,
         InternalApi,
@@ -89,12 +86,12 @@ impl<
         UserEmailConfirmation,
         UserUpdate,
         Session,
+        OAuth2RegistrationS,
         UserRepo,
     > UserFeatureService
     for UserFeatureServiceImpl<
         Db,
         Auth,
-        Cache,
         Captcha,
         VatApi,
         InternalApi,
@@ -102,12 +99,12 @@ impl<
         UserEmailConfirmation,
         UserUpdate,
         Session,
+        OAuth2RegistrationS,
         UserRepo,
     >
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
-    Cache: CacheService,
     Captcha: CaptchaService,
     VatApi: VatApiService,
     InternalApi: InternalApiService,
@@ -115,6 +112,7 @@ where
     UserEmailConfirmation: UserEmailConfirmationService<Db::Transaction>,
     UserUpdate: UserUpdateService<Db::Transaction>,
     Session: SessionService<Db::Transaction>,
+    OAuth2RegistrationS: OAuth2RegistrationService,
     UserRepo: UserRepository<Db::Transaction>,
 {
     async fn list_users(
@@ -167,10 +165,8 @@ where
 
         let oauth2_registration = match &request.oauth2_registration_token {
             Some(oauth2_registration_token) => Some(
-                self.cache
-                    .get::<OAuth2Registration>(&oauth2_registration_cache_key(
-                        oauth2_registration_token,
-                    ))
+                self.oauth2_registration
+                    .get(oauth2_registration_token)
                     .await?
                     .ok_or(UserCreateError::InvalidOAuthRegistrationToken)?,
             ),
@@ -207,8 +203,8 @@ where
             .map_err(UserCreateError::Other)?;
 
         if let Some(oauth2_registration_token) = request.oauth2_registration_token {
-            self.cache
-                .remove(&oauth2_registration_cache_key(&oauth2_registration_token))
+            self.oauth2_registration
+                .remove(&oauth2_registration_token)
                 .await?;
         }
 

@@ -1,12 +1,12 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use academy_auth_contracts::{AuthResultExt, AuthService};
-use academy_cache_contracts::CacheService;
 use academy_core_oauth2_contracts::{
-    create_link::{OAuth2CreateLinkService, OAuth2CreateLinkServiceError},
+    link::{OAuth2LinkService, OAuth2LinkServiceError},
     login::{OAuth2LoginService, OAuth2LoginServiceError},
-    oauth2_registration_cache_key, OAuth2CreateLinkError, OAuth2CreateSessionError,
-    OAuth2CreateSessionResponse, OAuth2DeleteLinkError, OAuth2FeatureService, OAuth2ListLinksError,
+    registration::OAuth2RegistrationService,
+    OAuth2CreateLinkError, OAuth2CreateSessionError, OAuth2CreateSessionResponse,
+    OAuth2DeleteLinkError, OAuth2FeatureService, OAuth2ListLinksError,
 };
 use academy_core_session_contracts::session::SessionService;
 use academy_di::Build;
@@ -14,7 +14,7 @@ use academy_extern_contracts::oauth2::OAuth2ApiService;
 use academy_models::{
     oauth2::{
         OAuth2Link, OAuth2LinkId, OAuth2Login, OAuth2Provider, OAuth2ProviderId,
-        OAuth2ProviderSummary, OAuth2Registration, OAuth2RegistrationToken,
+        OAuth2ProviderSummary, OAuth2Registration,
     },
     session::DeviceName,
     user::UserIdOrSelf,
@@ -22,10 +22,10 @@ use academy_models::{
 use academy_persistence_contracts::{
     oauth2::OAuth2Repository, user::UserRepository, Database, Transaction,
 };
-use academy_shared_contracts::secret::SecretService;
 
-pub mod create_link;
+pub mod link;
 pub mod login;
+pub mod registration;
 
 #[cfg(test)]
 mod tests;
@@ -35,30 +35,28 @@ mod tests;
 pub struct OAuth2FeatureServiceImpl<
     Db,
     Auth,
-    Cache,
-    Secret,
     OAuth2Api,
     UserRepo,
     OAuth2Repo,
-    OAuth2CreateLink,
+    OAuth2Link,
     OAuth2Login,
+    OAuth2Registration,
     Session,
 > {
     db: Db,
     auth: Auth,
-    cache: Cache,
-    secret: Secret,
     oauth2_api: OAuth2Api,
     user_repo: UserRepo,
     oauth2_repo: OAuth2Repo,
-    oauth2_create_link: OAuth2CreateLink,
+    oauth2_create_link: OAuth2Link,
     oauth2_login: OAuth2Login,
+    oauth2_registration: OAuth2Registration,
     session: Session,
-    config: OAuth2ServiceConfig,
+    config: OAuth2FeatureConfig,
 }
 
 #[derive(Debug, Clone)]
-pub struct OAuth2ServiceConfig {
+pub struct OAuth2FeatureConfig {
     pub providers: Arc<HashMap<OAuth2ProviderId, OAuth2Provider>>,
     pub registration_token_ttl: Duration,
 }
@@ -66,37 +64,34 @@ pub struct OAuth2ServiceConfig {
 impl<
         Db,
         Auth,
-        Cache,
-        Secret,
         OAuth2Api,
         UserRepo,
         OAuth2Repo,
-        OAuth2CreateLink,
+        OAuth2LinkS,
         OAuth2LoginS,
+        OAuth2RegistrationS,
         Session,
     > OAuth2FeatureService
     for OAuth2FeatureServiceImpl<
         Db,
         Auth,
-        Cache,
-        Secret,
         OAuth2Api,
         UserRepo,
         OAuth2Repo,
-        OAuth2CreateLink,
+        OAuth2LinkS,
         OAuth2LoginS,
+        OAuth2RegistrationS,
         Session,
     >
 where
     Db: Database,
     Auth: AuthService<Db::Transaction>,
-    Cache: CacheService,
-    Secret: SecretService,
     OAuth2Api: OAuth2ApiService,
     UserRepo: UserRepository<Db::Transaction>,
     OAuth2Repo: OAuth2Repository<Db::Transaction>,
-    OAuth2CreateLink: OAuth2CreateLinkService<Db::Transaction>,
+    OAuth2LinkS: OAuth2LinkService<Db::Transaction>,
     OAuth2LoginS: OAuth2LoginService,
+    OAuth2RegistrationS: OAuth2RegistrationService,
     Session: SessionService<Db::Transaction>,
 {
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary> {
@@ -131,6 +126,7 @@ where
             .list_links_by_user(&mut txn, user_id)
             .await?;
 
+        // include only links with valid providers
         links.retain(|link| self.config.providers.contains_key(&link.provider_id));
 
         Ok(links)
@@ -156,7 +152,7 @@ where
 
         let user_info = self
             .oauth2_login
-            .invoke(login)
+            .login(login)
             .await
             .map_err(|err| match err {
                 OAuth2LoginServiceError::InvalidProvider => OAuth2CreateLinkError::InvalidProvider,
@@ -166,13 +162,13 @@ where
 
         let link = self
             .oauth2_create_link
-            .invoke(&mut txn, user_id, provider_id, user_info)
+            .create(&mut txn, user_id, provider_id, user_info)
             .await
             .map_err(|err| match err {
-                OAuth2CreateLinkServiceError::RemoteAlreadyLinked => {
+                OAuth2LinkServiceError::RemoteAlreadyLinked => {
                     OAuth2CreateLinkError::RemoteAlreadyLinked
                 }
-                OAuth2CreateLinkServiceError::Other(err) => err.into(),
+                OAuth2LinkServiceError::Other(err) => err.into(),
             })?;
 
         txn.commit().await?;
@@ -201,6 +197,7 @@ where
 
         self.oauth2_repo.delete_link(&mut txn, link.id).await?;
 
+        // ensure the user can still login
         let user_composite = self
             .user_repo
             .get_composite(&mut txn, user_id)
@@ -223,7 +220,7 @@ where
         let provider_id = login.provider_id.clone();
         let user_info = self
             .oauth2_login
-            .invoke(login)
+            .login(login)
             .await
             .map_err(|err| match err {
                 OAuth2LoginServiceError::InvalidProvider => {
@@ -244,20 +241,17 @@ where
             )
             .await?
         else {
-            let registration_token = OAuth2RegistrationToken::try_new(
-                self.secret.generate(OAuth2RegistrationToken::LEN),
-            )
-            .unwrap();
-            self.cache
-                .set(
-                    &oauth2_registration_cache_key(&registration_token),
-                    &OAuth2Registration {
-                        provider_id,
-                        remote_user: user_info,
-                    },
-                    Some(self.config.registration_token_ttl),
-                )
+            // there is no local user linked to this remote user, so we save the provider id
+            // and remote user and return a registration token which can be used to create a
+            // new user account which will be automatically linked to this remote user
+            let registration_token = self
+                .oauth2_registration
+                .save(&OAuth2Registration {
+                    provider_id,
+                    remote_user: user_info,
+                })
                 .await?;
+
             return Ok(OAuth2CreateSessionResponse::RegistrationToken(
                 registration_token,
             ));

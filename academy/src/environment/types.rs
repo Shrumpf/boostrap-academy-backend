@@ -14,8 +14,8 @@ use academy_core_mfa_impl::{
     recovery::MfaRecoveryServiceImpl, totp_device::MfaTotpDeviceServiceImpl, MfaFeatureServiceImpl,
 };
 use academy_core_oauth2_impl::{
-    create_link::OAuth2CreateLinkServiceImpl, login::OAuth2LoginServiceImpl,
-    OAuth2FeatureServiceImpl,
+    link::OAuth2LinkServiceImpl, login::OAuth2LoginServiceImpl,
+    registration::OAuth2RegistrationServiceImpl, OAuth2FeatureServiceImpl,
 };
 use academy_core_session_impl::{
     failed_auth_count::SessionFailedAuthCountServiceImpl, session::SessionServiceImpl,
@@ -103,7 +103,6 @@ pub type ConfigFeature = ConfigFeatureServiceImpl<Captcha>;
 pub type UserFeature = UserFeatureServiceImpl<
     Database,
     Auth,
-    Cache,
     Captcha,
     VatApi,
     InternalApi,
@@ -111,9 +110,10 @@ pub type UserFeature = UserFeatureServiceImpl<
     UserEmailConfirmation,
     UserUpdate,
     Session,
+    OAuth2Registration,
     UserRepo,
 >;
-pub type User = UserServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>;
+pub type User = UserServiceImpl<Id, Time, Password, UserRepo, OAuth2Link>;
 pub type UserEmailConfirmation =
     UserEmailConfirmationServiceImpl<Auth, Secret, TemplateEmail, Cache, Password, UserRepo>;
 pub type UserUpdate = UserUpdateServiceImpl<Auth, Time, Password, Session, UserRepo>;
@@ -150,16 +150,16 @@ pub type MfaTotpDevice = MfaTotpDeviceServiceImpl<Id, Time, Totp, MfaRepo>;
 pub type OAuth2Feature = OAuth2FeatureServiceImpl<
     Database,
     Auth,
-    Cache,
-    Secret,
     OAuth2Api,
     UserRepo,
     OAuth2Repo,
-    OAuth2CreateLink,
+    OAuth2Link,
     OAuth2Login,
+    OAuth2Registration,
     Session,
 >;
-pub type OAuth2CreateLink = OAuth2CreateLinkServiceImpl<Id, Time, OAuth2Repo>;
+pub type OAuth2Link = OAuth2LinkServiceImpl<Id, Time, OAuth2Repo>;
 pub type OAuth2Login = OAuth2LoginServiceImpl<OAuth2Api>;
+pub type OAuth2Registration = OAuth2RegistrationServiceImpl<Secret, Cache>;
 
 pub type Internal = InternalServiceImpl<Database, AuthInternal, UserRepo>;

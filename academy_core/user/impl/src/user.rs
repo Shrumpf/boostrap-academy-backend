@@ -1,6 +1,4 @@
-use academy_core_oauth2_contracts::create_link::{
-    OAuth2CreateLinkService, OAuth2CreateLinkServiceError,
-};
+use academy_core_oauth2_contracts::link::{OAuth2LinkService, OAuth2LinkServiceError};
 use academy_core_user_contracts::user::{
     UserCreateCommand, UserCreateError, UserListQuery, UserListResult, UserService,
 };
@@ -18,15 +16,15 @@ pub struct UserServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink> {
     oauth2_create_link: OAuth2CreateLink,
 }
 
-impl<Txn, Id, Time, Password, UserRepo, OAuth2CreateLink> UserService<Txn>
-    for UserServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink>
+impl<Txn, Id, Time, Password, UserRepo, OAuth2Link> UserService<Txn>
+    for UserServiceImpl<Id, Time, Password, UserRepo, OAuth2Link>
 where
     Txn: Send + Sync + 'static,
     Id: IdService,
     Time: TimeService,
     Password: PasswordService,
     UserRepo: UserRepository<Txn>,
-    OAuth2CreateLink: OAuth2CreateLinkService<Txn>,
+    OAuth2Link: OAuth2LinkService<Txn>,
 {
     async fn list(&self, txn: &mut Txn, query: UserListQuery) -> anyhow::Result<UserListResult> {
         let total = self.user_repo.count(txn, &query.filter).await?;
@@ -105,7 +103,7 @@ where
 
         if let Some(oauth2_registration) = oauth2_registration {
             self.oauth2_create_link
-                .invoke(
+                .create(
                     txn,
                     user.id,
                     oauth2_registration.provider_id,
@@ -113,10 +111,10 @@ where
                 )
                 .await
                 .map_err(|err| match err {
-                    OAuth2CreateLinkServiceError::RemoteAlreadyLinked => {
+                    OAuth2LinkServiceError::RemoteAlreadyLinked => {
                         UserCreateError::RemoteAlreadyLinked
                     }
-                    OAuth2CreateLinkServiceError::Other(err) => err.into(),
+                    OAuth2LinkServiceError::Other(err) => err.into(),
                 })?;
         }
 
@@ -133,7 +131,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use academy_core_oauth2_contracts::create_link::MockOAuth2CreateLinkService;
+    use academy_core_oauth2_contracts::link::MockOAuth2LinkService;
     use academy_demo::{
         oauth2::{FOO_OAUTH2_LINK_1, TEST_OAUTH2_PROVIDER_ID},
         user::{ALL_USERS, FOO},
@@ -156,7 +154,7 @@ mod tests {
         MockTimeService,
         MockPasswordService,
         MockUserRepository<()>,
-        MockOAuth2CreateLinkService<()>,
+        MockOAuth2LinkService<()>,
     >;
 
     #[tokio::test]
@@ -259,7 +257,7 @@ mod tests {
             Ok(()),
         );
 
-        let oauth2_create_link = MockOAuth2CreateLinkService::new().with_invoke(
+        let oauth2_create_link = MockOAuth2LinkService::new().with_create(
             FOO.user.id,
             TEST_OAUTH2_PROVIDER_ID.clone(),
             FOO_OAUTH2_LINK_1.remote_user.clone(),
@@ -403,11 +401,11 @@ mod tests {
             Ok(()),
         );
 
-        let oauth2_create_link = MockOAuth2CreateLinkService::new().with_invoke(
+        let oauth2_create_link = MockOAuth2LinkService::new().with_create(
             FOO.user.id,
             TEST_OAUTH2_PROVIDER_ID.clone(),
             FOO_OAUTH2_LINK_1.remote_user.clone(),
-            Err(OAuth2CreateLinkServiceError::RemoteAlreadyLinked),
+            Err(OAuth2LinkServiceError::RemoteAlreadyLinked),
         );
 
         let sut = UserServiceImpl {

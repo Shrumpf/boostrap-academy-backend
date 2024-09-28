@@ -4,7 +4,7 @@ use academy_auth_impl::AuthServiceConfig;
 use academy_config::Config;
 use academy_core_contact_impl::ContactFeatureConfig;
 use academy_core_health_impl::HealthFeatureConfig;
-use academy_core_oauth2_impl::OAuth2ServiceConfig;
+use academy_core_oauth2_impl::OAuth2FeatureConfig;
 use academy_core_session_impl::SessionFeatureConfig;
 use academy_core_user_impl::UserFeatureConfig;
 use academy_di::provider;
@@ -37,7 +37,7 @@ provider! {
             // Shared
             CaptchaServiceConfig,
             JwtServiceConfig,
-            OAuth2ServiceConfig,
+            OAuth2FeatureConfig,
             TotpServiceConfig,
 
             // Auth
@@ -75,7 +75,7 @@ provider! {
         // Shared
         captcha_service_config: CaptchaServiceConfig,
         jwt_service_config: JwtServiceConfig,
-        oauth2_service_config: OAuth2ServiceConfig,
+        oauth2_service_config: OAuth2FeatureConfig,
         totp_service_config: TotpServiceConfig,
 
         // Auth
@@ -118,7 +118,7 @@ impl ConfigProvider {
 
         let jwt_service_config = JwtServiceConfig::new(&config.jwt.secret)?;
 
-        let oauth2_service_config = OAuth2ServiceConfig {
+        let oauth2_service_config = OAuth2FeatureConfig {
             registration_token_ttl: config
                 .oauth2
                 .as_ref()

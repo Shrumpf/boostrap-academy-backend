@@ -3,20 +3,20 @@ use academy_di::Build;
 use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError};
 use academy_models::oauth2::{OAuth2Login, OAuth2UserInfo};
 
-use crate::OAuth2ServiceConfig;
+use crate::OAuth2FeatureConfig;
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
 pub struct OAuth2LoginServiceImpl<OAuth2Api> {
     oauth2_api: OAuth2Api,
-    config: OAuth2ServiceConfig,
+    config: OAuth2FeatureConfig,
 }
 
 impl<OAuth2Api> OAuth2LoginService for OAuth2LoginServiceImpl<OAuth2Api>
 where
     OAuth2Api: OAuth2ApiService,
 {
-    async fn invoke(&self, login: OAuth2Login) -> Result<OAuth2UserInfo, OAuth2LoginServiceError> {
+    async fn login(&self, login: OAuth2Login) -> Result<OAuth2UserInfo, OAuth2LoginServiceError> {
         let provider = self
             .config
             .providers
@@ -68,7 +68,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(login).await;
+        let result = sut.login(login).await;
 
         // Assert
         assert_eq!(result.unwrap(), FOO_OAUTH2_LINK_1.remote_user);
@@ -86,7 +86,7 @@ mod tests {
         let sut = Sut::default();
 
         // Act
-        let result = sut.invoke(login).await;
+        let result = sut.login(login).await;
 
         // Assert
         assert_matches!(result, Err(OAuth2LoginServiceError::InvalidProvider));
@@ -114,7 +114,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.invoke(login).await;
+        let result = sut.login(login).await;
 
         // Assert
         assert_matches!(result, Err(OAuth2LoginServiceError::InvalidCode));

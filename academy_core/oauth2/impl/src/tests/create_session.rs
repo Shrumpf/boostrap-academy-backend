@@ -1,8 +1,6 @@
-use std::time::Duration;
-
-use academy_cache_contracts::MockCacheService;
 use academy_core_oauth2_contracts::{
     login::{MockOAuth2LoginService, OAuth2LoginServiceError},
+    registration::MockOAuth2RegistrationService,
     OAuth2CreateSessionError, OAuth2CreateSessionResponse, OAuth2FeatureService,
 };
 use academy_core_session_contracts::session::MockSessionService;
@@ -16,7 +14,6 @@ use academy_models::{
     oauth2::{OAuth2Login, OAuth2RegistrationToken},
 };
 use academy_persistence_contracts::{user::MockUserRepository, MockDatabase};
-use academy_shared_contracts::secret::MockSecretService;
 use academy_utils::{assert_matches, Apply};
 
 use crate::{tests::Sut, OAuth2FeatureServiceImpl, OAuth2Registration};
@@ -39,7 +36,7 @@ async fn ok() {
     let db = MockDatabase::build(true);
 
     let oauth2_login = MockOAuth2LoginService::new()
-        .with_invoke(login.clone(), Ok(FOO_OAUTH2_LINK_1.remote_user.clone()));
+        .with_login(login.clone(), Ok(FOO_OAUTH2_LINK_1.remote_user.clone()));
 
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_oauth2_provider_id_and_remote_user_id(
@@ -84,7 +81,7 @@ async fn not_linked() {
     let db = MockDatabase::build(false);
 
     let oauth2_login = MockOAuth2LoginService::new()
-        .with_invoke(login.clone(), Ok(FOO_OAUTH2_LINK_1.remote_user.clone()));
+        .with_login(login.clone(), Ok(FOO_OAUTH2_LINK_1.remote_user.clone()));
 
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_oauth2_provider_id_and_remote_user_id(
@@ -93,22 +90,18 @@ async fn not_linked() {
             None,
         );
 
-    let secret = MockSecretService::new().with_generate(64, expected.clone().into_inner());
-
-    let cache = MockCacheService::new().with_set(
-        format!("oauth2_registration:{}", *expected),
+    let oauth2_registration = MockOAuth2RegistrationService::new().with_save(
         OAuth2Registration {
             provider_id: login.provider_id.clone(),
             remote_user: FOO_OAUTH2_LINK_1.remote_user.clone(),
         },
-        Some(Duration::from_secs(600)),
+        expected.clone(),
     );
 
     let sut = OAuth2FeatureServiceImpl {
         db,
-        cache,
-        secret,
         oauth2_login,
+        oauth2_registration,
         user_repo,
         ..Sut::default()
     };
@@ -133,7 +126,7 @@ async fn invalid_provider() {
     };
 
     let oauth2_login = MockOAuth2LoginService::new()
-        .with_invoke(login.clone(), Err(OAuth2LoginServiceError::InvalidProvider));
+        .with_login(login.clone(), Err(OAuth2LoginServiceError::InvalidProvider));
 
     let sut = OAuth2FeatureServiceImpl {
         oauth2_login,
@@ -157,7 +150,7 @@ async fn invalid_code() {
     };
 
     let oauth2_login = MockOAuth2LoginService::new()
-        .with_invoke(login.clone(), Err(OAuth2LoginServiceError::InvalidCode));
+        .with_login(login.clone(), Err(OAuth2LoginServiceError::InvalidCode));
 
     let sut = OAuth2FeatureServiceImpl {
         oauth2_login,
@@ -183,7 +176,7 @@ async fn user_disabled() {
     let db = MockDatabase::build(false);
 
     let oauth2_login = MockOAuth2LoginService::new()
-        .with_invoke(login.clone(), Ok(FOO_OAUTH2_LINK_1.remote_user.clone()));
+        .with_login(login.clone(), Ok(FOO_OAUTH2_LINK_1.remote_user.clone()));
 
     let user_repo = MockUserRepository::new()
         .with_get_composite_by_oauth2_provider_id_and_remote_user_id(

@@ -7,18 +7,19 @@ use academy_models::{
 use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait OAuth2CreateLinkService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
-    fn invoke(
+pub trait OAuth2LinkService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Create a new OAuth2 link.
+    fn create(
         &self,
         txn: &mut Txn,
         user_id: UserId,
         provider_id: OAuth2ProviderId,
         remote_user: OAuth2UserInfo,
-    ) -> impl Future<Output = Result<OAuth2Link, OAuth2CreateLinkServiceError>> + Send;
+    ) -> impl Future<Output = Result<OAuth2Link, OAuth2LinkServiceError>> + Send;
 }
 
 #[derive(Debug, Error)]
-pub enum OAuth2CreateLinkServiceError {
+pub enum OAuth2LinkServiceError {
     #[error("The remote user has already been linked.")]
     RemoteAlreadyLinked,
     #[error(transparent)]
@@ -26,15 +27,15 @@ pub enum OAuth2CreateLinkServiceError {
 }
 
 #[cfg(feature = "mock")]
-impl<Txn: Send + Sync + 'static> MockOAuth2CreateLinkService<Txn> {
-    pub fn with_invoke(
+impl<Txn: Send + Sync + 'static> MockOAuth2LinkService<Txn> {
+    pub fn with_create(
         mut self,
         user_id: UserId,
         provider_id: OAuth2ProviderId,
         remote_user: OAuth2UserInfo,
-        result: Result<OAuth2Link, OAuth2CreateLinkServiceError>,
+        result: Result<OAuth2Link, OAuth2LinkServiceError>,
     ) -> Self {
-        self.expect_invoke()
+        self.expect_create()
             .once()
             .with(
                 mockall::predicate::always(),

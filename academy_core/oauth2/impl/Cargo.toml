@@ -19,6 +19,7 @@ academy_extern_contracts.workspace = true
 academy_models.workspace = true
 academy_persistence_contracts.workspace = true
 academy_shared_contracts.workspace = true
+anyhow.workspace = true
 
 [dev-dependencies]
 academy_cache_contracts = { workspace = true, features = ["mock"] }
