@@ -1,5 +1,4 @@
 pub mod patch;
-pub mod required_action;
 pub mod serde;
 
 pub trait Apply {
