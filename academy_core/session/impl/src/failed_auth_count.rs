@@ -40,10 +40,14 @@ where
     Hash: HashService,
 {
     fn cache_key(&self, name_or_email: &UserNameOrEmailAddress) -> String {
-        let hash = self.hash.sha256(match name_or_email {
-            UserNameOrEmailAddress::Name(name) => name.as_bytes(),
-            UserNameOrEmailAddress::Email(email) => email.as_str().as_bytes(),
-        });
+        let hash = self.hash.sha256(
+            &match name_or_email {
+                UserNameOrEmailAddress::Name(name) => name,
+                UserNameOrEmailAddress::Email(email) => email.as_str(),
+            }
+            .to_lowercase()
+            .into_bytes(),
+        );
         format!("failed_auth_attempts:{}", hex::encode(hash.0))
     }
 }
