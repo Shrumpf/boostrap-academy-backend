@@ -22,26 +22,25 @@ pub mod user;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait UserFeatureService: Send + Sync + 'static {
-    /// Returns a list of all users matching the given query.
+    /// Return a list of all users matching the given query.
     ///
-    /// Can only be used by administrators.
+    /// Requires admin privileges.
     fn list_users(
         &self,
         token: &str,
         query: UserListQuery,
     ) -> impl Future<Output = Result<UserListResult, UserListError>> + Send;
 
-    /// Returns the user with the given id.
+    /// Return the user with the given id.
     ///
-    /// Can only be used by administrators, if not used on the authenticated
-    /// user.
+    /// Requires admin privileges if not used on the authenticated user.
     fn get_user(
         &self,
         token: &str,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<UserComposite, UserGetError>> + Send;
 
-    /// Creates a new user and logs them in.
+    /// Create a new user and logs them in.
     fn create_user(
         &self,
         request: UserCreateRequest,
@@ -49,7 +48,7 @@ pub trait UserFeatureService: Send + Sync + 'static {
         recaptcha_response: Option<RecaptchaResponse>,
     ) -> impl Future<Output = Result<Login, UserCreateError>> + Send;
 
-    /// Updates a user.
+    /// Update a user.
     ///
     /// - Changing the email address will also set `email_verified` to `false`.
     /// - Disabling a user will also log them out.
@@ -59,6 +58,9 @@ pub trait UserFeatureService: Send + Sync + 'static {
     /// If the authenticated user is not an administrator:
     /// - Only the authenticated user itself can be updated.
     /// - Changing the `name` is rate-limited.
+    /// - Changing the `newsletter` field from `false` to `true` does not
+    ///   immediately update the field's value but rather results in a
+    ///   verification email being sent to the user.
     /// - Changing any of the following fields is not allowed:
     ///   - `enabled`
     ///   - `admin`
@@ -70,35 +72,35 @@ pub trait UserFeatureService: Send + Sync + 'static {
         request: UserUpdateRequest,
     ) -> impl Future<Output = Result<UserComposite, UserUpdateError>> + Send;
 
-    /// Deletes a user.
+    /// Delete a user.
     ///
-    /// Can only be used by administrators, if not used on the authenticated
-    /// user.
+    /// Requires admin privileges if not used on the authenticated user.
     fn delete_user(
         &self,
         token: &str,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<(), UserDeleteError>> + Send;
 
-    /// Requests an email with a verification code to verify a user's email
+    /// Request an email with a verification code to verify a user's email
     /// address.
     ///
-    /// Can only be used by administrators, if not used on the authenticated
-    /// user.
+    /// Requires admin privileges if not used on the authenticated user.
     fn request_verification_email(
         &self,
         token: &str,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<(), UserRequestVerificationEmailError>> + Send;
 
-    /// Verifies a user's email address using the verification code.
+    /// Verify a user's email address using the verification code.
     fn verify_email(
         &self,
         code: VerificationCode,
     ) -> impl Future<Output = Result<(), UserVerifyEmailError>> + Send;
 
-    /// Verifies the newsletter subscription using the verification code sent
+    /// Verifie the newsletter subscription using the verification code sent
     /// via email.
+    ///
+    /// Requires admin privileges if not used on the authenticated user.
     fn verify_newsletter_subscription(
         &self,
         token: &str,
@@ -106,12 +108,14 @@ pub trait UserFeatureService: Send + Sync + 'static {
         code: VerificationCode,
     ) -> impl Future<Output = Result<UserComposite, UserVerifyNewsletterSubscriptionError>> + Send;
 
+    /// Request an email with a verification code to reset a user's password.
     fn request_password_reset(
         &self,
         email: EmailAddress,
         recaptcha_response: Option<RecaptchaResponse>,
     ) -> impl Future<Output = Result<(), UserRequestPasswordResetError>> + Send;
 
+    /// Reset a user's password using the verification code sent via email.
     fn reset_password(
         &self,
         email: EmailAddress,

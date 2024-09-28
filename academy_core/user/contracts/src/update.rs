@@ -9,6 +9,7 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait UserUpdateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Update a user's name.
     fn update_name(
         &self,
         txn: &mut Txn,
@@ -17,6 +18,7 @@ pub trait UserUpdateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         rate_limit_policy: UserUpdateNameRateLimitPolicy,
     ) -> impl Future<Output = Result<User, UserUpdateNameError>> + Send;
 
+    /// Update a user's email address.
     fn update_email(
         &self,
         txn: &mut Txn,
@@ -25,6 +27,7 @@ pub trait UserUpdateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         email_verified: bool,
     ) -> impl Future<Output = Result<bool, UserUpdateEmailError>> + Send;
 
+    /// Update a user's password.
     fn update_password(
         &self,
         txn: &mut Txn,
@@ -32,6 +35,7 @@ pub trait UserUpdateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         password: UserPassword,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Update whether a user is enabled or not.
     fn update_enabled(
         &self,
         txn: &mut Txn,
@@ -39,6 +43,7 @@ pub trait UserUpdateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         enabled: bool,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
+    /// Update whether a user is an administrator or not.
     fn update_admin(
         &self,
         txn: &mut Txn,
@@ -46,6 +51,7 @@ pub trait UserUpdateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         admin: bool,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
+    /// Update a user's invoice information.
     fn update_invoice_info(
         &self,
         txn: &mut Txn,

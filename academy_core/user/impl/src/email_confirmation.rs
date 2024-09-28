@@ -100,6 +100,8 @@ where
             .await
             .map_err(|err| UserEmailConfirmationVerifyEmailError::Other(err.into()))?;
 
+        // access tokens contain the `email_verified` field, so we need to invalidate
+        // them when changing this value
         self.auth
             .invalidate_access_tokens(txn, user_composite.user.id)
             .await?;
@@ -145,12 +147,9 @@ where
         new_password: UserPassword,
     ) -> Result<(), UserEmailConfirmationResetPasswordError> {
         let cache_key = reset_password_cache_key(user_id);
-        let expected_code: VerificationCode = self
-            .cache
-            .get(&cache_key)
-            .await?
-            .ok_or(UserEmailConfirmationResetPasswordError::InvalidCode)?;
-        if expected_code != code {
+
+        let expected_code = self.cache.get(&cache_key).await?;
+        if expected_code != Some(code) {
             return Err(UserEmailConfirmationResetPasswordError::InvalidCode);
         }
 
@@ -175,7 +174,7 @@ where
         self.cache
             .set(
                 &subscribe_newsletter_cache_key(user_id),
-                &*code,
+                &code,
                 Some(self.config.newsletter_subscription_verification_code_ttl),
             )
             .await?;
@@ -201,7 +200,8 @@ where
     ) -> Result<(), UserEmailConfirmationSubscribeToNewsletterError> {
         let cache_key = subscribe_newsletter_cache_key(user_id);
 
-        if self.cache.get::<String>(&cache_key).await? != Some(code.into_inner()) {
+        let expected_code = self.cache.get(&cache_key).await?;
+        if expected_code != Some(code) {
             return Err(UserEmailConfirmationSubscribeToNewsletterError::InvalidCode);
         }
 
@@ -593,7 +593,7 @@ mod tests {
 
         let cache = MockCacheService::new().with_set(
             format!("subscribe_newsletter_code:{}", FOO.user.id.hyphenated()),
-            VERIFICATION_CODE_1.clone().into_inner(),
+            VERIFICATION_CODE_1.clone(),
             Some(config.newsletter_subscription_verification_code_ttl),
         );
 
@@ -631,10 +631,7 @@ mod tests {
 
         let cache_key = format!("subscribe_newsletter_code:{}", FOO.user.id.hyphenated());
         let cache = MockCacheService::new()
-            .with_get(
-                cache_key.clone(),
-                VERIFICATION_CODE_1.clone().into_inner().into(),
-            )
+            .with_get(cache_key.clone(), VERIFICATION_CODE_1.clone().into())
             .with_remove(cache_key);
 
         let sut = UserEmailConfirmationServiceImpl {
@@ -659,7 +656,7 @@ mod tests {
 
         let cache = MockCacheService::new().with_get(
             format!("subscribe_newsletter_code:{}", FOO.user.id.hyphenated()),
-            None::<String>,
+            None::<VerificationCode>,
         );
 
         let sut = UserEmailConfirmationServiceImpl {
@@ -687,7 +684,7 @@ mod tests {
 
         let cache = MockCacheService::new().with_get(
             format!("subscribe_newsletter_code:{}", FOO.user.id.hyphenated()),
-            VERIFICATION_CODE_2.clone().into_inner().into(),
+            VERIFICATION_CODE_2.clone().into(),
         );
 
         let sut = UserEmailConfirmationServiceImpl {

@@ -10,12 +10,14 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait UserService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Return a paginated and filtered list of all users.
     fn list(
         &self,
         txn: &mut Txn,
         query: UserListQuery,
     ) -> impl Future<Output = anyhow::Result<UserListResult>> + Send;
 
+    /// Create a new user.
     fn create(
         &self,
         txn: &mut Txn,

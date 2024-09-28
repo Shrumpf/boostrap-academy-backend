@@ -9,23 +9,27 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait UserEmailConfirmationService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Send a verification email to verify a user's email address.
     fn request_verification(
         &self,
         email: EmailAddressWithName,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Verify a user's email address.
     fn verify_email(
         &self,
         txn: &mut Txn,
         verification_code: &VerificationCode,
     ) -> impl Future<Output = Result<UserComposite, UserEmailConfirmationVerifyEmailError>> + Send;
 
+    /// Send a verification email to reset a user's password.
     fn request_password_reset(
         &self,
         user_id: UserId,
         email: EmailAddressWithName,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Reset a user's password.
     fn reset_password(
         &self,
         txn: &mut Txn,
@@ -34,12 +38,14 @@ pub trait UserEmailConfirmationService<Txn: Send + Sync + 'static>: Send + Sync 
         new_password: UserPassword,
     ) -> impl Future<Output = Result<(), UserEmailConfirmationResetPasswordError>> + Send;
 
+    /// Send a verification email to confirm a user's newsletter subscription.
     fn request_newsletter_subscription(
         &self,
         user_id: UserId,
         email: EmailAddressWithName,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Confirm a user's newsletter subscription.
     fn subscribe_to_newsletter(
         &self,
         txn: &mut Txn,

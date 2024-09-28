@@ -100,6 +100,8 @@ where
             })?;
 
         if result {
+            // access tokens contain the `email_verified` field, so we need to invalidate
+            // them when changing this value
             self.auth.invalidate_access_tokens(txn, user_id).await?;
         }
 
@@ -143,6 +145,8 @@ where
         user_id: UserId,
         admin: bool,
     ) -> anyhow::Result<bool> {
+        // access tokens contain the `admin` field, so we need to invalidate
+        // them when changing this value
         self.auth.invalidate_access_tokens(txn, user_id).await?;
         self.user_repo
             .update(txn, user_id, UserPatchRef::new().update_admin(&admin))
