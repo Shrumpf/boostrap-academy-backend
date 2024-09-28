@@ -31,7 +31,7 @@ struct State {
     cache: RwLock<Option<CachedStatus>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct CachedStatus {
     status: HealthStatus,
     timestamp: DateTime<Utc>,
@@ -47,43 +47,47 @@ where
 {
     async fn get_status(&self) -> HealthStatus {
         let now = self.time.now();
-        let cache_guard = self.state.cache.read().await;
-        if let Some(cached) = cache_guard
-            .as_ref()
-            .filter(|c| now < c.timestamp + self.config.cache_ttl)
-        {
-            return cached.status;
+
+        let status_if_not_expired = |cached: Option<CachedStatus>| {
+            cached
+                .filter(|c| now < c.timestamp + self.config.cache_ttl)
+                .map(|c| c.status)
+        };
+
+        if let Some(status) = status_if_not_expired(*self.state.cache.read().await) {
+            return status;
         }
-        drop(cache_guard);
 
         let mut cache_guard = self.state.cache.write().await;
-        if let Some(cached) = cache_guard
-            .as_ref()
-            .filter(|c| now < c.timestamp + self.config.cache_ttl)
-        {
-            return cached.status;
+        if let Some(status) = status_if_not_expired(*cache_guard) {
+            return status;
         }
 
-        let database = self
-            .db
-            .ping()
-            .await
-            .inspect_err(|err| error!("Failed to ping database: {err}"))
-            .is_ok();
+        let database = async {
+            self.db
+                .ping()
+                .await
+                .inspect_err(|err| error!("Failed to ping database: {err}"))
+                .is_ok()
+        };
 
-        let cache = self
-            .cache
-            .ping()
-            .await
-            .inspect_err(|err| error!("Failed to ping cache: {err}"))
-            .is_ok();
+        let cache = async {
+            self.cache
+                .ping()
+                .await
+                .inspect_err(|err| error!("Failed to ping cache: {err}"))
+                .is_ok()
+        };
 
-        let email = self
-            .email
-            .ping()
-            .await
-            .inspect_err(|err| error!("Failed to ping smtp server: {err}"))
-            .is_ok();
+        let email = async {
+            self.email
+                .ping()
+                .await
+                .inspect_err(|err| error!("Failed to ping smtp server: {err}"))
+                .is_ok()
+        };
+
+        let (database, cache, email) = tokio::join!(database, cache, email);
 
         let status = HealthStatus {
             database,

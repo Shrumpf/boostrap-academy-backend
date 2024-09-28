@@ -1,6 +1,7 @@
 use std::future::Future;
 
 pub trait HealthFeatureService: Send + Sync + 'static {
+    /// Return the current health status.
     fn get_status(&self) -> impl Future<Output = HealthStatus> + Send;
 }
 
