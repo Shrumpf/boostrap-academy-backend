@@ -4,13 +4,13 @@ use serde::{de::DeserializeOwned, Serialize};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait CacheService: Sized + Send + Sync + 'static {
-    /// Reads a cache item.
+    /// Read a cache item.
     fn get<T: DeserializeOwned + 'static>(
         &self,
         key: &str,
     ) -> impl Future<Output = anyhow::Result<Option<T>>> + Send;
 
-    /// Creates a new or updates an existing cache item.
+    /// Create a new or update an existing cache item.
     ///
     /// If `ttl` is set, the item is automatically removed after this timeout.
     fn set<T: Serialize + Sync + 'static>(
@@ -20,7 +20,7 @@ pub trait CacheService: Sized + Send + Sync + 'static {
         ttl: Option<Duration>,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
-    /// Removes an existing cache item.
+    /// Remove an existing cache item.
     ///
     /// Does nothing if the cache item does not exist.
     fn remove(&self, key: &str) -> impl Future<Output = anyhow::Result<()>> + Send;
