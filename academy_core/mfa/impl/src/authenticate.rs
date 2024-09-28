@@ -39,7 +39,7 @@ where
             .await?;
 
         if totp_secrets.is_empty() {
-            return Ok(MfaAuthenticateResult::Ok);
+            return Ok(MfaAuthenticateResult::Disabled);
         }
 
         if let Some(recovery_code) = cmd.recovery_code {
@@ -110,7 +110,7 @@ mod tests {
         let result = sut.authenticate(&mut (), FOO.user.id, cmd).await;
 
         // Assert
-        assert_eq!(result.unwrap(), MfaAuthenticateResult::Ok);
+        assert_eq!(result.unwrap(), MfaAuthenticateResult::Disabled);
     }
 
     #[tokio::test]

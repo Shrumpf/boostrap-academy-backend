@@ -14,12 +14,16 @@ pub mod totp_device;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait MfaFeatureService: Send + Sync + 'static {
+    /// Create a new disabled TOTP device or reset an existing disabled TOTP
+    /// device.
     fn initialize(
         &self,
         token: &str,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<TotpSetup, MfaInitializeError>> + Send;
 
+    /// Enable a previously created disabled TOTP device and generate an MFA
+    /// recovery code.
     fn enable(
         &self,
         token: &str,
@@ -27,6 +31,7 @@ pub trait MfaFeatureService: Send + Sync + 'static {
         code: TotpCode,
     ) -> impl Future<Output = Result<MfaRecoveryCode, MfaEnableError>> + Send;
 
+    /// Delete all TOTP devices and invalidate the MFA recovery code.
     fn disable(
         &self,
         token: &str,

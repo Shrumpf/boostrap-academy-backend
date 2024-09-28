@@ -184,7 +184,7 @@ where
                 .authenticate(&mut txn, user_composite.user.id, cmd.mfa)
                 .await
             {
-                Ok(MfaAuthenticateResult::Ok) => (),
+                Ok(MfaAuthenticateResult::Ok | MfaAuthenticateResult::Disabled) => (),
                 Ok(MfaAuthenticateResult::Reset) => user_composite.details.mfa_enabled = false,
                 Err(MfaAuthenticateError::Failed) => {
                     increment_failed_login_attempts().await?;

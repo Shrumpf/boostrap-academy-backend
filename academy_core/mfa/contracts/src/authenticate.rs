@@ -5,6 +5,9 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait MfaAuthenticateService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Authenticate the given user using a second factor.
+    ///
+    /// Disables MFA for the user if a correct recovery code is provided.
     fn authenticate(
         &self,
         txn: &mut Txn,
@@ -15,7 +18,11 @@ pub trait MfaAuthenticateService<Txn: Send + Sync + 'static>: Send + Sync + 'sta
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MfaAuthenticateResult {
+    /// MFA is disabled
+    Disabled,
+    /// MFA is enabled and authentication was successful
     Ok,
+    /// Recovery code has been used and MFA has been disabled
     Reset,
 }
 

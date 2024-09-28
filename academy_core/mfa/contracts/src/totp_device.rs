@@ -8,12 +8,14 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait MfaTotpDeviceService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Create a new unconfirmed TOTP device.
     fn create(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<TotpSetup>> + Send;
 
+    /// Confirm a previously created TOTP device.
     fn confirm(
         &self,
         txn: &mut Txn,
@@ -21,6 +23,7 @@ pub trait MfaTotpDeviceService<Txn: Send + Sync + 'static>: Send + Sync + 'stati
         code: TotpCode,
     ) -> impl Future<Output = Result<TotpDevice, MfaTotpDeviceConfirmError>> + Send;
 
+    /// Reset an existing TOTP device.
     fn reset(
         &self,
         txn: &mut Txn,
