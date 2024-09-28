@@ -7,9 +7,9 @@ use academy_models::{
 };
 use thiserror::Error;
 
-/// Creates a new session for a given user.
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SessionService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Create a new session for the given user.
     fn create(
         &self,
         txn: &mut Txn,
@@ -18,18 +18,24 @@ pub trait SessionService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         update_last_login: bool,
     ) -> impl Future<Output = anyhow::Result<Login>> + Send;
 
+    /// Refresh the given session by invalidating the current access/refresh
+    /// token pair and generating a new one.
     fn refresh(
         &self,
         txn: &mut Txn,
         session_id: SessionId,
     ) -> impl Future<Output = Result<Login, SessionRefreshError>> + Send;
 
+    /// Delete the given session and invalidate the current access/refresh token
+    /// pair.
     fn delete(
         &self,
         txn: &mut Txn,
         session_id: SessionId,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
+    /// Delete all sessions of the given user and invalidate all associated
+    /// access/refresh token pairs.
     fn delete_by_user(
         &self,
         txn: &mut Txn,

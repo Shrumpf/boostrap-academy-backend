@@ -19,6 +19,8 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary>;
 
     /// Return a list of all OAuth2 links of the given user.
+    ///
+    /// Requires admin privileges if not used on the authenticated user.
     fn list_links(
         &self,
         token: &str,
@@ -26,6 +28,8 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
     ) -> impl Future<Output = Result<Vec<OAuth2Link>, OAuth2ListLinksError>> + Send;
 
     /// Create a new OAuth2 for the given user.
+    ///
+    /// Requires admin privileges if not used on the authenticated user.
     fn create_link(
         &self,
         token: &str,
@@ -34,6 +38,8 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
     ) -> impl Future<Output = Result<OAuth2Link, OAuth2CreateLinkError>> + Send;
 
     /// Delete the given OAuth2 link.
+    ///
+    /// Requires admin privileges if not used on the authenticated user.
     fn delete_link(
         &self,
         token: &str,

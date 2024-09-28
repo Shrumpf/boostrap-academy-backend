@@ -14,23 +14,23 @@ pub mod session;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SessionFeatureService: Send + Sync + 'static {
-    /// Returns the currently authenticated session.
+    /// Return the currently authenticated session.
     fn get_current_session(
         &self,
         token: &str,
     ) -> impl Future<Output = Result<Session, SessionGetCurrentError>> + Send;
 
-    /// Returns all sessions of a given user.
+    /// Return all sessions of the given user.
     ///
-    /// Can only be used by administrators, if not used on the authenticated
-    /// user.
+    /// Requires admin privileges if not used on the authenticated user.
     fn list_by_user(
         &self,
         token: &str,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<Vec<Session>, SessionListByUserError>> + Send;
 
-    /// Creates a new session using a username and password.
+    /// Create a new session by authenticating via username/password and MFA (if
+    /// enabled).
     fn create_session(
         &self,
         cmd: SessionCreateCommand,
@@ -39,14 +39,14 @@ pub trait SessionFeatureService: Send + Sync + 'static {
 
     /// Impersonate a user by creating a new session for them.
     ///
-    /// Can only be used by administrators.
+    /// Requires admin privileges.
     fn impersonate(
         &self,
         token: &str,
         user_id: UserId,
     ) -> impl Future<Output = Result<Login, SessionImpersonateError>> + Send;
 
-    /// Refreshes a session using a refresh token.
+    /// Refresh a session using a refresh token.
     ///
     /// This will generate a new access and refresh token pair and invalidate
     /// the previous one.
@@ -55,11 +55,10 @@ pub trait SessionFeatureService: Send + Sync + 'static {
         refresh_token: &str,
     ) -> impl Future<Output = Result<Login, SessionRefreshError>> + Send;
 
-    /// Deletes a session and invalidates the access and refresh tokens
+    /// Delete the given session and invalidate the access and refresh tokens
     /// associated with it.
     ///
-    /// Can only be used by administrators, if not used on the authenticated
-    /// user.
+    /// Requires admin privileges if not used on the authenticated user.
     fn delete_session(
         &self,
         token: &str,
@@ -67,18 +66,17 @@ pub trait SessionFeatureService: Send + Sync + 'static {
         session_id: SessionId,
     ) -> impl Future<Output = Result<(), SessionDeleteError>> + Send;
 
-    /// Deletes the currently authenticated session and invalidates its access
+    /// Delete the currently authenticated session and invalidate its access
     /// and refresh tokens.
     fn delete_current_session(
         &self,
         token: &str,
     ) -> impl Future<Output = Result<(), SessionDeleteCurrentError>> + Send;
 
-    /// Deletes all sessions of a given user and invalidates all access and
+    /// Delete all sessions of the given user and invalidate all access and
     /// refresh tokens associated with them.
     ///
-    /// Can only be used by administrators, if not used on the authenticated
-    /// user.
+    /// Requires admin privileges if not used on the authenticated user.
     fn delete_by_user(
         &self,
         token: &str,

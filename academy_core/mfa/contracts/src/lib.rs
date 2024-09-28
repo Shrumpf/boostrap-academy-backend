@@ -16,6 +16,8 @@ pub mod totp_device;
 pub trait MfaFeatureService: Send + Sync + 'static {
     /// Create a new disabled TOTP device or reset an existing disabled TOTP
     /// device.
+    ///
+    /// Requires admin privileges if not used on the authenticated user.
     fn initialize(
         &self,
         token: &str,
@@ -24,6 +26,8 @@ pub trait MfaFeatureService: Send + Sync + 'static {
 
     /// Enable a previously created disabled TOTP device and generate an MFA
     /// recovery code.
+    ///
+    /// Requires admin privileges if not used on the authenticated user.
     fn enable(
         &self,
         token: &str,
@@ -32,6 +36,8 @@ pub trait MfaFeatureService: Send + Sync + 'static {
     ) -> impl Future<Output = Result<MfaRecoveryCode, MfaEnableError>> + Send;
 
     /// Delete all TOTP devices and invalidate the MFA recovery code.
+    ///
+    /// Requires admin privileges if not used on the authenticated user.
     fn disable(
         &self,
         token: &str,

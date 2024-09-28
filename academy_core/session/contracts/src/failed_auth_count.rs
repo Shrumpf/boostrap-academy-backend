@@ -4,16 +4,20 @@ use academy_models::user::UserNameOrEmailAddress;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SessionFailedAuthCountService: Send + Sync + 'static {
+    /// Return the number of failed authentication attempts for the given login.
     fn get(
         &self,
         name_or_email: &UserNameOrEmailAddress,
     ) -> impl Future<Output = anyhow::Result<u64>> + Send;
 
+    /// Increment the number of failed authentication attempts for the given
+    /// login.
     fn increment(
         &self,
         name_or_email: &UserNameOrEmailAddress,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Reset the number of failed authentication attempts for the given login.
     fn reset(
         &self,
         name_or_email: &UserNameOrEmailAddress,
