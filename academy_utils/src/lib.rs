@@ -1,13 +1,14 @@
+mod macros;
 pub mod patch;
 pub mod serde;
 
 pub trait Apply {
-    /// Applies the function `f` with a mutable reference to `self`.
+    /// Apply the function `f` with a mutable reference to `self`.
     ///
     /// #### Example
     /// ```rust
     /// # use academy_utils::Apply;
-    /// let x = 1.with(|x| *x += 2);
+    /// let x = 1.with(|x: &mut i32| *x += 2);
     /// assert_eq!(x, 3);
     /// ```
     fn with<X>(mut self, f: impl FnOnce(&mut Self) -> X) -> Self
@@ -18,7 +19,7 @@ pub trait Apply {
         self
     }
 
-    /// Applies the function `f`.
+    /// Apply the function `f`.
     ///
     /// #### Example
     /// ```rust
@@ -35,7 +36,7 @@ pub trait Apply {
         f(self)
     }
 
-    /// Applies the function `f` only if `value` is `Some(...)` and provides the
+    /// Apply the function `f` only if `value` is `Some(...)` and provides the
     /// contained value to `f`.
     ///
     /// #### Example
@@ -58,7 +59,7 @@ pub trait Apply {
         }
     }
 
-    /// Applies the function `f` only if `apply` is `true`.
+    /// Apply the function `f` only if `apply` is `true`.
     ///
     /// #### Example
     /// ```rust
@@ -82,31 +83,3 @@ pub trait Apply {
 }
 
 impl<T> Apply for T {}
-
-#[macro_export]
-macro_rules! assert_matches {
-    ($expr:expr, $pat:pat) => {
-        match ($expr) {
-            $pat => (),
-            val => ::core::panic!(
-                "Assertion failed: Value {val:?} did not match pattern {}",
-                ::core::stringify!($pat)
-            ),
-        }
-    };
-    ($expr:expr, $pat:pat if $pred:expr) => {{
-        let val = $expr;
-        match (&val) {
-            $pat if $pred => (),
-            #[allow(unused_variables)]
-            $pat => ::core::panic!(
-                "Assertion failed: Value {val:?} does not match predicate {}",
-                ::core::stringify!($pred)
-            ),
-            _ => ::core::panic!(
-                "Assertion failed: Value {val:?} did not match pattern {}",
-                ::core::stringify!($pat)
-            ),
-        }
-    }};
-}
