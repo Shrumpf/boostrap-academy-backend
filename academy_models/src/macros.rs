@@ -30,6 +30,23 @@ macro_rules! id {
     };
 }
 
+macro_rules! sha256hash {
+    ($ident:ident) => {
+        #[::nutype::nutype(derive(
+            Debug,
+            Clone,
+            Copy,
+            PartialEq,
+            Eq,
+            Deref,
+            From,
+            Serialize,
+            Deserialize
+        ))]
+        pub struct $ident($crate::Sha256Hash);
+    };
+}
+
 macro_rules! nutype_string {
     ($ident:ident) => {
         $crate::macros::nutype_string!($ident());
@@ -70,3 +87,4 @@ macro_rules! nutype_string {
 
 pub(crate) use id;
 pub(crate) use nutype_string;
+pub(crate) use sha256hash;

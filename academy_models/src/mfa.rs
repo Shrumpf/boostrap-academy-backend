@@ -7,9 +7,8 @@ use regex::Regex;
 
 use crate::{
     hyphenated_code_regex,
-    macros::{id, nutype_string},
+    macros::{id, nutype_string, sha256hash},
     user::UserId,
-    Sha256Hash,
 };
 
 id!(TotpDeviceId);
@@ -67,8 +66,7 @@ impl MfaRecoveryCode {
     pub const CHUNK_SIZE: usize = 6;
 }
 
-#[nutype(derive(Debug, Clone, Copy, PartialEq, Eq, Deref, From, Serialize, Deserialize,))]
-pub struct MfaRecoveryCodeHash(Sha256Hash);
+sha256hash!(MfaRecoveryCodeHash);
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MfaAuthentication {

@@ -3,9 +3,8 @@ use chrono::{DateTime, Utc};
 use nutype::nutype;
 
 use crate::{
-    macros::{id, nutype_string},
+    macros::{id, nutype_string, sha256hash},
     user::UserId,
-    Sha256Hash,
 };
 
 id!(SessionId);
@@ -33,8 +32,7 @@ impl DeviceName {
     }
 }
 
-#[nutype(derive(Debug, Clone, Copy, PartialEq, Eq, Deref, From, Serialize, Deserialize,))]
-pub struct SessionRefreshTokenHash(Sha256Hash);
+sha256hash!(SessionRefreshTokenHash);
 
 #[cfg(test)]
 mod tests {
