@@ -1,10 +1,9 @@
-use academy_api_rest::RealIpConfig;
 use academy_cache_contracts::CacheService;
 use academy_config::Config;
 use academy_di::Provides;
 use academy_email_contracts::EmailService;
 use academy_persistence_contracts::Database;
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::{
     cache, database, email,
@@ -36,19 +35,14 @@ pub async fn serve(config: Config) -> anyhow::Result<()> {
 
     let config_provider = ConfigProvider::new(&config)?;
     let mut provider = Provider::new(config_provider, database, cache, email);
+
     let server: RestServer = provider.provide();
-    info!(
-        "Starting http server on {}:{}",
-        config.http.host, config.http.port
-    );
-    server
-        .serve(
-            config.http.host,
-            config.http.port,
-            config.http.real_ip.map(|x| RealIpConfig {
-                header: x.header,
-                set_from: x.set_from,
-            }),
-        )
-        .await
+
+    let url = format!("http://{}", config.http.address);
+    info!("Starting REST API server on {url}");
+    debug!("Swagger UI is available on {url}/docs");
+    debug!("Redoc is available on {url}/redoc");
+    debug!("OpenAPI spec is available on {url}/openapi.json");
+
+    server.serve().await
 }

@@ -1,4 +1,8 @@
-use std::{collections::HashMap, net::IpAddr, path::Path};
+use std::{
+    collections::HashMap,
+    net::{IpAddr, SocketAddr},
+    path::Path,
+};
 
 use academy_models::{email_address::EmailAddressWithName, mfa::TotpSecretLength};
 use anyhow::Context;
@@ -92,8 +96,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize)]
 pub struct HttpConfig {
-    pub host: IpAddr,
-    pub port: u16,
+    pub address: SocketAddr,
     pub real_ip: Option<HttpRealIpConfig>,
 }
 

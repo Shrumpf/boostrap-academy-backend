@@ -33,6 +33,7 @@ mod routes;
 
 #[derive(Debug, Clone, Build)]
 pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal> {
+    _config: RestServerConfig,
     health: Health,
     config: Config,
     user: User,
@@ -41,6 +42,18 @@ pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Inter
     mfa: Mfa,
     oauth2: OAuth2,
     internal: Internal,
+}
+
+#[derive(Debug, Clone)]
+pub struct RestServerConfig {
+    pub addr: SocketAddr,
+    pub real_ip_config: Option<Arc<RestServerRealIpConfig>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RestServerRealIpConfig {
+    pub header: String,
+    pub set_from: IpAddr,
 }
 
 impl<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>
@@ -55,12 +68,13 @@ where
     OAuth2: OAuth2FeatureService,
     Internal: InternalService,
 {
-    pub async fn serve(
-        self,
-        host: IpAddr,
-        port: u16,
-        real_ip_config: Option<RealIpConfig>,
-    ) -> anyhow::Result<()> {
+    pub async fn serve(self) -> anyhow::Result<()> {
+        let RestServerConfig {
+            addr,
+            ref real_ip_config,
+        } = self._config;
+        let real_ip_config = real_ip_config.as_ref().map(Arc::clone);
+
         let mut api = OpenApi {
             info: Info {
                 title: "Bootstrap Academy Backend".into(),
@@ -118,11 +132,11 @@ where
             .apply(middlewares::panic_handler::add)
             .apply(middlewares::trace::add)
             .apply(middlewares::request_id::add)
-            .apply(middlewares::client_ip::add(real_ip_config.map(Into::into)))
+            .apply(middlewares::client_ip::add(real_ip_config))
             .finish_api(&mut api)
             .layer(Extension(Arc::new(api)))
             .into_make_service_with_connect_info::<SocketAddr>();
-        let listener = TcpListener::bind((host, port)).await?;
+        let listener = TcpListener::bind(addr).await?;
         axum::serve(listener, router).await.map_err(Into::into)
     }
 
@@ -137,12 +151,6 @@ where
             .merge(routes::oauth2::router(self.oauth2.into()))
             .merge(routes::internal::router(self.internal.into()))
     }
-}
-
-#[derive(Debug)]
-pub struct RealIpConfig {
-    pub header: String,
-    pub set_from: IpAddr,
 }
 
 async fn serve_api(Extension(api): Extension<Arc<OpenApi>>) -> Response {

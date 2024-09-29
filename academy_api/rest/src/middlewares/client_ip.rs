@@ -15,10 +15,10 @@ use axum::{
 };
 use tracing::{debug, error, warn};
 
-use crate::RealIpConfig;
+use crate::RestServerRealIpConfig;
 
 pub fn add<S: Clone + Send + Sync + 'static>(
-    real_ip_config: Option<Arc<RealIpConfig>>,
+    real_ip_config: Option<Arc<RestServerRealIpConfig>>,
 ) -> impl FnOnce(ApiRouter<S>) -> ApiRouter<S> {
     |router| {
         router.layer(from_fn(move |mut request: Request, next: Next| {
@@ -34,14 +34,14 @@ pub fn add<S: Clone + Send + Sync + 'static>(
 pub struct ClientIp(pub IpAddr);
 
 impl ClientIp {
-    fn from_request(request: &Request, real_ip_config: Option<&RealIpConfig>) -> Self {
+    fn from_request(request: &Request, real_ip_config: Option<&RestServerRealIpConfig>) -> Self {
         let client_ip = request
             .extensions()
             .get::<ConnectInfo<SocketAddr>>()
             .unwrap()
             .ip();
 
-        let Some(RealIpConfig { header, set_from }) = real_ip_config else {
+        let Some(RestServerRealIpConfig { header, set_from }) = real_ip_config else {
             // no real ip header configured, fall back to socket address
             return Self(client_ip);
         };

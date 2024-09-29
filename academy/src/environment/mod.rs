@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
+use academy_api_rest::{RestServerConfig, RestServerRealIpConfig};
 use academy_auth_impl::AuthServiceConfig;
 use academy_config::Config;
 use academy_core_contact_impl::ContactFeatureConfig;
@@ -29,6 +30,9 @@ provider! {
         cache: Cache,
         email: Email,
         ..config: ConfigProvider {
+            // API
+            RestServerConfig,
+
             // Extern
             InternalApiServiceConfig,
             RecaptchaApiServiceConfig,
@@ -67,6 +71,9 @@ impl Provider {
 provider! {
     /// Reduced provider, capable of providing services that only depend on the configuration
     pub ConfigProvider {
+        // API
+        rest_server_config: RestServerConfig,
+
         // Extern
         internal_api_service_config: InternalApiServiceConfig,
         recaptcha_api_service_config: RecaptchaApiServiceConfig,
@@ -91,6 +98,17 @@ provider! {
 
 impl ConfigProvider {
     pub fn new(config: &Config) -> anyhow::Result<Self> {
+        // API
+        let rest_server_config = RestServerConfig {
+            addr: config.http.address,
+            real_ip_config: config.http.real_ip.as_ref().map(|real_ip_config| {
+                Arc::new(RestServerRealIpConfig {
+                    header: real_ip_config.header.clone(),
+                    set_from: real_ip_config.set_from,
+                })
+            }),
+        };
+
         // Extern
         let internal_api_service_config = InternalApiServiceConfig {
             shop_url: config.internal.shop_url.clone(),
@@ -189,6 +207,9 @@ impl ConfigProvider {
 
         Ok(Self {
             _state: Default::default(),
+
+            // API
+            rest_server_config,
 
             // Extern
             internal_api_service_config,

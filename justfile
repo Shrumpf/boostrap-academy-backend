@@ -79,7 +79,7 @@ test-email *args:
 [private]
 alias tm := test-email
 
-# Run valkey integration tests with coverage
+# Run email integration tests with coverage
 coverage-email *args:
     RUST_TEST_THREADS=1 cargo llvm-cov test --lcov --output-path .lcov-email.info -p academy_email_impl --locked --all-features --test '*' {{args}}
     {{ if is_dependency() == "false" { "genhtml -o .lcov_html .lcov-email.info" } else { "" } }}
@@ -92,7 +92,7 @@ test-extern *args:
 [private]
 alias te := test-extern
 
-# Run valkey integration tests with coverage
+# Run extern integration tests with coverage
 coverage-extern *args:
     RUST_TEST_THREADS=1 cargo llvm-cov test --lcov --output-path .lcov-extern.info -p academy_extern_impl --locked --all-features --test '*' {{args}}
     {{ if is_dependency() == "false" { "genhtml -o .lcov_html .lcov-extern.info" } else { "" } }}

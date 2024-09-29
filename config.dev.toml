@@ -1,6 +1,5 @@
 [http]
-host = "127.0.0.1"
-port = 8000
+address = "127.0.0.1:8000"
 
 [database]
 url = "postgres://academy@127.0.0.1:5432/academy" # https://docs.rs/tokio-postgres/latest/tokio_postgres/config/struct.Config.html

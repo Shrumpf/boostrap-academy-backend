@@ -40,10 +40,7 @@
       logLevel = "debug,academy=trace";
       extraConfigFiles = ["/run/academy-backend/secrets.toml"];
       settings = {
-        http = {
-          host = "127.0.0.1";
-          port = 8000;
-        };
+        http.address = "127.0.0.1:8000";
         database.acquire_timeout = "2s";
         cache.acquire_timeout = "2s";
         email = {
