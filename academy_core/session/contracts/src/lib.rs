@@ -12,7 +12,6 @@ use thiserror::Error;
 pub mod failed_auth_count;
 pub mod session;
 
-#[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SessionFeatureService: Send + Sync + 'static {
     /// Return the currently authenticated session.
     fn get_current_session(

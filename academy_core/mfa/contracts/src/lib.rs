@@ -12,7 +12,6 @@ pub mod disable;
 pub mod recovery;
 pub mod totp_device;
 
-#[cfg_attr(feature = "mock", mockall::automock)]
 pub trait MfaFeatureService: Send + Sync + 'static {
     /// Create a new disabled TOTP device or reset an existing disabled TOTP
     /// device.

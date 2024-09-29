@@ -3,7 +3,6 @@ use std::future::Future;
 use academy_models::{contact::ContactMessage, RecaptchaResponse};
 use thiserror::Error;
 
-#[cfg_attr(feature = "mock", mockall::automock)]
 pub trait ContactFeatureService: Send + Sync + 'static {
     /// Send a message to the support team.
     fn send_message(

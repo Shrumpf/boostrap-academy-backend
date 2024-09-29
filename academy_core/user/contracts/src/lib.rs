@@ -20,7 +20,6 @@ pub mod email_confirmation;
 pub mod update;
 pub mod user;
 
-#[cfg_attr(feature = "mock", mockall::automock)]
 pub trait UserFeatureService: Send + Sync + 'static {
     /// Return a list of all users matching the given query.
     ///
