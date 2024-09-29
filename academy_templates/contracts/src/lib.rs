@@ -2,6 +2,7 @@ use serde::Serialize;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait TemplateService: Send + Sync + 'static {
+    /// Render the given template.
     fn render<T: Template + 'static>(&self, template: &T) -> anyhow::Result<String>;
 }
 
