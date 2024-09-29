@@ -8,6 +8,8 @@ use url::Url;
 
 use crate::http::HttpClient;
 
+/// https://ec.europa.eu/taxation_customs/vies/#/vat-validation
+/// https://ec.europa.eu/taxation_customs/vies/#/technical-information
 const VALIDATE_ENDPOINT: &str = "https://ec.europa.eu/taxation_customs/vies/rest-api/ms/";
 
 #[derive(Debug, Clone, Build)]

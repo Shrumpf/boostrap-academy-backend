@@ -4,6 +4,7 @@ use academy_models::user::UserId;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait InternalApiService: Send + Sync + 'static {
+    /// Release all withheld coins for the given user.
     fn release_coins(&self, user_id: UserId) -> impl Future<Output = anyhow::Result<()>> + Send;
 }
 

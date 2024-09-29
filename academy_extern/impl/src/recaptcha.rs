@@ -7,6 +7,9 @@ use url::Url;
 
 use crate::http::HttpClient;
 
+/// API documentation:
+/// - https://developers.google.com/recaptcha/docs/verify
+/// - https://developers.google.com/recaptcha/docs/v3
 const SITEVERIFY_ENDPOINT: &str = "https://www.google.com/recaptcha/api/siteverify";
 
 #[derive(Debug, Clone, Build)]

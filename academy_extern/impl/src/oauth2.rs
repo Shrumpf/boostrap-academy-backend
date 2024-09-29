@@ -52,6 +52,7 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
         )
         .set_redirect_uri(RedirectUrl::from_url(redirect_url));
 
+        // exchange the authorization code for an access token
         let response = client
             .exchange_code(AuthorizationCode::new(code.into_inner()))
             .request_async(http_client)
@@ -65,6 +66,7 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
 
         let access_token = response.access_token().secret();
 
+        // use the access token to fetch the remote user's id and name
         let userinfo = self
             .http
             .get(provider.userinfo_url)

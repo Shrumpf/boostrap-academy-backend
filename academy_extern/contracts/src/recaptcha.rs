@@ -2,6 +2,7 @@ use std::future::Future;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait RecaptchaApiService: Send + Sync + 'static {
+    /// Verify the given reCAPTCHA response.
     fn siteverify(
         &self,
         response: &str,
@@ -11,7 +12,10 @@ pub trait RecaptchaApiService: Send + Sync + 'static {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RecaptchaSiteverifyResponse {
+    /// Whether the response is valid and the user is likely human.
     pub success: bool,
+    /// A score from `0` to `1` where `0` indicates that the user is definitely
+    /// a bot and `1` indicates that the user is definitely a human.
     pub score: Option<f64>,
 }
 

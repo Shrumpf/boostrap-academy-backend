@@ -2,6 +2,7 @@ use std::future::Future;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait VatApiService: Send + Sync + 'static {
+    /// Validate the given VAT id.
     fn is_vat_id_valid(&self, vat_id: &str) -> impl Future<Output = anyhow::Result<bool>> + Send;
 }
 

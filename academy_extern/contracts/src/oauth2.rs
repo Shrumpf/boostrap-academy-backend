@@ -6,8 +6,11 @@ use url::Url;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait OAuth2ApiService: Send + Sync + 'static {
+    /// Build the authorize URL for the given OAuth2 provider.
     fn generate_auth_url(&self, provider: &OAuth2Provider) -> Url;
 
+    /// Try to resolve an authorization code and return the remote user
+    /// information in case of success.
     fn resolve_code(
         &self,
         provider: OAuth2Provider,
