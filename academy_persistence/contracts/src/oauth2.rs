@@ -8,24 +8,28 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait OAuth2Repository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Return all OAuth2 links of the given user.
     fn list_links_by_user(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Vec<OAuth2Link>>> + Send;
 
+    /// Return the OAuth2 link with the given id.
     fn get_link(
         &self,
         txn: &mut Txn,
         link_id: OAuth2LinkId,
     ) -> impl Future<Output = anyhow::Result<Option<OAuth2Link>>> + Send;
 
+    /// Create a new OAuth2 link.
     fn create_link(
         &self,
         txn: &mut Txn,
         oauth2_link: &OAuth2Link,
     ) -> impl Future<Output = Result<(), OAuth2RepoError>> + Send;
 
+    /// Delete the given OAuth2 link.
     fn delete_link(
         &self,
         txn: &mut Txn,

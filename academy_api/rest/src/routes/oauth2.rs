@@ -71,7 +71,7 @@ async fn list_providers(service: State<Arc<impl OAuth2FeatureService>>) -> Respo
 }
 
 fn list_providers_docs(op: TransformOperation) -> TransformOperation {
-    op.summary("Return a list of all available OAuth2 providers.")
+    op.summary("Return all available OAuth2 providers.")
         .add_response::<Vec<ApiOAuth2ProviderSummary>>(StatusCode::OK, None)
 }
 
@@ -95,7 +95,7 @@ async fn list_links(
 }
 
 fn list_links_docs(op: TransformOperation) -> TransformOperation {
-    op.summary("Return a list of all OAuth2 links of the given user.")
+    op.summary("Return all OAuth2 links of the given user.")
         .add_response::<Vec<ApiOAuth2Link>>(StatusCode::OK, None)
         .add_error::<UserNotFoundError>()
         .with(auth_error_docs)

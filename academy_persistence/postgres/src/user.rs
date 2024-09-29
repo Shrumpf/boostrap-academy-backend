@@ -15,7 +15,7 @@ use academy_utils::patch::PatchValue;
 use bb8_postgres::tokio_postgres::{self, types::ToSql, Row};
 use uuid::Uuid;
 
-use crate::{arg_indices, columns, PostgresTransaction};
+use crate::{arg_indices, columns, ColumnCounter, PostgresTransaction};
 
 #[derive(Debug, Clone, Copy, Default, Build)]
 pub struct PostgresUserRepository;
@@ -77,7 +77,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(Into::into)
             .and_then(|rows| {
                 rows.into_iter()
-                    .map(|row| decode_composite(&row, &mut 0))
+                    .map(|row| decode_composite(&row, &mut Default::default()))
                     .collect()
             })
     }
@@ -105,7 +105,10 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             )
             .await
             .map_err(Into::into)
-            .and_then(|row| row.map(|row| decode_composite(&row, &mut 0)).transpose())
+            .and_then(|row| {
+                row.map(|row| decode_composite(&row, &mut Default::default()))
+                    .transpose()
+            })
     }
 
     async fn get_composite_by_name(
@@ -124,7 +127,10 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             )
             .await
             .map_err(Into::into)
-            .and_then(|row| row.map(|row| decode_composite(&row, &mut 0)).transpose())
+            .and_then(|row| {
+                row.map(|row| decode_composite(&row, &mut Default::default()))
+                    .transpose()
+            })
     }
 
     async fn get_composite_by_email(
@@ -143,7 +149,10 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             )
             .await
             .map_err(Into::into)
-            .and_then(|row| row.map(|row| decode_composite(&row, &mut 0)).transpose())
+            .and_then(|row| {
+                row.map(|row| decode_composite(&row, &mut Default::default()))
+                    .transpose()
+            })
     }
 
     async fn get_composite_by_oauth2_provider_id_and_remote_user_id(
@@ -164,7 +173,10 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             )
             .await
             .map_err(Into::into)
-            .and_then(|row| row.map(|row| decode_composite(&row, &mut 0)).transpose())
+            .and_then(|row| {
+                row.map(|row| decode_composite(&row, &mut Default::default()))
+                    .transpose()
+            })
     }
 
     async fn create(
@@ -493,42 +505,32 @@ fn make_filter<'a>(
     }
 }
 
-fn decode_user(row: &Row, offset: &mut usize) -> anyhow::Result<User> {
-    let mut idx = || {
-        *offset += 1;
-        *offset - 1
-    };
-
+fn decode_user(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<User> {
     Ok(User {
-        id: row.get::<_, Uuid>(idx()).into(),
-        name: row.get::<_, String>(idx()).try_into()?,
+        id: row.get::<_, Uuid>(cnt.idx()).into(),
+        name: row.get::<_, String>(cnt.idx()).try_into()?,
         email: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .as_deref()
             .map(str::parse)
             .transpose()?,
-        email_verified: row.get(idx()),
-        created_at: row.get(idx()),
-        last_login: row.get(idx()),
-        last_name_change: row.get(idx()),
-        enabled: row.get(idx()),
-        admin: row.get(idx()),
-        newsletter: row.get(idx()),
+        email_verified: row.get(cnt.idx()),
+        created_at: row.get(cnt.idx()),
+        last_login: row.get(cnt.idx()),
+        last_name_change: row.get(cnt.idx()),
+        enabled: row.get(cnt.idx()),
+        admin: row.get(cnt.idx()),
+        newsletter: row.get(cnt.idx()),
     })
 }
 
-fn decode_profile(row: &Row, offset: &mut usize) -> anyhow::Result<UserProfile> {
-    let mut idx = || {
-        *offset += 1;
-        *offset - 1
-    };
-
-    idx(); // user_id
+fn decode_profile(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<UserProfile> {
+    cnt.idx(); // user_id
     Ok(UserProfile {
-        display_name: row.get::<_, String>(idx()).try_into()?,
-        bio: row.get::<_, String>(idx()).try_into()?,
+        display_name: row.get::<_, String>(cnt.idx()).try_into()?,
+        bio: row.get::<_, String>(cnt.idx()).try_into()?,
         tags: row
-            .get::<_, Vec<String>>(idx())
+            .get::<_, Vec<String>>(cnt.idx())
             .into_iter()
             .map(TryInto::try_into)
             .collect::<Result<Vec<_>, _>>()?
@@ -536,66 +538,56 @@ fn decode_profile(row: &Row, offset: &mut usize) -> anyhow::Result<UserProfile> 
     })
 }
 
-fn decode_details(row: &Row, offset: &mut usize) -> anyhow::Result<UserDetails> {
-    let mut idx = || {
-        *offset += 1;
-        *offset - 1
-    };
-
-    idx(); // user_id
+fn decode_details(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<UserDetails> {
+    cnt.idx(); // user_id
     Ok(UserDetails {
-        mfa_enabled: row.get(idx()),
-        password_login: row.get(idx()),
-        oauth2_login: row.get(idx()),
+        mfa_enabled: row.get(cnt.idx()),
+        password_login: row.get(cnt.idx()),
+        oauth2_login: row.get(cnt.idx()),
     })
 }
 
-fn decode_invoice_info(row: &Row, offset: &mut usize) -> anyhow::Result<UserInvoiceInfo> {
-    let mut idx = || {
-        *offset += 1;
-        *offset - 1
-    };
-
-    idx(); // user_id
+fn decode_invoice_info(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<UserInvoiceInfo> {
+    cnt.idx(); // user_id
     Ok(UserInvoiceInfo {
-        business: row.get(idx()),
+        business: row.get(cnt.idx()),
         first_name: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
         last_name: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
         street: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
         zip_code: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
         city: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
         country: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
         vat_id: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
     })
 }
 
-fn decode_composite(row: &Row, offset: &mut usize) -> anyhow::Result<UserComposite> {
+fn decode_composite(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<UserComposite> {
     Ok(UserComposite {
-        user: decode_user(row, offset)?,
-        profile: decode_profile(row, offset)?,
-        details: decode_details(row, offset)?,
-        invoice_info: decode_invoice_info(row, offset)?,
+        user: decode_user(row, cnt)?,
+        profile: decode_profile(row, cnt)?,
+        details: decode_details(row, cnt)?,
+        invoice_info: decode_invoice_info(row, cnt)?,
     })
 }
 

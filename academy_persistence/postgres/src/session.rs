@@ -11,7 +11,7 @@ use bb8_postgres::tokio_postgres::{types::ToSql, Row};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::{arg_indices, columns, decode_sha256hash, PostgresTransaction};
+use crate::{arg_indices, columns, decode_sha256hash, ColumnCounter, PostgresTransaction};
 
 #[derive(Debug, Clone, Build)]
 pub struct PostgresSessionRepository;
@@ -31,7 +31,10 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             )
             .await
             .map_err(Into::into)
-            .and_then(|row| row.map(|row| decode_session(&row, &mut 0)).transpose())
+            .and_then(|row| {
+                row.map(|row| decode_session(&row, &mut Default::default()))
+                    .transpose()
+            })
     }
 
     async fn get_by_refresh_token_hash(
@@ -49,7 +52,10 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             )
             .await
             .map_err(Into::into)
-            .and_then(|row| row.map(|row| decode_session(&row, &mut 0)).transpose())
+            .and_then(|row| {
+                row.map(|row| decode_session(&row, &mut Default::default()))
+                    .transpose()
+            })
     }
 
     async fn list_by_user(
@@ -66,7 +72,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             .map_err(Into::into)
             .and_then(|rows| {
                 rows.into_iter()
-                    .map(|row| decode_session(&row, &mut 0))
+                    .map(|row| decode_session(&row, &mut Default::default()))
                     .collect()
             })
     }
@@ -214,20 +220,15 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
     }
 }
 
-fn decode_session(row: &Row, offset: &mut usize) -> anyhow::Result<Session> {
-    let mut idx = || {
-        *offset += 1;
-        *offset - 1
-    };
-
+fn decode_session(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<Session> {
     Ok(Session {
-        id: row.get::<_, Uuid>(idx()).into(),
-        user_id: row.get::<_, Uuid>(idx()).into(),
+        id: row.get::<_, Uuid>(cnt.idx()).into(),
+        user_id: row.get::<_, Uuid>(cnt.idx()).into(),
         device_name: row
-            .get::<_, Option<String>>(idx())
+            .get::<_, Option<String>>(cnt.idx())
             .map(TryInto::try_into)
             .transpose()?,
-        created_at: row.get(idx()),
-        updated_at: row.get(idx()),
+        created_at: row.get(cnt.idx()),
+        updated_at: row.get(cnt.idx()),
     })
 }

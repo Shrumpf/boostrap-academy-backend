@@ -7,7 +7,7 @@ use academy_persistence_contracts::oauth2::{OAuth2RepoError, OAuth2Repository};
 use bb8_postgres::tokio_postgres::{self, Row};
 use uuid::Uuid;
 
-use crate::{arg_indices, columns, PostgresTransaction};
+use crate::{arg_indices, columns, ColumnCounter, PostgresTransaction};
 
 #[derive(Debug, Clone, Build)]
 pub struct PostgresOAuth2Repository;
@@ -29,7 +29,7 @@ impl OAuth2Repository<PostgresTransaction> for PostgresOAuth2Repository {
             .map_err(Into::into)
             .and_then(|rows| {
                 rows.into_iter()
-                    .map(|row| decode_oauth2_link(&row, &mut 0))
+                    .map(|row| decode_oauth2_link(&row, &mut Default::default()))
                     .collect()
             })
     }
@@ -46,7 +46,10 @@ impl OAuth2Repository<PostgresTransaction> for PostgresOAuth2Repository {
             )
             .await
             .map_err(Into::into)
-            .and_then(|row| row.map(|row| decode_oauth2_link(&row, &mut 0)).transpose())
+            .and_then(|row| {
+                row.map(|row| decode_oauth2_link(&row, &mut Default::default()))
+                    .transpose()
+            })
     }
 
     async fn create_link(
@@ -87,20 +90,15 @@ impl OAuth2Repository<PostgresTransaction> for PostgresOAuth2Repository {
     }
 }
 
-fn decode_oauth2_link(row: &Row, offset: &mut usize) -> anyhow::Result<OAuth2Link> {
-    let mut idx = || {
-        *offset += 1;
-        *offset - 1
-    };
-
+fn decode_oauth2_link(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<OAuth2Link> {
     Ok(OAuth2Link {
-        id: row.get::<_, Uuid>(idx()).into(),
-        user_id: row.get::<_, Uuid>(idx()).into(),
-        provider_id: row.get::<_, String>(idx()).into(),
-        created_at: row.get(idx()),
+        id: row.get::<_, Uuid>(cnt.idx()).into(),
+        user_id: row.get::<_, Uuid>(cnt.idx()).into(),
+        provider_id: row.get::<_, String>(cnt.idx()).into(),
+        created_at: row.get(cnt.idx()),
         remote_user: OAuth2UserInfo {
-            id: row.get::<_, String>(idx()).try_into()?,
-            name: row.get::<_, String>(idx()).try_into()?,
+            id: row.get::<_, String>(cnt.idx()).try_into()?,
+            name: row.get::<_, String>(cnt.idx()).try_into()?,
         },
     })
 }

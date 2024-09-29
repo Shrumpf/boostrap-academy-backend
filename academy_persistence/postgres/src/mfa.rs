@@ -10,7 +10,7 @@ use academy_utils::patch::PatchValue;
 use bb8_postgres::tokio_postgres::{types::ToSql, Row};
 use uuid::Uuid;
 
-use crate::{arg_indices, columns, decode_sha256hash, PostgresTransaction};
+use crate::{arg_indices, columns, decode_sha256hash, ColumnCounter, PostgresTransaction};
 
 #[derive(Debug, Clone, Build)]
 pub struct PostgresMfaRepository;
@@ -32,7 +32,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             .map_err(Into::into)
             .and_then(|rows| {
                 rows.into_iter()
-                    .map(|row| decode_totp_device(&row, &mut 0))
+                    .map(|row| decode_totp_device(&row, &mut Default::default()))
                     .collect()
             })
     }
@@ -202,17 +202,12 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
     }
 }
 
-fn decode_totp_device(row: &Row, offset: &mut usize) -> anyhow::Result<TotpDevice> {
-    let mut idx = || {
-        *offset += 1;
-        *offset - 1
-    };
-
+fn decode_totp_device(row: &Row, cnt: &mut ColumnCounter) -> anyhow::Result<TotpDevice> {
     Ok(TotpDevice {
-        id: row.get::<_, Uuid>(idx()).into(),
-        user_id: row.get::<_, Uuid>(idx()).into(),
-        enabled: row.get(idx()),
-        created_at: row.get(idx()),
+        id: row.get::<_, Uuid>(cnt.idx()).into(),
+        user_id: row.get::<_, Uuid>(cnt.idx()).into(),
+        enabled: row.get(cnt.idx()),
+        created_at: row.get(cnt.idx()),
     })
 }
 

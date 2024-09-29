@@ -9,8 +9,7 @@ pub mod user;
 pub trait Database: Send + Sync + 'static {
     type Transaction: Transaction;
 
-    /// Starts a new transaction which can be used to interact with the
-    /// database.
+    /// Start a new transaction which can be used to interact with the database.
     ///
     /// Changes are persisted only after explicitly invoking
     /// [`Transaction::commit()`].
@@ -22,9 +21,10 @@ pub trait Database: Send + Sync + 'static {
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait Transaction: Send + Sync + 'static {
-    /// Persists any changes made to the database using this transaction.
+    /// Persist any changes made to the database using this transaction.
     fn commit(self) -> impl Future<Output = anyhow::Result<()>> + Send;
-    /// Explicitly discards any changes made to the database using this
+
+    /// Explicitly discard any changes made to the database using this
     /// transaction.
     fn rollback(self) -> impl Future<Output = anyhow::Result<()>> + Send;
 }

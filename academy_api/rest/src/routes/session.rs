@@ -105,7 +105,7 @@ async fn list_by_user(
 }
 
 fn list_by_user_docs(op: TransformOperation) -> TransformOperation {
-    op.summary("Return a list of all sessions of the given user.")
+    op.summary("Return all sessions of the given user.")
         .add_response::<Vec<ApiSession>>(StatusCode::OK, None)
         .with(auth_error_docs)
         .with(internal_server_error_docs)

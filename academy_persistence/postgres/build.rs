@@ -35,20 +35,13 @@ fn collect_migrations() -> BTreeMap<String, (String, String)> {
     for file in dir.read_dir().unwrap() {
         let file = file.unwrap();
         let name = file.file_name().into_string().unwrap();
+
         if let Some(name) = name.strip_suffix(".up.sql").map(ToOwned::to_owned) {
-            let content = std::fs::read_to_string(file.path()).unwrap();
-            if let Some((up, _)) = out.get_mut(&name) {
-                *up = content;
-            } else {
-                out.insert(name, (content, String::new()));
-            }
+            let (up, _) = out.entry(name).or_insert_with(Default::default);
+            *up = std::fs::read_to_string(file.path()).unwrap();
         } else if let Some(name) = name.strip_suffix(".down.sql").map(ToOwned::to_owned) {
-            let content = std::fs::read_to_string(file.path()).unwrap();
-            if let Some((_, down)) = out.get_mut(&name) {
-                *down = content;
-            } else {
-                out.insert(name, (String::new(), content));
-            }
+            let (_, down) = out.entry(name).or_insert_with(Default::default);
+            *down = std::fs::read_to_string(file.path()).unwrap();
         }
     }
     out

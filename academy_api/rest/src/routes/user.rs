@@ -120,7 +120,7 @@ async fn list(
 }
 
 fn list_docs(op: TransformOperation) -> TransformOperation {
-    op.summary("Return a list of all users matching the given query.")
+    op.summary("Return all users matching the given query.")
         .add_response::<ListResult>(StatusCode::OK, None)
         .with(auth_error_docs)
         .with(internal_server_error_docs)

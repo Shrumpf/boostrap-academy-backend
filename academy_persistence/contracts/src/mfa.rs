@@ -7,12 +7,14 @@ use academy_models::{
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait MfaRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
+    /// Return all TOTP devices of the given user.
     fn list_totp_devices_by_user(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Vec<TotpDevice>>> + Send;
 
+    /// Create a new TOTP device and set the associated secret.
     fn create_totp_device(
         &self,
         txn: &mut Txn,
@@ -20,6 +22,7 @@ pub trait MfaRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         secret: &TotpSecret,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Update an existing TOTP device.
     fn update_totp_device<'a>(
         &self,
         txn: &mut Txn,
@@ -27,24 +30,28 @@ pub trait MfaRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         patch: TotpDevicePatchRef<'a>,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
+    /// Delete all TOTP devices of the given user.
     fn delete_totp_devices_by_user(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Return the secrets of all enabled TOTP devices of the given user.
     fn list_enabled_totp_device_secrets_by_user(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Vec<TotpSecret>>> + Send;
 
+    /// Return the secret of the given TOTP device.
     fn get_totp_device_secret(
         &self,
         txn: &mut Txn,
         totp_device_id: TotpDeviceId,
     ) -> impl Future<Output = anyhow::Result<TotpSecret>> + Send;
 
+    /// Update the secret of the given TOTP device.
     fn save_totp_device_secret(
         &self,
         txn: &mut Txn,
@@ -52,12 +59,14 @@ pub trait MfaRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         secret: &TotpSecret,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Return the MFA recovery code hash of the given user.
     fn get_mfa_recovery_code_hash(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Option<MfaRecoveryCodeHash>>> + Send;
 
+    /// Set the MFA recovery code hash of the given user.
     fn save_mfa_recovery_code_hash(
         &self,
         txn: &mut Txn,
@@ -65,6 +74,7 @@ pub trait MfaRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         recovery_code_hash: MfaRecoveryCodeHash,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
+    /// Delete the MFA recovery code hash of the given user.
     fn delete_mfa_recovery_code_hash(
         &self,
         txn: &mut Txn,

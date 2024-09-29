@@ -15,10 +15,10 @@ pub mod login;
 pub mod registration;
 
 pub trait OAuth2FeatureService: Send + Sync + 'static {
-    /// Return a list of all available OAuth2 providers.
+    /// Return all available OAuth2 providers.
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary>;
 
-    /// Return a list of all OAuth2 links of the given user.
+    /// Return all OAuth2 links of the given user.
     ///
     /// Requires admin privileges if not used on the authenticated user.
     fn list_links(

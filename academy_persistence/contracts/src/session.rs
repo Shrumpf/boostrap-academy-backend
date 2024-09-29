@@ -8,35 +8,35 @@ use chrono::{DateTime, Utc};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SessionRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
-    /// Returns the session with the given id.
+    /// Return the session with the given id.
     fn get(
         &self,
         txn: &mut Txn,
         session_id: SessionId,
     ) -> impl Future<Output = anyhow::Result<Option<Session>>> + Send;
 
-    /// Returns the session with the given refresh token hash.
+    /// Return the session with the given refresh token hash.
     fn get_by_refresh_token_hash(
         &self,
         txn: &mut Txn,
         refresh_token_hash: SessionRefreshTokenHash,
     ) -> impl Future<Output = anyhow::Result<Option<Session>>> + Send;
 
-    /// Returns all sessions of a given user.
+    /// Return all sessions of a given user.
     fn list_by_user(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Vec<Session>>> + Send;
 
-    /// Creates a new session.
+    /// Create a new session.
     fn create(
         &self,
         txn: &mut Txn,
         session: &Session,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
-    /// Updates the `updated_at` field of a session.
+    /// Update an existing session.
     fn update<'a>(
         &self,
         txn: &mut Txn,
@@ -44,44 +44,44 @@ pub trait SessionRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         patch: SessionPatchRef<'a>,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
-    /// Deletes a given session.
+    /// Delete a given session.
     fn delete(
         &self,
         txn: &mut Txn,
         session_id: SessionId,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
-    /// Deletes all sessions of a given user.
+    /// Delete all sessions of a given user.
     fn delete_by_user(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
-    /// Deletes all sessions that have not been updated since `updated_at`.
+    /// Delete all sessions that have not been updated since `updated_at`.
     ///
-    /// Returns the number of affected sessions.
+    /// Returns the number of deleted sessions.
     fn delete_by_updated_at(
         &self,
         txn: &mut Txn,
         updated_at: DateTime<Utc>,
     ) -> impl Future<Output = anyhow::Result<u64>> + Send;
 
-    /// Returns all refresh token hashes of a given user.
+    /// Return all refresh token hashes of a given user.
     fn list_refresh_token_hashes_by_user(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Vec<SessionRefreshTokenHash>>> + Send;
 
-    /// Returns the refresh token hash of a given session.
+    /// Return the refresh token hash of a given session.
     fn get_refresh_token_hash(
         &self,
         txn: &mut Txn,
         session_id: SessionId,
     ) -> impl Future<Output = anyhow::Result<Option<SessionRefreshTokenHash>>> + Send;
 
-    /// Saves or updates the refresh token hash for a given session.
+    /// Save or update the refresh token hash for a given session.
     fn save_refresh_token_hash(
         &self,
         txn: &mut Txn,

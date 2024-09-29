@@ -21,7 +21,7 @@ pub mod update;
 pub mod user;
 
 pub trait UserFeatureService: Send + Sync + 'static {
-    /// Return a list of all users matching the given query.
+    /// Return all users matching the given query.
     ///
     /// Requires admin privileges.
     fn list_users(

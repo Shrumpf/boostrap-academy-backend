@@ -20,7 +20,7 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         filter: &UserFilter,
     ) -> impl Future<Output = anyhow::Result<u64>> + Send;
 
-    /// Returns all user composites matching the given filter and pagination
+    /// Return all user composites matching the given filter and pagination
     /// slice.
     fn list_composites(
         &self,
@@ -29,34 +29,35 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         pagination: PaginationSlice,
     ) -> impl Future<Output = anyhow::Result<Vec<UserComposite>>> + Send;
 
-    /// Returns whether the user with the given id exists.
+    /// Return whether the user with the given id exists.
     fn exists(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
-    /// Returns the user composite with the given id.
+    /// Return the user composite with the given id.
     fn get_composite(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send;
 
-    /// Returns the user with the given name.
+    /// Return the user composite with the given name.
     fn get_composite_by_name(
         &self,
         txn: &mut Txn,
         name: &UserName,
     ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send;
 
-    /// Returns the user with the given email.
+    /// Return the user composite with the given email.
     fn get_composite_by_email(
         &self,
         txn: &mut Txn,
         email: &EmailAddress,
     ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send;
 
+    /// Return the user composite with the given name or email.
     fn get_composite_by_name_or_email(
         &self,
         txn: &mut Txn,
@@ -72,7 +73,7 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         }
     }
 
-    /// Returns the user linked to the given remote oauth2 user.
+    /// Return the user composite linked to the given remote OAuth2 user.
     fn get_composite_by_oauth2_provider_id_and_remote_user_id(
         &self,
         txn: &mut Txn,
@@ -80,7 +81,7 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         remote_user_id: &OAuth2RemoteUserId,
     ) -> impl Future<Output = anyhow::Result<Option<UserComposite>>> + Send;
 
-    /// Creates a new user.
+    /// Create a new user.
     ///
     /// Returns an error if a user with the same name or email already exists
     /// (both case insensitive).
@@ -92,6 +93,7 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         invoice_info: &UserInvoiceInfo,
     ) -> impl Future<Output = Result<(), UserRepoError>> + Send;
 
+    /// Update an existing user.
     fn update<'a>(
         &self,
         txn: &mut Txn,
@@ -99,6 +101,7 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         patch: UserPatchRef<'a>,
     ) -> impl Future<Output = Result<bool, UserRepoError>> + Send;
 
+    /// Update the profile of an existing user.
     fn update_profile<'a>(
         &self,
         txn: &mut Txn,
@@ -106,6 +109,7 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         patch: UserProfilePatchRef<'a>,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
+    /// Update the invoice info of an existing user.
     fn update_invoice_info<'a>(
         &self,
         txn: &mut Txn,
@@ -113,13 +117,14 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         patch: UserInvoiceInfoPatchRef<'a>,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
+    /// Delete an existing user.
     fn delete(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
-    /// Saves or updates the password hash for a given user.
+    /// Save or update the password hash for a given user.
     fn save_password_hash(
         &self,
         txn: &mut Txn,
@@ -127,14 +132,14 @@ pub trait UserRepository<Txn: Send + Sync + 'static>: Send + Sync + 'static {
         password_hash: String,
     ) -> impl Future<Output = anyhow::Result<()>> + Send;
 
-    /// Returns the password hash of a given user.
+    /// Return the password hash of a given user.
     fn get_password_hash(
         &self,
         txn: &mut Txn,
         user_id: UserId,
     ) -> impl Future<Output = anyhow::Result<Option<String>>> + Send;
 
-    /// Removes the password hash of a given user.
+    /// Remove the password hash of a given user.
     fn remove_password_hash(
         &self,
         txn: &mut Txn,
