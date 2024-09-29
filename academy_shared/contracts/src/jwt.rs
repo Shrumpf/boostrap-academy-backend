@@ -5,14 +5,14 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait JwtService: Send + Sync + 'static {
-    /// Signs a JWT with the given data and time to live.
+    /// Sign a JWT with the given data and time to live.
     ///
     /// `data` must serialize to a map (JSON object), which may not contain the
     /// `exp` key.
     fn sign<T: Serialize + 'static>(&self, data: T, ttl: Duration) -> anyhow::Result<String>;
 
-    /// Verifies the signature of a JWT, deserializes its payload and checks
-    /// whether the JWT has expired.
+    /// Verify the signature of the given JWT, deserialize its payload and
+    /// ensure the JWT has not expired yet.
     fn verify<T: DeserializeOwned + 'static>(&self, jwt: &str) -> Result<T, VerifyJwtError<T>>;
 }
 

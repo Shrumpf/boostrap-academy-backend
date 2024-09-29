@@ -2,7 +2,7 @@ use academy_models::Sha256Hash;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait HashService: Send + Sync + 'static {
-    /// Hashes the given data using the SHA-256 algorithm.
+    /// Compute the SHA-256 hash of the given data.
     fn sha256(&self, data: &[u8]) -> Sha256Hash;
 }
 

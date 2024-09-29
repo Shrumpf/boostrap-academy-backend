@@ -55,6 +55,7 @@ where
             return Err(TotpCheckError::InvalidCode);
         }
 
+        // temporarily cache used totp codes to prevent replay attacks
         let cache_key = format!("totp_code_used:{}:{}", hex::encode(secret_hash.0), **code);
         if self.cache.get::<()>(&cache_key).await?.is_some() {
             return Err(TotpCheckError::RecentlyUsed);

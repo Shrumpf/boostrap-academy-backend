@@ -38,18 +38,17 @@ where
     }
 
     async fn check(&self, response: Option<&str>) -> Result<(), CaptchaCheckError> {
-        let CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig {
-            ref secret,
-            min_score,
-            ..
-        }) = self.config
-        else {
-            return Ok(());
+        let config = match &self.config {
+            CaptchaServiceConfig::Recaptcha(config) => config,
+            CaptchaServiceConfig::Disabled => return Ok(()),
         };
 
         let response = response.ok_or(CaptchaCheckError::Failed)?;
-        let response = self.recaptcha_api.siteverify(response, secret).await?;
-        let ok = response.success && response.score.unwrap_or(0.0) >= min_score;
+        let response = self
+            .recaptcha_api
+            .siteverify(response, &config.secret)
+            .await?;
+        let ok = response.success && response.score.unwrap_or(0.0) >= config.min_score;
         ok.then_some(()).ok_or(CaptchaCheckError::Failed)
     }
 }

@@ -4,10 +4,10 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait PasswordService: Send + Sync + 'static {
-    /// Securely hashes a password.
+    /// Securely hash a password.
     fn hash(&self, password: String) -> impl Future<Output = anyhow::Result<String>> + Send;
 
-    /// Verifies that a password matches the given hash.
+    /// Verify that a password matches the given hash.
     fn verify(
         &self,
         password: String,

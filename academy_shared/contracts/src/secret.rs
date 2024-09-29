@@ -2,16 +2,16 @@ use academy_models::{mfa::MfaRecoveryCode, VerificationCode};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SecretService: Send + Sync + 'static {
-    /// Generates a new random alphanumeric string of the given length.
+    /// Generate a new random alphanumeric string of the given length.
     fn generate(&self, len: usize) -> String;
 
-    /// Generates `len` bytes of random data.
+    /// Generate `len` bytes of random data.
     fn generate_bytes(&self, len: usize) -> Vec<u8>;
 
-    /// Generates a new random verification code.
+    /// Generate a new random verification code.
     fn generate_verification_code(&self) -> VerificationCode;
 
-    /// Generates a new random mfa recovery code.
+    /// Generate a new random mfa recovery code.
     fn generate_mfa_recovery_code(&self) -> MfaRecoveryCode;
 }
 

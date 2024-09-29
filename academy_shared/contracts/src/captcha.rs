@@ -4,12 +4,14 @@ use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait CaptchaService: Send + Sync + 'static {
+    /// Return the public reCAPTCHA sitekey if reCAPTCHA is enabled.
     #[allow(
         clippy::needless_lifetimes,
         reason = "explicit lifetime needed for automock"
     )]
     fn get_recaptcha_sitekey<'a>(&'a self) -> Option<&'a str>;
 
+    /// Verify the given reCAPTCHA response.
     fn check<'a>(
         &self,
         response: Option<&'a str>,

@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait IdService: Send + Sync + 'static {
-    /// Generates a new unique ID.
+    /// Generate a new unique ID.
     fn generate<I: From<Uuid> + 'static>(&self) -> I;
 }
 

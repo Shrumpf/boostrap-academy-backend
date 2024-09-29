@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait TimeService: Send + Sync + 'static {
-    /// Returns the current time.
+    /// Return the current time.
     fn now(&self) -> DateTime<Utc>;
 }
 
