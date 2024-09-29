@@ -6,8 +6,10 @@ pub mod template;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait EmailService: Send + Sync + 'static {
+    /// Send the given [`Email`].
     fn send(&self, email: Email) -> impl Future<Output = anyhow::Result<bool>> + Send;
 
+    /// Verify the connection to the SMTP server.
     fn ping(&self) -> impl Future<Output = anyhow::Result<()>> + Send;
 }
 
