@@ -1021,22 +1021,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-master": {
-      "locked": {
-        "lastModified": 1727704729,
-        "narHash": "sha256-VT831LO4Ph0R5AcPCez9MztHOxrUEExiFg4+QGI4sQo=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "4cffff1c550aef6792a8c746e5a965bfa86af34f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "master",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-regression": {
       "locked": {
         "lastModified": 1643052045,
@@ -1103,11 +1087,11 @@
     },
     "nixpkgs_10": {
       "locked": {
-        "lastModified": 1727348695,
-        "narHash": "sha256-J+PeFKSDV+pHL7ukkfpVzCOO7mBSrrpJ3svwBFABbhI=",
+        "lastModified": 1727634051,
+        "narHash": "sha256-S5kVU7U82LfpEukbn/ihcyNt2+EvG7Z5unsKW9H/yFA=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "1925c603f17fc89f4c8f6bf6f631a802ad85d784",
+        "rev": "06cf0e1da4208d3766d898b7fdab6513366d45b9",
         "type": "github"
       },
       "original": {
@@ -1432,8 +1416,7 @@
         "crate2nix": "crate2nix",
         "devenv": "devenv",
         "fenix": "fenix",
-        "nixpkgs": "nixpkgs_10",
-        "nixpkgs-master": "nixpkgs-master"
+        "nixpkgs": "nixpkgs_10"
       }
     },
     "rust-analyzer-src": {

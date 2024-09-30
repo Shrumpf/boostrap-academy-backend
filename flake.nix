@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
     fenix.url = "github:nix-community/fenix";
     crate2nix.url = "github:nix-community/crate2nix";
     devenv = {
@@ -13,7 +12,6 @@
   outputs = {
     self,
     nixpkgs,
-    nixpkgs-master,
     fenix,
     crate2nix,
     devenv,
@@ -21,16 +19,12 @@
   } @ inputs: let
     inherit (nixpkgs) lib;
 
-    defaultSystems = [
+    eachDefaultSystem = lib.genAttrs [
       "x86_64-linux"
       "aarch64-linux"
     ];
-    eachDefaultSystem = lib.genAttrs defaultSystems;
 
-    overlays = [
-      (final: prev: {inherit (nixpkgs-master.legacyPackages.${final.system}) smtp4dev;})
-    ];
-    importNixpkgs = system: import nixpkgs {inherit system overlays;};
+    importNixpkgs = system: import nixpkgs {inherit system;};
   in {
     packages = eachDefaultSystem (system: let
       pkgs = importNixpkgs system;
