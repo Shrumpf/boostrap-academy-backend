@@ -13,6 +13,7 @@ jobs:
     runs-on: debian-latest
     env:
       USER: root
+      HOME: /root
     steps:
       - uses: actions/checkout@v4
       - run: apt update && apt install -y sudo
@@ -26,4 +27,7 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           useDaemon: false
       - run: nix build -L
+      - run: nix build -L .#testing
+      - run: nix build -L .#devShell --no-pure-eval
+      - run: nix build -L .#devenv-up --no-pure-eval
       - run: nix build -L .#tests.composite

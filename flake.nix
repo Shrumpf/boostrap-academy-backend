@@ -32,6 +32,7 @@
       (pkgs.callPackages ./nix/packages.nix {inherit crate2nix fenix;})
       // {
         tests = pkgs.callPackages ./nix/tests {inherit self;};
+        devShell = self.devShells.${system}.default;
         devenv-up = self.devShells.${system}.default.config.procfileScript;
       });
 
