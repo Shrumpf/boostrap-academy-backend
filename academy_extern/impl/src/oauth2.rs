@@ -4,7 +4,7 @@ use academy_di::Build;
 use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError};
 use academy_models::oauth2::{OAuth2AuthorizationCode, OAuth2Provider, OAuth2UserInfo};
 use academy_utils::Apply;
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use oauth2::{
     basic::BasicClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, RedirectUrl,
     RequestTokenError, TokenResponse, TokenUrl,
@@ -61,7 +61,9 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
                 RequestTokenError::ServerResponse(_) | RequestTokenError::Parse(_, _) => {
                     OAuth2ResolveCodeError::InvalidCode
                 }
-                err => OAuth2ResolveCodeError::Other(err.into()),
+                err => anyhow!(err)
+                    .context("Failed to exchange authorization code")
+                    .into(),
             })?;
 
         let access_token = response.access_token().secret();
@@ -73,32 +75,31 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
             .bearer_auth(access_token)
             .send()
             .await
-            .map_err(|err| OAuth2ResolveCodeError::Other(err.into()))?
+            .context("Failed to send request to fetch userinfo")?
             .error_for_status()
-            .map_err(|err| OAuth2ResolveCodeError::Other(err.into()))?
+            .context("Fetch userinfo request returned an error")?
             .json::<HashMap<String, serde_json::Value>>()
             .await
-            .map_err(|err| OAuth2ResolveCodeError::Other(err.into()))?;
+            .context("Failed to deserialize userinfo")?;
 
         let id = match userinfo.get(&provider.userinfo_id_key) {
-            Some(serde_json::Value::Number(id)) => id.to_string(),
-            Some(serde_json::Value::String(id)) => id.to_owned(),
-            Some(x) => return Err(anyhow!("Invalid user id: {x}").into()),
-            None => return Err(anyhow!("User id missing").into()),
-        };
+            Some(serde_json::Value::Number(id)) => Ok(id.to_string()),
+            Some(serde_json::Value::String(id)) => Ok(id.to_owned()),
+            Some(x) => Err(anyhow!("Invalid user id: {x}")),
+            None => Err(anyhow!("User id missing")),
+        }
+        .context("Failed to get user id from userinfo")?
+        .try_into()
+        .map_err(|id| anyhow!("Failed to deserialize remote user id {id:?}"))?;
 
         let name = match userinfo.get(&provider.userinfo_name_key) {
-            Some(serde_json::Value::String(name)) => name.clone(),
-            Some(x) => return Err(anyhow!("Invalid username: {x}").into()),
-            None => return Err(anyhow!("Username missing").into()),
-        };
-
-        let id = id
-            .try_into()
-            .map_err(|id| anyhow!("Failed to deserialize remote user id {id:?}"))?;
-        let name = name
-            .try_into()
-            .map_err(|name| anyhow!("Failed to deserialize remote user name {name:?}"))?;
+            Some(serde_json::Value::String(name)) => Ok(name.clone()),
+            Some(x) => Err(anyhow!("Invalid username: {x}")),
+            None => Err(anyhow!("Username missing")),
+        }
+        .context("Failed to get username from userinfo")?
+        .try_into()
+        .map_err(|name| anyhow!("Failed to deserialize remote user name {name:?}"))?;
 
         Ok(OAuth2UserInfo { id, name })
     }

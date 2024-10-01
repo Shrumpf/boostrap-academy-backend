@@ -3,6 +3,7 @@ use academy_di::Build;
 use academy_models::{mfa::MfaRecoveryCode, user::UserId};
 use academy_persistence_contracts::mfa::MfaRepository;
 use academy_shared_contracts::{hash::HashService, secret::SecretService};
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
 pub struct MfaRecoveryServiceImpl<Secret, Hash, MfaRepo> {
@@ -25,7 +26,8 @@ where
         let hash = self.hash.sha256(recovery_code.as_bytes()).into();
         self.mfa_repo
             .save_mfa_recovery_code_hash(txn, user_id, hash)
-            .await?;
+            .await
+            .context("Failed to save MFA recovery code hash in database")?;
 
         Ok(recovery_code)
     }

@@ -32,7 +32,7 @@ pub fn load_dev_config() -> anyhow::Result<Config> {
 
 fn parse_env_var() -> anyhow::Result<Vec<String>> {
     let env_var = std::env::var(ENVIRONMENT_VARIABLE)
-        .with_context(|| format!("Failed to load {ENVIRONMENT_VARIABLE} environment variable"))?;
+        .with_context(|| format!("Failed to load environment variable {ENVIRONMENT_VARIABLE}"))?;
     Ok(env_var.split(':').rev().map(Into::into).collect())
 }
 
@@ -53,26 +53,25 @@ fn load_paths(paths: &[impl AsRef<Path>], overrides: &[&str]) -> anyhow::Result<
         builder = builder.add_source(source);
     }
 
-    builder
+    let mut config = builder
         .build()?
         .try_deserialize::<Config>()
-        .context("Failed to load config")
-        .map(|mut config| {
-            config
-                .recaptcha
-                .take_if(|recaptcha| recaptcha.enable == Some(false));
+        .context("Failed to load config")?;
 
-            config.sentry.take_if(|sentry| sentry.enable == Some(false));
+    config
+        .recaptcha
+        .take_if(|recaptcha| recaptcha.enable == Some(false));
 
-            if let Some(oauth2) = &mut config.oauth2 {
-                oauth2.providers.retain(|_, p| p.enable != Some(false));
-            }
-            config
-                .oauth2
-                .take_if(|oauth2| oauth2.enable == Some(false) || oauth2.providers.is_empty());
+    config.sentry.take_if(|sentry| sentry.enable == Some(false));
 
-            config
-        })
+    if let Some(oauth2) = &mut config.oauth2 {
+        oauth2.providers.retain(|_, p| p.enable != Some(false));
+    }
+    config
+        .oauth2
+        .take_if(|oauth2| oauth2.enable == Some(false) || oauth2.providers.is_empty());
+
+    Ok(config)
 }
 
 #[derive(Debug, Deserialize)]

@@ -151,32 +151,31 @@ pub static BAR: LazyLock<UserComposite> = LazyLock::new(|| UserComposite {
 pub static BAR_PASSWORD: LazyLock<UserPassword> =
     LazyLock::new(|| "password for bar".try_into().unwrap());
 
+fn hash_password(password: &str) -> anyhow::Result<String> {
+    let argon2 = Argon2::default();
+    let salt = SaltString::generate(&mut OsRng);
+    argon2
+        .hash_password(password.as_bytes(), &salt)
+        .map(|hash| hash.to_string())
+        .map_err(Into::into)
+}
+
 pub async fn create<Txn: Send + Sync + 'static>(
     txn: &mut Txn,
     repo: impl UserRepository<Txn>,
 ) -> anyhow::Result<()> {
     for &user in &*ALL_USERS {
         repo.create(txn, &user.user, &user.profile, &user.invoice_info)
-            .await
-            .unwrap();
+            .await?;
     }
 
-    fn hash(password: &str) -> anyhow::Result<String> {
-        let argon2 = Argon2::default();
-        let salt = SaltString::generate(&mut OsRng);
-        argon2
-            .hash_password(password.as_bytes(), &salt)
-            .map(|hash| hash.to_string())
-            .map_err(Into::into)
-    }
-
-    repo.save_password_hash(txn, ADMIN.user.id, hash(&ADMIN_PASSWORD)?)
+    repo.save_password_hash(txn, ADMIN.user.id, hash_password(&ADMIN_PASSWORD)?)
         .await?;
-    repo.save_password_hash(txn, ADMIN2.user.id, hash(&ADMIN2_PASSWORD)?)
+    repo.save_password_hash(txn, ADMIN2.user.id, hash_password(&ADMIN2_PASSWORD)?)
         .await?;
-    repo.save_password_hash(txn, FOO.user.id, hash(&FOO_PASSWORD)?)
+    repo.save_password_hash(txn, FOO.user.id, hash_password(&FOO_PASSWORD)?)
         .await?;
-    repo.save_password_hash(txn, BAR.user.id, hash(&BAR_PASSWORD)?)
+    repo.save_password_hash(txn, BAR.user.id, hash_password(&BAR_PASSWORD)?)
         .await?;
 
     Ok(())

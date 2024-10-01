@@ -14,6 +14,7 @@ use academy_models::{
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_shared_contracts::{password::PasswordService, time::TimeService};
 use academy_utils::patch::{Patch, PatchValue};
+use anyhow::{anyhow, Context};
 
 use crate::UserFeatureConfig;
 
@@ -73,7 +74,9 @@ where
             .map(|_| user.update(patch))
             .map_err(|err| match err {
                 UserRepoError::NameConflict => UserUpdateNameError::Conflict,
-                err => UserUpdateNameError::Other(err.into()),
+                err => anyhow!(err)
+                    .context("Failed to update user in database")
+                    .into(),
             })
     }
 
@@ -96,13 +99,18 @@ where
             .await
             .map_err(|err| match err {
                 UserRepoError::EmailConflict => UserUpdateEmailError::Conflict,
-                err => UserUpdateEmailError::Other(err.into()),
+                err => anyhow!(err)
+                    .context("Failed to update user in database")
+                    .into(),
             })?;
 
         if result {
             // access tokens contain the `email_verified` field, so we need to invalidate
             // them when changing this value
-            self.auth.invalidate_access_tokens(txn, user_id).await?;
+            self.auth
+                .invalidate_access_tokens(txn, user_id)
+                .await
+                .context("Failed to invalidate access tokens")?;
         }
 
         Ok(result)
@@ -114,11 +122,16 @@ where
         user_id: UserId,
         password: UserPassword,
     ) -> anyhow::Result<()> {
-        let hash = self.password.hash(password.into_inner()).await?;
+        let hash = self
+            .password
+            .hash(password.into_inner())
+            .await
+            .context("Failed to hash password")?;
 
         self.user_repo
             .save_password_hash(txn, user_id, hash)
-            .await?;
+            .await
+            .context("Failed to save password hash in database")?;
 
         Ok(())
     }
@@ -130,13 +143,16 @@ where
         enabled: bool,
     ) -> anyhow::Result<bool> {
         if !enabled {
-            self.session.delete_by_user(txn, user_id).await?;
+            self.session
+                .delete_by_user(txn, user_id)
+                .await
+                .context("Failed to log out user")?;
         }
 
         self.user_repo
             .update(txn, user_id, UserPatchRef::new().update_enabled(&enabled))
             .await
-            .map_err(Into::into)
+            .context("Failed to update user in database")
     }
 
     async fn update_admin(
@@ -147,11 +163,15 @@ where
     ) -> anyhow::Result<bool> {
         // access tokens contain the `admin` field, so we need to invalidate
         // them when changing this value
-        self.auth.invalidate_access_tokens(txn, user_id).await?;
+        self.auth
+            .invalidate_access_tokens(txn, user_id)
+            .await
+            .context("Failed to invalidate access tokens")?;
+
         self.user_repo
             .update(txn, user_id, UserPatchRef::new().update_admin(&admin))
             .await
-            .map_err(Into::into)
+            .context("Failed to update user in database")
     }
 
     async fn update_invoice_info(
@@ -167,7 +187,8 @@ where
 
         self.user_repo
             .update_invoice_info(txn, user_id, patch.as_ref())
-            .await?;
+            .await
+            .context("Failed to update user in database")?;
 
         Ok(invoice_info.update(patch))
     }

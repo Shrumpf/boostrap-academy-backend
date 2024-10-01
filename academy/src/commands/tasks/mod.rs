@@ -1,6 +1,7 @@
 use academy_config::Config;
 use academy_persistence_contracts::{session::SessionRepository, Database, Transaction};
 use academy_persistence_postgres::session::PostgresSessionRepository;
+use anyhow::Context;
 use chrono::Utc;
 use clap::Subcommand;
 use tracing::info;
@@ -29,7 +30,8 @@ async fn prune_database(config: Config) -> anyhow::Result<()> {
     let now = Utc::now();
     let pruned = session_repo
         .delete_by_updated_at(&mut txn, now - config.session.refresh_token_ttl.0)
-        .await?;
+        .await
+        .context("Failed to prune sessions")?;
     info!("Pruned {pruned} expired sessions.");
 
     txn.commit().await?;

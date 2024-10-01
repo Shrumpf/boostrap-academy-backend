@@ -45,7 +45,7 @@ pub async fn create<Txn: Send + Sync + 'static>(
     repo: impl SessionRepository<Txn>,
 ) -> anyhow::Result<()> {
     for &session in &*ALL_SESSIONS {
-        repo.create(txn, session).await.unwrap();
+        repo.create(txn, session).await?;
     }
     Ok(())
 }

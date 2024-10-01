@@ -45,8 +45,7 @@ pub async fn create<Txn: Send + Sync + 'static>(
 ) -> anyhow::Result<()> {
     for &totp_device in &*ALL_TOTP_DEVICES {
         repo.create_totp_device(txn, totp_device, &TOTP_SECRETS[&totp_device.id])
-            .await
-            .unwrap();
+            .await?;
     }
     Ok(())
 }

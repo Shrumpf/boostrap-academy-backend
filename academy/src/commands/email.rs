@@ -2,7 +2,7 @@ use academy_config::Config;
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_email_impl::EmailServiceImpl;
 use academy_models::email_address::EmailAddressWithName;
-use anyhow::ensure;
+use anyhow::{anyhow, Context};
 use clap::Subcommand;
 
 #[derive(Debug, Subcommand)]
@@ -25,7 +25,7 @@ impl EmailCommand {
 async fn test(config: Config, recipient: EmailAddressWithName) -> anyhow::Result<()> {
     let email_service = EmailServiceImpl::new(&config.email.smtp_url, config.email.from).await?;
 
-    let ok = email_service
+    email_service
         .send(Email {
             recipient,
             subject: "Email Deliverability Test".into(),
@@ -33,9 +33,12 @@ async fn test(config: Config, recipient: EmailAddressWithName) -> anyhow::Result
             content_type: ContentType::Text,
             reply_to: None,
         })
-        .await?;
-
-    ensure!(ok, "Failed to send email");
+        .await
+        .and_then(|r| {
+            r.then_some(())
+                .ok_or_else(|| anyhow!("SMTP server returned a negative response"))
+        })
+        .context("Failed to send email")?;
 
     Ok(())
 }

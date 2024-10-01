@@ -9,6 +9,7 @@ use academy_models::{
 use academy_persistence_contracts::{session::SessionRepository, user::UserRepository};
 use academy_shared_contracts::{id::IdService, time::TimeService};
 use academy_utils::patch::Patch;
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build, Default)]
 pub struct SessionServiceImpl<Id, Time, Auth, AuthAccessToken, SessionRepo, UserRepo> {
@@ -49,18 +50,26 @@ where
             updated_at: now,
         };
 
-        let tokens = self.auth.issue_tokens(&user_composite.user, session.id)?;
+        let tokens = self
+            .auth
+            .issue_tokens(&user_composite.user, session.id)
+            .context("Failed to issue tokens")?;
 
-        self.session_repo.create(txn, &session).await?;
+        self.session_repo
+            .create(txn, &session)
+            .await
+            .context("Failed to create session in database")?;
         self.session_repo
             .save_refresh_token_hash(txn, session.id, tokens.refresh_token_hash)
-            .await?;
+            .await
+            .context("Failed to save session refresh token hash in database")?;
 
         if update_last_login {
             let patch = UserPatch::new().update_last_login(Some(now));
             self.user_repo
                 .update(txn, user_composite.user.id, patch.as_ref())
-                .await?;
+                .await
+                .context("Failed to update user in database")?;
             user_composite.user = user_composite.user.update(patch);
         }
 
@@ -77,41 +86,52 @@ where
         txn: &mut Txn,
         session_id: SessionId,
     ) -> Result<Login, SessionRefreshError> {
+        // get session and user from database
         let refresh_token_hash = self
             .session_repo
             .get_refresh_token_hash(txn, session_id)
-            .await?
+            .await
+            .context("Failed to get session refresh token hash from database")?
             .ok_or(SessionRefreshError::NotFound)?;
 
         let session = self
             .session_repo
             .get(txn, session_id)
-            .await?
+            .await
+            .context("Failed to get session from database")?
             .ok_or(SessionRefreshError::NotFound)?;
 
         let user_composite = self
             .user_repo
             .get_composite(txn, session.user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(SessionRefreshError::NotFound)?;
 
+        // invalidate old access token
         self.auth_access_token
             .invalidate(refresh_token_hash)
-            .await?;
+            .await
+            .context("Failed to invalidate old access token")?;
 
-        let tokens = self.auth.issue_tokens(&user_composite.user, session_id)?;
+        // issue new token pair
+        let tokens = self
+            .auth
+            .issue_tokens(&user_composite.user, session_id)
+            .context("Failed to issue tokens")?;
 
-        let now = self.time.now();
-
-        let patch = SessionPatch::new().update_updated_at(now);
+        // update session
+        let patch = SessionPatch::new().update_updated_at(self.time.now());
         self.session_repo
             .update(txn, session.id, patch.as_ref())
-            .await?;
+            .await
+            .context("Failed to update session in database")?;
         let session = session.update(patch);
 
         self.session_repo
             .save_refresh_token_hash(txn, session.id, tokens.refresh_token_hash)
-            .await?;
+            .await
+            .context("Failed to update session refresh token hash in database")?;
 
         Ok(Login {
             user_composite,
@@ -125,19 +145,32 @@ where
         if let Some(refresh_token_hash) = self
             .session_repo
             .get_refresh_token_hash(txn, session_id)
-            .await?
+            .await
+            .context("Failed to get session fresh token hash from database")?
         {
             self.auth_access_token
                 .invalidate(refresh_token_hash)
-                .await?;
+                .await
+                .context("Failed to invalidate access token")?;
         }
 
-        self.session_repo.delete(txn, session_id).await
+        self.session_repo
+            .delete(txn, session_id)
+            .await
+            .context("Failed to delete session from database")
     }
 
     async fn delete_by_user(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<()> {
-        self.auth.invalidate_access_tokens(txn, user_id).await?;
-        self.session_repo.delete_by_user(txn, user_id).await?;
+        self.auth
+            .invalidate_access_tokens(txn, user_id)
+            .await
+            .context("Failed to invalidate access tokens")?;
+
+        self.session_repo
+            .delete_by_user(txn, user_id)
+            .await
+            .context("Failed to delete sessions from database")?;
+
         Ok(())
     }
 }

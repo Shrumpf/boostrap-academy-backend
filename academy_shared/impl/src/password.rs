@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use academy_di::Build;
 use academy_shared_contracts::password::{PasswordService, PasswordVerifyError};
+use anyhow::{anyhow, Context};
 use argon2::{
     password_hash::{self, rand_core::OsRng, SaltString},
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
@@ -23,7 +24,7 @@ impl PasswordService for PasswordServiceImpl {
                 .map(|hash| hash.to_string())
         })
         .await?
-        .map_err(Into::into)
+        .context("Failed to hash password")
     }
 
     async fn verify(&self, password: String, hash: String) -> Result<(), PasswordVerifyError> {
@@ -35,11 +36,11 @@ impl PasswordService for PasswordServiceImpl {
                 .verify_password(password.as_bytes(), &hash)
                 .map_err(|err| match err {
                     password_hash::Error::Password => PasswordVerifyError::InvalidPassword,
-                    err => PasswordVerifyError::Other(err.into()),
+                    err => anyhow!(err).context("Failed to verify password").into(),
                 })
         })
         .await
-        .map_err(|err| PasswordVerifyError::Other(err.into()))?
+        .map_err(|err| anyhow!(err).context("Failed to verify password"))?
     }
 }
 

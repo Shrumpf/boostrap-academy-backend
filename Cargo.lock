@@ -229,6 +229,7 @@ dependencies = [
  "academy_persistence_contracts",
  "academy_shared_contracts",
  "academy_utils",
+ "anyhow",
  "serde",
  "tokio",
 ]
@@ -454,6 +455,7 @@ dependencies = [
  "academy_utils",
  "anyhow",
  "chrono",
+ "hex",
  "lettre",
  "nutype",
  "regex",

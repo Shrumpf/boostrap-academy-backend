@@ -5,6 +5,7 @@ use academy_persistence_postgres::{
     session::PostgresSessionRepository, user::PostgresUserRepository, MigrationStatus,
     PostgresDatabase,
 };
+use anyhow::Context;
 use clap::Subcommand;
 use load::LoadCommand;
 
@@ -94,9 +95,14 @@ async fn reset(db: PostgresDatabase) -> anyhow::Result<()> {
 }
 
 async fn demo(db: PostgresDatabase) -> anyhow::Result<()> {
-    db.reset().await?;
+    db.reset().await.context("Failed to reset database")?;
     println!("Database reset successful");
-    migration_logs(&db.run_migrations(None).await?, "applied");
+    migration_logs(
+        &db.run_migrations(None)
+            .await
+            .context("Failed to run migrations")?,
+        "applied",
+    );
 
     let mut txn = db.begin_transaction().await?;
     academy_demo::create(
@@ -106,7 +112,8 @@ async fn demo(db: PostgresDatabase) -> anyhow::Result<()> {
         PostgresMfaRepository,
         PostgresOAuth2Repository,
     )
-    .await?;
+    .await
+    .context("Failed to restore demo dataset")?;
     txn.commit().await?;
     println!("Demo dataset has been restored");
 

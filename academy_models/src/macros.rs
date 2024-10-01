@@ -34,6 +34,7 @@ macro_rules! sha256hash {
     ($ident:ident) => {
         #[::nutype::nutype(derive(
             Debug,
+            Display,
             Clone,
             Copy,
             PartialEq,

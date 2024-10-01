@@ -3,6 +3,7 @@ use std::sync::Arc;
 use academy_di::Build;
 use academy_extern_contracts::recaptcha::RecaptchaApiService;
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
@@ -47,7 +48,8 @@ where
         let response = self
             .recaptcha_api
             .siteverify(response, &config.secret)
-            .await?;
+            .await
+            .context("Failed to verify reCAPTCHA response")?;
         let ok = response.success && response.score.unwrap_or(0.0) >= config.min_score;
         ok.then_some(()).ok_or(CaptchaCheckError::Failed)
     }

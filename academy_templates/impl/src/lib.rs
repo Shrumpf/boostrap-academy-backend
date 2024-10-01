@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use academy_di::Build;
 use academy_templates_contracts::{Template, TemplateService, BASE_TEMPLATE, TEMPLATES};
+use anyhow::Context;
 use tera::Tera;
 
 #[derive(Debug, Clone, Build)]
@@ -29,8 +30,13 @@ impl Default for State {
 
 impl TemplateService for TemplateServiceImpl {
     fn render<T: Template>(&self, template: &T) -> anyhow::Result<String> {
-        let context = tera::Context::from_serialize(template)?;
-        self.state.0.render(T::NAME, &context).map_err(Into::into)
+        let context = tera::Context::from_serialize(template)
+            .with_context(|| format!("Failed to build tera context for template {}", T::NAME))?;
+
+        self.state
+            .0
+            .render(T::NAME, &context)
+            .with_context(|| format!("Failed to render template {}", T::NAME))
     }
 }
 

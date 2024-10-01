@@ -3,6 +3,7 @@ use academy_core_oauth2_contracts::registration::OAuth2RegistrationService;
 use academy_di::Build;
 use academy_models::oauth2::{OAuth2Registration, OAuth2RegistrationToken};
 use academy_shared_contracts::secret::SecretService;
+use anyhow::Context;
 
 use crate::OAuth2FeatureConfig;
 
@@ -33,7 +34,8 @@ where
                 registration,
                 Some(self.config.registration_token_ttl),
             )
-            .await?;
+            .await
+            .context("Failed to save OAuth2 registration in cache")?;
 
         Ok(registration_token)
     }
@@ -45,12 +47,14 @@ where
         self.cache
             .get(&oauth2_registration_cache_key(registration_token))
             .await
+            .context("Failed to get OAuth2 registration from cache")
     }
 
     async fn remove(&self, registration_token: &OAuth2RegistrationToken) -> anyhow::Result<()> {
         self.cache
             .remove(&oauth2_registration_cache_key(registration_token))
             .await
+            .context("Failed to remove OAuth2 registration from cache")
     }
 }
 

@@ -1,7 +1,7 @@
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_models::email_address::EmailAddressWithName;
 use academy_utils::Apply;
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use lettre::{
     message::{header, MessageBuilder},
     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
@@ -41,19 +41,21 @@ impl EmailService for EmailServiceImpl {
                 ContentType::Text => header::ContentType::TEXT_PLAIN,
                 ContentType::Html => header::ContentType::TEXT_HTML,
             })
-            .body(email.body)?;
+            .body(email.body)
+            .context("Failed to build email message")?;
 
         self.transport
             .send(message)
             .await
             .map(|response| response.is_positive())
-            .map_err(Into::into)
+            .context("Failed to send email")
     }
 
     async fn ping(&self) -> anyhow::Result<()> {
         self.transport
             .test_connection()
-            .await?
+            .await
+            .context("Failed to ping smtp server")?
             .then_some(())
             .ok_or_else(|| anyhow!("Failed to ping smtp server"))
     }

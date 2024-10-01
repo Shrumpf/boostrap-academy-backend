@@ -9,6 +9,7 @@ use academy_shared_contracts::{
     time::TimeService,
     totp::{TotpCheckError, TotpService},
 };
+use anyhow::Context;
 use totp_rs::{Rfc6238, TOTP};
 
 #[derive(Debug, Clone, Build)]
@@ -57,7 +58,13 @@ where
 
         // temporarily cache used totp codes to prevent replay attacks
         let cache_key = format!("totp_code_used:{}:{}", hex::encode(secret_hash.0), **code);
-        if self.cache.get::<()>(&cache_key).await?.is_some() {
+        if self
+            .cache
+            .get::<()>(&cache_key)
+            .await
+            .context("Failed to check whether totp code has recently been used")?
+            .is_some()
+        {
             return Err(TotpCheckError::RecentlyUsed);
         }
 
@@ -66,7 +73,8 @@ where
         // have expired and can be removed from the cache.
         self.cache
             .set(&cache_key, &(), Some(Duration::from_secs(90)))
-            .await?;
+            .await
+            .context("Failed to cache used totp code")?;
 
         Ok(())
     }

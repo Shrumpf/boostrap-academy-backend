@@ -29,7 +29,9 @@ where
             .await
             .map_err(|err| match err {
                 OAuth2ResolveCodeError::InvalidCode => OAuth2LoginServiceError::InvalidCode,
-                OAuth2ResolveCodeError::Other(err) => err.into(),
+                OAuth2ResolveCodeError::Other(err) => {
+                    err.context("Failed to resolve authorization code").into()
+                }
             })?;
 
         Ok(user_info)

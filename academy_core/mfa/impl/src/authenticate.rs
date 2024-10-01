@@ -9,6 +9,7 @@ use academy_shared_contracts::{
     hash::HashService,
     totp::{TotpCheckError, TotpService},
 };
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build, Default)]
 pub struct MfaAuthenticateServiceImpl<Hash, Totp, MfaDisable, MfaRepo> {
@@ -36,7 +37,8 @@ where
         let totp_secrets = self
             .mfa_repo
             .list_enabled_totp_device_secrets_by_user(txn, user_id)
-            .await?;
+            .await
+            .context("Failed to get totp secrets from database")?;
 
         if totp_secrets.is_empty() {
             return Ok(MfaAuthenticateResult::Disabled);
@@ -46,10 +48,14 @@ where
             if let Some(hash) = self
                 .mfa_repo
                 .get_mfa_recovery_code_hash(txn, user_id)
-                .await?
+                .await
+                .context("Failed to get recovery code hash from database")?
             {
                 if self.hash.sha256(recovery_code.as_bytes()) == *hash {
-                    self.mfa_disable.disable(txn, user_id).await?;
+                    self.mfa_disable
+                        .disable(txn, user_id)
+                        .await
+                        .context("Failed to disable MFA")?;
                     return Ok(MfaAuthenticateResult::Reset);
                 }
             }
@@ -60,7 +66,9 @@ where
                 match self.totp.check(&code, secret).await {
                     Ok(()) => return Ok(MfaAuthenticateResult::Ok),
                     Err(TotpCheckError::InvalidCode | TotpCheckError::RecentlyUsed) => (),
-                    Err(TotpCheckError::Other(err)) => return Err(err.into()),
+                    Err(TotpCheckError::Other(err)) => {
+                        return Err(err.context("Failed to check totp code").into())
+                    }
                 }
             }
         }

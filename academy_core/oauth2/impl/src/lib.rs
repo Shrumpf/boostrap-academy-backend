@@ -22,6 +22,7 @@ use academy_models::{
 use academy_persistence_contracts::{
     oauth2::OAuth2Repository, user::UserRepository, Database, Transaction,
 };
+use anyhow::Context;
 
 pub mod link;
 pub mod login;
@@ -117,14 +118,20 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
-        if !self.user_repo.exists(&mut txn, user_id).await? {
+        if !self
+            .user_repo
+            .exists(&mut txn, user_id)
+            .await
+            .context("Failed to check user existence")?
+        {
             return Err(OAuth2ListLinksError::NotFound);
         }
 
         let mut links = self
             .oauth2_repo
             .list_links_by_user(&mut txn, user_id)
-            .await?;
+            .await
+            .context("Failed to get OAuth2 links from database")?;
 
         // include only links with valid providers
         links.retain(|link| self.config.providers.contains_key(&link.provider_id));
@@ -144,7 +151,12 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
-        if !self.user_repo.exists(&mut txn, user_id).await? {
+        if !self
+            .user_repo
+            .exists(&mut txn, user_id)
+            .await
+            .context("Failed to check user existence")?
+        {
             return Err(OAuth2CreateLinkError::NotFound);
         }
 
@@ -157,7 +169,9 @@ where
             .map_err(|err| match err {
                 OAuth2LoginServiceError::InvalidProvider => OAuth2CreateLinkError::InvalidProvider,
                 OAuth2LoginServiceError::InvalidCode => OAuth2CreateLinkError::InvalidCode,
-                OAuth2LoginServiceError::Other(err) => err.into(),
+                OAuth2LoginServiceError::Other(err) => {
+                    err.context("Failed to perform OAuth2 login").into()
+                }
             })?;
 
         let link = self
@@ -168,7 +182,9 @@ where
                 OAuth2LinkServiceError::RemoteAlreadyLinked => {
                     OAuth2CreateLinkError::RemoteAlreadyLinked
                 }
-                OAuth2LinkServiceError::Other(err) => err.into(),
+                OAuth2LinkServiceError::Other(err) => {
+                    err.context("Failed to create OAuth2 link").into()
+                }
             })?;
 
         txn.commit().await?;
@@ -191,19 +207,25 @@ where
         let link = self
             .oauth2_repo
             .get_link(&mut txn, link_id)
-            .await?
+            .await
+            .context("Failed to get OAuth2 link from database")?
             .filter(|link| link.user_id == user_id)
             .ok_or(OAuth2DeleteLinkError::NotFound)?;
 
-        self.oauth2_repo.delete_link(&mut txn, link.id).await?;
+        self.oauth2_repo
+            .delete_link(&mut txn, link.id)
+            .await
+            .context("Failed to delete OAuth2 link from database")?;
 
         // ensure the user can still login
         let user_composite = self
             .user_repo
             .get_composite(&mut txn, user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(OAuth2DeleteLinkError::NotFound)?;
         if !user_composite.details.password_login && !user_composite.details.oauth2_login {
+            txn.rollback().await?;
             return Err(OAuth2DeleteLinkError::CannotRemoveLink);
         }
 
@@ -227,7 +249,9 @@ where
                     OAuth2CreateSessionError::InvalidProvider
                 }
                 OAuth2LoginServiceError::InvalidCode => OAuth2CreateSessionError::InvalidCode,
-                OAuth2LoginServiceError::Other(err) => err.into(),
+                OAuth2LoginServiceError::Other(err) => {
+                    err.context("Failed to perform OAuth2 login").into()
+                }
             })?;
 
         let mut txn = self.db.begin_transaction().await?;
@@ -239,7 +263,8 @@ where
                 &provider_id,
                 &user_info.id,
             )
-            .await?
+            .await
+            .context("Failed to get user from database")?
         else {
             // there is no local user linked to this remote user, so we save the provider id
             // and remote user and return a registration token which can be used to create a
@@ -250,7 +275,8 @@ where
                     provider_id,
                     remote_user: user_info,
                 })
-                .await?;
+                .await
+                .context("Failed to save OAuth2 registration")?;
 
             return Ok(OAuth2CreateSessionResponse::RegistrationToken(
                 registration_token,
@@ -264,7 +290,8 @@ where
         let login = self
             .session
             .create(&mut txn, user_composite, device_name, true)
-            .await?;
+            .await
+            .context("Failed to create session")?;
 
         txn.commit().await?;
 

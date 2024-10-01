@@ -8,6 +8,7 @@ use academy_models::{
     user::{UserComposite, UserId},
 };
 use academy_persistence_contracts::{user::UserRepository, Database};
+use anyhow::Context;
 
 #[cfg(test)]
 mod tests;
@@ -36,7 +37,8 @@ where
 
         self.user_repo
             .get_composite(&mut txn, user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(InternalGetUserError::NotFound)
     }
 
@@ -51,7 +53,8 @@ where
 
         self.user_repo
             .get_composite_by_email(&mut txn, &email)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(InternalGetUserByEmailError::NotFound)
     }
 }

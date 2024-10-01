@@ -2,6 +2,7 @@ use std::sync::{Arc, LazyLock};
 
 use academy_di::Build;
 use academy_extern_contracts::vat::VatApiService;
+use anyhow::Context;
 use regex::Regex;
 use serde::Deserialize;
 use url::Url;
@@ -46,17 +47,20 @@ impl VatApiService for VatApiServiceImpl {
         let url = self
             .config
             .validate_endpoint
-            .join(&format!("{}/vat/{}", &captures[1], &captures[2]))?;
+            .join(&format!("{}/vat/{}", &captures[1], &captures[2]))
+            .context("Failed to build vat validate URL")?;
 
         self.http
             .get(url)
             .send()
-            .await?
-            .error_for_status()?
+            .await
+            .context("Failed to send vat validate request")?
+            .error_for_status()
+            .context("Vat validate request returned an error")?
             .json::<IsVatIdValidResponse>()
             .await
             .map(|x| x.is_valid)
-            .map_err(Into::into)
+            .context("Failed to deserialize vat validate response")
     }
 }
 

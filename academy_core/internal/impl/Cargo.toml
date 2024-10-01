@@ -16,6 +16,7 @@ academy_di.workspace = true
 academy_models.workspace = true
 academy_persistence_contracts.workspace = true
 academy_shared_contracts.workspace = true
+anyhow.workspace = true
 serde.workspace = true
 
 [dev-dependencies]

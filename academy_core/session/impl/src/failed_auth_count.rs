@@ -3,6 +3,7 @@ use academy_core_session_contracts::failed_auth_count::SessionFailedAuthCountSer
 use academy_di::Build;
 use academy_models::user::UserNameOrEmailAddress;
 use academy_shared_contracts::hash::HashService;
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
 pub struct SessionFailedAuthCountServiceImpl<Hash, Cache> {
@@ -20,18 +21,30 @@ where
             .get(&self.cache_key(name_or_email))
             .await
             .map(|x| x.unwrap_or(0))
+            .context("Failed to get failed auth count from cache")
     }
 
     async fn increment(&self, name_or_email: &UserNameOrEmailAddress) -> anyhow::Result<()> {
         let cache_key = self.cache_key(name_or_email);
 
-        let count = self.cache.get(&cache_key).await?.unwrap_or(0u64);
+        let count = self
+            .cache
+            .get(&cache_key)
+            .await
+            .context("Failed to get failed auth count from cache")?
+            .unwrap_or(0u64);
 
-        self.cache.set(&cache_key, &(count + 1), None).await
+        self.cache
+            .set(&cache_key, &(count + 1), None)
+            .await
+            .context("Failed to save failed auth count in cache")
     }
 
     async fn reset(&self, name_or_email: &UserNameOrEmailAddress) -> anyhow::Result<()> {
-        self.cache.remove(&self.cache_key(name_or_email)).await
+        self.cache
+            .remove(&self.cache_key(name_or_email))
+            .await
+            .context("Failed to reset failed auth count in cache")
     }
 }
 

@@ -6,6 +6,7 @@ use academy_di::Build;
 use academy_models::user::{User, UserComposite, UserDetails, UserInvoiceInfo, UserProfile};
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_shared_contracts::{id::IdService, password::PasswordService, time::TimeService};
+use anyhow::{anyhow, Context};
 
 #[derive(Debug, Clone, Copy, Build, Default)]
 pub struct UserServiceImpl<Id, Time, Password, UserRepo, OAuth2CreateLink> {
@@ -27,12 +28,17 @@ where
     OAuth2Link: OAuth2LinkService<Txn>,
 {
     async fn list(&self, txn: &mut Txn, query: UserListQuery) -> anyhow::Result<UserListResult> {
-        let total = self.user_repo.count(txn, &query.filter).await?;
+        let total = self
+            .user_repo
+            .count(txn, &query.filter)
+            .await
+            .context("Failed to get total number of users from database")?;
 
         let user_composites = self
             .user_repo
             .list_composites(txn, &query.filter, query.pagination)
-            .await?;
+            .await
+            .context("Failed to get users from database")?;
 
         Ok(UserListResult {
             total,
@@ -55,7 +61,12 @@ where
         }: UserCreateCommand,
     ) -> Result<UserComposite, UserCreateError> {
         let password_hash = match password {
-            Some(password) => Some(self.password.hash(password.into_inner()).await?),
+            Some(password) => Some(
+                self.password
+                    .hash(password.into_inner())
+                    .await
+                    .context("Failed to hash password")?,
+            ),
             None => None,
         };
 
@@ -92,13 +103,16 @@ where
             .map_err(|err| match err {
                 UserRepoError::NameConflict => UserCreateError::NameConflict,
                 UserRepoError::EmailConflict => UserCreateError::EmailConflict,
-                UserRepoError::Other(err) => UserCreateError::Other(err),
+                UserRepoError::Other(err) => anyhow!(err)
+                    .context("Failed to create user in database")
+                    .into(),
             })?;
 
         if let Some(password_hash) = password_hash {
             self.user_repo
                 .save_password_hash(txn, user.id, password_hash)
-                .await?;
+                .await
+                .context("Failed to save password hash in database")?;
         }
 
         if let Some(oauth2_registration) = oauth2_registration {
@@ -114,7 +128,9 @@ where
                     OAuth2LinkServiceError::RemoteAlreadyLinked => {
                         UserCreateError::RemoteAlreadyLinked
                     }
-                    OAuth2LinkServiceError::Other(err) => err.into(),
+                    OAuth2LinkServiceError::Other(err) => {
+                        err.context("Failed to create OAuth2 link").into()
+                    }
                 })?;
         }
 

@@ -5,6 +5,7 @@ use academy_shared_contracts::{
     jwt::{JwtService, VerifyJwtError},
     time::TimeService,
 };
+use anyhow::Context;
 use hmac::{digest::KeyInit, Hmac};
 use jwt::{SignWithKey, VerifyWithKey};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -24,7 +25,9 @@ pub struct JwtServiceConfig {
 impl JwtServiceConfig {
     pub fn new(jwt_secret: &str) -> anyhow::Result<Self> {
         Ok(Self {
-            jwt_secret: Arc::new(Hmac::new_from_slice(jwt_secret.as_bytes())?),
+            jwt_secret: Hmac::new_from_slice(jwt_secret.as_bytes())
+                .context("Failed to load JWT secret")?
+                .into(),
         })
     }
 }
@@ -39,7 +42,7 @@ where
 
         JwtData { exp, data }
             .sign_with_key(&*self.config.jwt_secret)
-            .map_err(Into::into)
+            .context("Failed to sign JWT")
     }
 
     fn verify<T: DeserializeOwned + 'static>(&self, jwt: &str) -> Result<T, VerifyJwtError<T>> {

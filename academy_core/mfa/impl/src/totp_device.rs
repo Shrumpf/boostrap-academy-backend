@@ -11,6 +11,7 @@ use academy_shared_contracts::{
     totp::{TotpCheckError, TotpService},
 };
 use academy_utils::patch::Patch;
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build, Default)]
 pub struct MfaTotpDeviceServiceImpl<Id, Time, Totp, MfaRepo> {
@@ -41,7 +42,8 @@ where
 
         self.mfa_repo
             .create_totp_device(txn, &totp_device, &secret)
-            .await?;
+            .await
+            .context("Failed to save totp device in database")?;
 
         Ok(setup)
     }
@@ -55,7 +57,8 @@ where
         let secret = self
             .mfa_repo
             .get_totp_device_secret(txn, totp_device.id)
-            .await?;
+            .await
+            .context("Failed to get totp device secret from database")?;
 
         self.totp
             .check(&code, secret)
@@ -64,13 +67,14 @@ where
                 TotpCheckError::InvalidCode | TotpCheckError::RecentlyUsed => {
                     MfaTotpDeviceConfirmError::InvalidCode
                 }
-                TotpCheckError::Other(err) => err.into(),
+                TotpCheckError::Other(err) => err.context("Failed to check totp code").into(),
             })?;
 
         let patch = TotpDevicePatch::new().update_enabled(true);
         self.mfa_repo
             .update_totp_device(txn, totp_device.id, patch.as_ref())
-            .await?;
+            .await
+            .context("Failed to update totp device in database")?;
 
         Ok(totp_device.update(patch))
     }
@@ -88,11 +92,13 @@ where
                 totp_device_id,
                 TotpDevicePatchRef::new().update_enabled(&false),
             )
-            .await?;
+            .await
+            .context("Failed to update totp device in database")?;
 
         self.mfa_repo
             .save_totp_device_secret(txn, totp_device_id, &secret)
-            .await?;
+            .await
+            .context("Failed to update totp device secret in database")?;
 
         Ok(setup)
     }

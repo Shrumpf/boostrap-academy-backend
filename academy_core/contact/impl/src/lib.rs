@@ -7,6 +7,7 @@ use academy_models::{
     contact::ContactMessage, email_address::EmailAddressWithName, RecaptchaResponse,
 };
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
@@ -36,7 +37,7 @@ where
             .await
             .map_err(|err| match err {
                 CaptchaCheckError::Failed => ContactSendMessageError::Recaptcha,
-                CaptchaCheckError::Other(err) => err.into(),
+                CaptchaCheckError::Other(err) => err.context("Failed to check captcha").into(),
             })?;
 
         let email = Email {
@@ -57,7 +58,12 @@ where
             ),
         };
 
-        if !self.email.send(email).await? {
+        if !self
+            .email
+            .send(email)
+            .await
+            .context("Failed to send email")?
+        {
             return Err(ContactSendMessageError::Send);
         }
 

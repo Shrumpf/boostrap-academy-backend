@@ -6,6 +6,7 @@ use academy_models::{
     user::{User, UserId},
 };
 use academy_shared_contracts::jwt::JwtService;
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 use crate::AuthServiceConfig;
@@ -39,6 +40,7 @@ where
 
         self.jwt
             .sign(Token::from(auth), self.config.access_token_ttl)
+            .context("Failed to sign JWT")
     }
 
     fn verify(&self, access_token: &str) -> Option<Authentication> {
@@ -56,6 +58,11 @@ where
                 Some(self.config.access_token_ttl),
             )
             .await
+            .with_context(|| {
+                format!(
+                    "Failed to invalidate access token by refresh token hash {refresh_token_hash}"
+                )
+            })
     }
 
     async fn is_invalidated(
@@ -66,6 +73,10 @@ where
             .get::<()>(&access_token_invalidated_key(refresh_token_hash))
             .await
             .map(|x| x.is_some())
+            .context(
+                "Failed to check whether the access token of refresh token hash \
+                 {refresh_token_hash} has been invalidated",
+            )
     }
 }
 

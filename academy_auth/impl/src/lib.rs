@@ -15,6 +15,7 @@ use academy_shared_contracts::{
     password::{PasswordService, PasswordVerifyError},
     time::TimeService,
 };
+use anyhow::Context;
 
 pub mod access_token;
 pub mod internal;
@@ -64,7 +65,8 @@ where
         if self
             .auth_access_token
             .is_invalidated(auth.refresh_token_hash)
-            .await?
+            .await
+            .context("Failed to check whether access token has been invalidated")?
         {
             return Err(AuthenticateError::InvalidToken);
         }
@@ -81,7 +83,8 @@ where
         let password_hash = self
             .user_repo
             .get_password_hash(txn, user_id)
-            .await?
+            .await
+            .context("Failed to get password hash from database")?
             .ok_or(AuthenticateByPasswordError::InvalidCredentials)?;
 
         self.password
@@ -91,7 +94,9 @@ where
                 PasswordVerifyError::InvalidPassword => {
                     AuthenticateByPasswordError::InvalidCredentials
                 }
-                PasswordVerifyError::Other(err) => err.into(),
+                PasswordVerifyError::Other(err) => {
+                    err.context("Failed to verify password against hash").into()
+                }
             })
     }
 
@@ -105,7 +110,8 @@ where
         let session = self
             .session_repo
             .get_by_refresh_token_hash(txn, refresh_token_hash)
-            .await?
+            .await
+            .context("Failed to get session from database")?
             .ok_or(AuthenticateByRefreshTokenError::Invalid)?;
 
         let now = self.time.now();
@@ -121,7 +127,8 @@ where
         let refresh_token_hash = self.auth_refresh_token.hash(&refresh_token);
         let access_token = self
             .auth_access_token
-            .issue(user, session_id, refresh_token_hash)?;
+            .issue(user, session_id, refresh_token_hash)
+            .context("Failed to issue access token")?;
 
         Ok(Tokens {
             access_token,
@@ -134,11 +141,13 @@ where
         for refresh_token_hash in self
             .session_repo
             .list_refresh_token_hashes_by_user(txn, user_id)
-            .await?
+            .await
+            .context("Failed to get session refresh token hashes from database")?
         {
             self.auth_access_token
                 .invalidate(refresh_token_hash)
-                .await?;
+                .await
+                .context("Failed to invalidate access token")?;
         }
 
         Ok(())

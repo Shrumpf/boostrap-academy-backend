@@ -18,6 +18,12 @@ pub mod user;
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Sha256Hash(#[serde(with = "academy_utils::serde::hex")] pub [u8; 32]);
 
+impl std::fmt::Display for Sha256Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        hex::encode(self.0).fmt(f)
+    }
+}
+
 nutype_string!(SearchTerm(validate(len_char_max = 256)));
 
 nutype_string!(VerificationCode(

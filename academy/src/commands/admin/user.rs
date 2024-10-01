@@ -2,6 +2,7 @@ use academy_config::Config;
 use academy_core_user_contracts::user::{UserCreateCommand, UserService};
 use academy_di::Provides;
 use academy_persistence_contracts::{Database as _, Transaction};
+use anyhow::Context;
 use clap::Subcommand;
 
 use crate::{
@@ -83,7 +84,8 @@ async fn create(
                 oauth2_registration: None,
             },
         )
-        .await?;
+        .await
+        .context("Failed to create user")?;
 
     txn.commit().await?;
 

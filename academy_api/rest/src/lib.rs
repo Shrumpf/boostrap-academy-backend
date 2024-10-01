@@ -17,10 +17,12 @@ use aide::{
     axum::ApiRouter,
     openapi::{Components, Info, OpenApi, ReferenceOr, SecurityScheme, Tag},
 };
+use anyhow::Context;
 use axum::{
     response::{IntoResponse, Response},
     Extension, Json,
 };
+use extractors::auth::{ApiTokenType, InternalApiToken, UserApiToken};
 use tokio::net::TcpListener;
 
 mod docs;
@@ -99,27 +101,19 @@ where
             })
             .collect(),
             components: Some(Components {
-                security_schemes: [
-                    (
-                        "Token".into(),
-                        ReferenceOr::Item(SecurityScheme::Http {
-                            scheme: "bearer".into(),
-                            bearer_format: None,
-                            description: None,
-                            extensions: Default::default(),
-                        }),
-                    ),
-                    (
-                        "InternalToken".into(),
-                        ReferenceOr::Item(SecurityScheme::Http {
-                            scheme: "bearer".into(),
-                            bearer_format: None,
-                            description: None,
-                            extensions: Default::default(),
-                        }),
-                    ),
-                ]
-                .into(),
+                security_schemes: {
+                    let bearer = ReferenceOr::Item(SecurityScheme::Http {
+                        scheme: "bearer".into(),
+                        bearer_format: None,
+                        description: None,
+                        extensions: Default::default(),
+                    });
+                    [
+                        (UserApiToken::NAME.into(), bearer.clone()),
+                        (InternalApiToken::NAME.into(), bearer),
+                    ]
+                    .into()
+                },
                 ..Default::default()
             }),
             ..Default::default()
@@ -136,8 +130,13 @@ where
             .finish_api(&mut api)
             .layer(Extension(Arc::new(api)))
             .into_make_service_with_connect_info::<SocketAddr>();
-        let listener = TcpListener::bind(addr).await?;
-        axum::serve(listener, router).await.map_err(Into::into)
+
+        let listener = TcpListener::bind(addr)
+            .await
+            .with_context(|| format!("Failed to bind to {addr}"))?;
+        axum::serve(listener, router)
+            .await
+            .context("Failed to start HTTP server")
     }
 
     fn router(self) -> ApiRouter<()> {

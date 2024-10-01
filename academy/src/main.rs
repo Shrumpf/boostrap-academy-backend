@@ -2,6 +2,7 @@ use academy::commands::{
     admin::AdminCommand, email::EmailCommand, jwt::JwtCommand, migrate::MigrateCommand,
     serve::serve, tasks::TaskCommand,
 };
+use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 use sentry::integrations::tracing::EventFilter;
@@ -33,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    let config = academy_config::load()?;
+    let config = academy_config::load().context("Failed to load config")?;
 
     let _sentry_guard = config.sentry.as_ref().map(|sentry_config| {
         sentry::init((
@@ -54,9 +55,7 @@ async fn main() -> anyhow::Result<()> {
         Command::Email { command } => command.invoke(config).await?,
         Command::Task { command } => command.invoke(config).await?,
         Command::CheckConfig { verbose } => {
-            if verbose {
-                println!("{config:#?}");
-            }
+            verbose.then(|| println!("{config:#?}"));
         }
         Command::Completion { .. } => unreachable!(),
     }

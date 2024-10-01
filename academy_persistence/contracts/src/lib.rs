@@ -45,4 +45,17 @@ impl MockDatabase {
             .return_once(|| Box::pin(std::future::ready(Ok(txn))));
         db
     }
+
+    pub fn build_expect_rollback() -> Self {
+        let mut txn = MockTransaction::new();
+        txn.expect_rollback()
+            .once()
+            .return_once(|| Box::pin(std::future::ready(Ok(()))));
+
+        let mut db = Self::new();
+        db.expect_begin_transaction()
+            .once()
+            .return_once(|| Box::pin(std::future::ready(Ok(txn))));
+        db
+    }
 }

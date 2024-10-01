@@ -152,7 +152,7 @@ async fn last_login_method() {
     // Arrange
     let auth = MockAuthService::new().with_authenticate(Some((FOO.user.clone(), FOO_1.clone())));
 
-    let db = MockDatabase::build(false);
+    let db = MockDatabase::build_expect_rollback();
 
     let oauth2_repo = MockOAuth2Repository::new()
         .with_get_link(FOO_OAUTH2_LINK_1.id, Some(FOO_OAUTH2_LINK_1.clone()))

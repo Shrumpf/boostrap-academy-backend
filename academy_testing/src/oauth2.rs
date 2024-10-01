@@ -1,5 +1,6 @@
 use std::{collections::HashMap, net::IpAddr, sync::Arc};
 
+use anyhow::Context;
 use axum::{
     extract::Query,
     http::StatusCode,
@@ -53,10 +54,13 @@ pub async fn start_server(
             codes: Default::default(),
             logins: Default::default(),
         }));
-    let listener = TcpListener::bind((host, port)).await?;
-    axum::serve(listener, router).await?;
 
-    Ok(())
+    let listener = TcpListener::bind((host, port))
+        .await
+        .with_context(|| format!("Failed to bind to {host}:{port}"))?;
+    axum::serve(listener, router)
+        .await
+        .context("Failed to start HTTP server")
 }
 
 type State = axum::extract::State<Arc<StateInner>>;

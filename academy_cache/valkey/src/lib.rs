@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use academy_cache_contracts::CacheService;
+use anyhow::Context;
 use bb8_redis::{
     bb8::Pool,
     redis::{self, AsyncCommands},
@@ -47,26 +48,35 @@ impl ValkeyCache {
     }
 
     pub async fn clear(&self) -> anyhow::Result<()> {
-        let mut conn = self.pool.get().await?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to acquire cache connection")?;
         redis::cmd("FLUSHDB")
             .exec_async(&mut *conn)
             .await
-            .map_err(Into::into)
+            .context("Failed to execute FLUSHDB command")
     }
 }
 
 impl CacheService for ValkeyCache {
     async fn get<T: DeserializeOwned + 'static>(&self, key: &str) -> anyhow::Result<Option<T>> {
-        let mut conn = self.pool.get().await?;
-        conn.get::<_, Option<Vec<u8>>>(key)
+        let mut conn = self
+            .pool
+            .get()
             .await
-            .map_err(Into::into)
-            .and_then(|result| {
-                result
-                    .map(|data| rmp_serde::from_slice(&data))
-                    .transpose()
-                    .map_err(Into::into)
-            })
+            .context("Failed to acquire cache connection")?;
+
+        let result = conn
+            .get::<_, Option<Vec<u8>>>(key)
+            .await
+            .context("Failed to read value from cache")?;
+
+        result
+            .map(|data| rmp_serde::from_slice(&data))
+            .transpose()
+            .context("Failed to deserialize cached value")
     }
 
     async fn set<T: Serialize + Sync + 'static>(
@@ -75,26 +85,44 @@ impl CacheService for ValkeyCache {
         value: &T,
         ttl: Option<Duration>,
     ) -> anyhow::Result<()> {
-        let value = rmp_serde::to_vec(&value)?;
-        let mut conn = self.pool.get().await?;
+        let value = rmp_serde::to_vec(&value).context("Failed to serialize value")?;
+
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to acquire cache connection")?;
+
         if let Some(ttl) = ttl {
             conn.pset_ex(key, value, ttl.as_millis().try_into()?).await
         } else {
             conn.set(key, value).await
         }
-        .map_err(Into::into)
+        .context("Failed to write value to cache")
     }
 
     async fn remove(&self, key: &str) -> anyhow::Result<()> {
-        let mut conn = self.pool.get().await?;
-        conn.del(key).await.map_err(Into::into)
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to acquire cache connection")?;
+
+        conn.del(key)
+            .await
+            .context("Failed to remove item from cache")
     }
 
     async fn ping(&self) -> anyhow::Result<()> {
-        let mut conn = self.pool.get().await?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to acquire cache connection")?;
+
         redis::cmd("PING")
             .exec_async(&mut *conn)
             .await
-            .map_err(Into::into)
+            .context("Failed to ping cache")
     }
 }

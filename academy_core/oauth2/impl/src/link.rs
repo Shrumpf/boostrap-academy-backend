@@ -42,7 +42,9 @@ where
             .await
             .map_err(|err| match err {
                 OAuth2RepoError::Conflict => OAuth2LinkServiceError::RemoteAlreadyLinked,
-                OAuth2RepoError::Other(err) => err.into(),
+                OAuth2RepoError::Other(err) => err
+                    .context("Failed to create OAuth2 link in database")
+                    .into(),
             })?;
 
         Ok(link)

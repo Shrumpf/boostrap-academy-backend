@@ -4,6 +4,7 @@ use academy_models::{Sha256Hash, VerificationCode};
 use academy_persistence_contracts::{
     mfa::MfaRepository, oauth2::OAuth2Repository, session::SessionRepository, user::UserRepository,
 };
+use anyhow::Context;
 use uuid::{uuid, Uuid};
 
 pub mod mfa;
@@ -38,9 +39,15 @@ pub async fn create<Txn: Send + Sync + 'static>(
     mfa: impl MfaRepository<Txn>,
     oauth2: impl OAuth2Repository<Txn>,
 ) -> anyhow::Result<()> {
-    user::create(txn, user).await?;
-    session::create(txn, session).await?;
-    mfa::create(txn, mfa).await?;
-    oauth2::create(txn, oauth2).await?;
+    macro_rules! create {
+        ($($ident:ident),* $(,)?) => { $(
+            $ident::create(txn, $ident).await.context(concat!(
+                "Failed to create ", stringify!(ident), " demo data"
+            ))?;
+        )*};
+    }
+
+    create!(user, session, mfa, oauth2);
+
     Ok(())
 }

@@ -16,6 +16,7 @@ use academy_shared_contracts::{password::PasswordService, secret::SecretService}
 use academy_templates_contracts::{
     ResetPasswordTemplate, SubscribeNewsletterTemplate, VerifyEmailTemplate,
 };
+use anyhow::{anyhow, Context};
 
 use crate::UserFeatureConfig;
 
@@ -52,7 +53,8 @@ where
                 &email.clone().into_email_address(),
                 Some(self.config.verification_verification_code_ttl),
             )
-            .await?;
+            .await
+            .context("Failed to save code in cache")?;
 
         self.template_email
             .send_verification_email(
@@ -62,7 +64,8 @@ where
                     url: (*self.config.verification_redirect_url).clone(),
                 },
             )
-            .await?;
+            .await
+            .context("Failed to send email")?;
 
         Ok(())
     }
@@ -76,17 +79,22 @@ where
         let email = self
             .cache
             .get(&cache_key)
-            .await?
+            .await
+            .context("Failed to get email from cache")?
             .ok_or(UserEmailConfirmationVerifyEmailError::InvalidCode)?;
 
         let mut user_composite = self
             .user_repo
             .get_composite_by_email(txn, &email)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(UserEmailConfirmationVerifyEmailError::InvalidCode)?;
 
         if user_composite.user.email_verified {
-            self.cache.remove(&cache_key).await?;
+            self.cache
+                .remove(&cache_key)
+                .await
+                .context("Failed to remove code from cache")?;
             return Err(UserEmailConfirmationVerifyEmailError::AlreadyVerified);
         }
 
@@ -98,15 +106,19 @@ where
                 UserPatchRef::new().update_email_verified(&true),
             )
             .await
-            .map_err(|err| UserEmailConfirmationVerifyEmailError::Other(err.into()))?;
+            .map_err(|err| anyhow!(err).context("Failed to update user in database"))?;
 
         // access tokens contain the `email_verified` field, so we need to invalidate
         // them when changing this value
         self.auth
             .invalidate_access_tokens(txn, user_composite.user.id)
-            .await?;
+            .await
+            .context("Failed to invalidate access token")?;
 
-        self.cache.remove(&cache_key).await?;
+        self.cache
+            .remove(&cache_key)
+            .await
+            .context("Failed to remove code from cache")?;
 
         Ok(user_composite)
     }
@@ -124,7 +136,8 @@ where
                 &code,
                 Some(self.config.password_reset_verification_code_ttl),
             )
-            .await?;
+            .await
+            .context("Failed to save code in cache")?;
 
         self.template_email
             .send_reset_password_email(
@@ -134,7 +147,8 @@ where
                     url: (*self.config.password_reset_redirect_url).clone(),
                 },
             )
-            .await?;
+            .await
+            .context("Failed to send email")?;
 
         Ok(())
     }
@@ -148,18 +162,30 @@ where
     ) -> Result<(), UserEmailConfirmationResetPasswordError> {
         let cache_key = reset_password_cache_key(user_id);
 
-        let expected_code = self.cache.get(&cache_key).await?;
+        let expected_code = self
+            .cache
+            .get(&cache_key)
+            .await
+            .context("Failed to get expected code from cache")?;
         if expected_code != Some(code) {
             return Err(UserEmailConfirmationResetPasswordError::InvalidCode);
         }
 
-        let password_hash = self.password.hash(new_password.into_inner()).await?;
+        let password_hash = self
+            .password
+            .hash(new_password.into_inner())
+            .await
+            .context("Failed to hash password")?;
 
         self.user_repo
             .save_password_hash(txn, user_id, password_hash)
-            .await?;
+            .await
+            .context("Failed to save password hash in database")?;
 
-        self.cache.remove(&cache_key).await?;
+        self.cache
+            .remove(&cache_key)
+            .await
+            .context("Failed to remove code from cache")?;
 
         Ok(())
     }
@@ -177,7 +203,8 @@ where
                 &code,
                 Some(self.config.newsletter_subscription_verification_code_ttl),
             )
-            .await?;
+            .await
+            .context("Failed to save code in cache")?;
 
         self.template_email
             .send_subscribe_newsletter_email(
@@ -187,7 +214,8 @@ where
                     url: self.config.newsletter_subscription_redirect_url.to_string(),
                 },
             )
-            .await?;
+            .await
+            .context("Failed to send email")?;
 
         Ok(())
     }
@@ -200,7 +228,11 @@ where
     ) -> Result<(), UserEmailConfirmationSubscribeToNewsletterError> {
         let cache_key = subscribe_newsletter_cache_key(user_id);
 
-        let expected_code = self.cache.get(&cache_key).await?;
+        let expected_code = self
+            .cache
+            .get(&cache_key)
+            .await
+            .context("Failed to get expected code from cache")?;
         if expected_code != Some(code) {
             return Err(UserEmailConfirmationSubscribeToNewsletterError::InvalidCode);
         }
@@ -208,9 +240,12 @@ where
         self.user_repo
             .update(txn, user_id, UserPatchRef::new().update_newsletter(&true))
             .await
-            .map_err(|err| UserEmailConfirmationSubscribeToNewsletterError::Other(err.into()))?;
+            .map_err(|err| anyhow!(err).context("Failed to update user in database"))?;
 
-        self.cache.remove(&cache_key).await?;
+        self.cache
+            .remove(&cache_key)
+            .await
+            .context("Failed to remove code from cache")?;
 
         Ok(())
     }

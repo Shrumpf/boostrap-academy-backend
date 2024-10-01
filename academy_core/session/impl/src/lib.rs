@@ -21,7 +21,7 @@ use academy_persistence_contracts::{
     session::SessionRepository, user::UserRepository, Database, Transaction,
 };
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 
 pub mod failed_auth_count;
 pub mod session;
@@ -112,6 +112,7 @@ where
         self.session_repo
             .list_by_user(&mut txn, user_id)
             .await
+            .context("Failed to get sessions from database")
             .map_err(Into::into)
     }
 
@@ -123,7 +124,8 @@ where
         let failed_login_attempts = self
             .session_failed_auth_count
             .get(&cmd.name_or_email)
-            .await?;
+            .await
+            .context("Failed to get failed auth count")?;
 
         if failed_login_attempts >= self.config.login_fails_before_captcha {
             self.captcha
@@ -131,7 +133,7 @@ where
                 .await
                 .map_err(|err| match err {
                     CaptchaCheckError::Failed => SessionCreateError::Recaptcha,
-                    CaptchaCheckError::Other(err) => err.into(),
+                    CaptchaCheckError::Other(err) => err.context("Failed to check captcha").into(),
                 })?;
         }
 
@@ -140,13 +142,15 @@ where
         let mut user_composite = match self
             .user_repo
             .get_composite_by_name_or_email(&mut txn, &cmd.name_or_email)
-            .await?
+            .await
+            .context("Failed to get user from database")?
         {
             Some(user_composite) => user_composite,
             None => {
                 self.session_failed_auth_count
                     .increment(&cmd.name_or_email)
-                    .await?;
+                    .await
+                    .context("Failed to increment failed auth count")?;
                 return Err(SessionCreateError::InvalidCredentials);
             }
         };
@@ -156,11 +160,13 @@ where
                 .increment(&UserNameOrEmailAddress::Name(
                     user_composite.user.name.clone(),
                 ))
-                .await?;
+                .await
+                .context("Failed to increment failed auth count for name")?;
             if let Some(email) = user_composite.user.email.clone() {
                 self.session_failed_auth_count
                     .increment(&UserNameOrEmailAddress::Email(email))
-                    .await?;
+                    .await
+                    .context("Failed to increment failed auth count for email")?;
             }
             anyhow::Ok(())
         };
@@ -175,7 +181,11 @@ where
                 increment_failed_login_attempts().await?;
                 return Err(SessionCreateError::InvalidCredentials);
             }
-            Err(AuthenticateByPasswordError::Other(err)) => return Err(err.into()),
+            Err(AuthenticateByPasswordError::Other(err)) => {
+                return Err(err
+                    .context("Failed to perform password authentication")
+                    .into())
+            }
         };
 
         if user_composite.details.mfa_enabled {
@@ -190,7 +200,9 @@ where
                     increment_failed_login_attempts().await?;
                     return Err(SessionCreateError::MfaFailed);
                 }
-                Err(MfaAuthenticateError::Other(err)) => return Err(err.into()),
+                Err(MfaAuthenticateError::Other(err)) => {
+                    return Err(err.context("Failed to perform MFA").into())
+                }
             }
         }
 
@@ -198,11 +210,13 @@ where
             .reset(&UserNameOrEmailAddress::Name(
                 user_composite.user.name.clone(),
             ))
-            .await?;
+            .await
+            .context("Failed to reset failed auth count for name")?;
         if let Some(email) = user_composite.user.email.clone() {
             self.session_failed_auth_count
                 .reset(&UserNameOrEmailAddress::Email(email))
-                .await?;
+                .await
+                .context("Failed to reset failed auth count for email")?;
         }
 
         if !user_composite.user.enabled {
@@ -212,7 +226,8 @@ where
         let login = self
             .session
             .create(&mut txn, user_composite, cmd.device_name, true)
-            .await?;
+            .await
+            .context("Failed to create session")?;
 
         txn.commit().await?;
 
@@ -232,13 +247,15 @@ where
         let user_composite = self
             .user_repo
             .get_composite(&mut txn, user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(SessionImpersonateError::NotFound)?;
 
         let login = self
             .session
             .create(&mut txn, user_composite, None, false)
-            .await?;
+            .await
+            .context("Failed to create session")?;
 
         txn.commit().await?;
 
@@ -258,10 +275,17 @@ where
                 return Err(SessionRefreshError::InvalidRefreshToken)
             }
             Err(AuthenticateByRefreshTokenError::Expired(session_id)) => {
-                self.session.delete(&mut txn, session_id).await?;
+                self.session
+                    .delete(&mut txn, session_id)
+                    .await
+                    .context("Failed to delete expired session")?;
                 return Err(SessionRefreshError::InvalidRefreshToken);
             }
-            Err(AuthenticateByRefreshTokenError::Other(err)) => return Err(err.into()),
+            Err(AuthenticateByRefreshTokenError::Other(err)) => {
+                return Err(err
+                    .context("Failed to authenticate by refresh token")
+                    .into())
+            }
         };
 
         let login = self
@@ -272,7 +296,7 @@ where
                 use academy_core_session_contracts::session::SessionRefreshError as E;
                 match err {
                     E::NotFound => SessionRefreshError::InvalidRefreshToken,
-                    E::Other(err) => err.into(),
+                    E::Other(err) => err.context("Failed to refresh session").into(),
                 }
             })?;
 
@@ -296,11 +320,15 @@ where
         let session = self
             .session_repo
             .get(&mut txn, session_id)
-            .await?
+            .await
+            .context("Failed to get session from database")?
             .filter(|s| s.user_id == user_id)
             .ok_or(SessionDeleteError::NotFound)?;
 
-        self.session.delete(&mut txn, session.id).await?;
+        self.session
+            .delete(&mut txn, session.id)
+            .await
+            .context("Failed to delete session")?;
 
         txn.commit().await?;
 
@@ -312,7 +340,10 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
-        self.session.delete(&mut txn, auth.session_id).await?;
+        self.session
+            .delete(&mut txn, auth.session_id)
+            .await
+            .context("Failed to delete session")?;
 
         txn.commit().await?;
 
@@ -330,7 +361,10 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
-        self.session.delete_by_user(&mut txn, user_id).await?;
+        self.session
+            .delete_by_user(&mut txn, user_id)
+            .await
+            .context("Failed to delete sessions")?;
 
         txn.commit().await?;
 

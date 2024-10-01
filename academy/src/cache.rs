@@ -1,5 +1,6 @@
 use academy_cache_valkey::{ValkeyCache, ValkeyCacheConfig};
 use academy_config::CacheConfig;
+use anyhow::Context;
 
 /// Connect to Valkey
 pub async fn connect(config: &CacheConfig) -> anyhow::Result<ValkeyCache> {
@@ -12,4 +13,5 @@ pub async fn connect(config: &CacheConfig) -> anyhow::Result<ValkeyCache> {
         max_lifetime: config.max_lifetime.map(Into::into),
     })
     .await
+    .context("Failed to connect to Valkey cache")
 }

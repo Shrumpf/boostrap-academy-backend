@@ -40,7 +40,7 @@ pub async fn create<Txn: Send + Sync + 'static>(
     repo: impl OAuth2Repository<Txn>,
 ) -> anyhow::Result<()> {
     for &link in &*ALL_OAUTH2_LINKS {
-        repo.create_link(txn, link).await.unwrap();
+        repo.create_link(txn, link).await?;
     }
     Ok(())
 }

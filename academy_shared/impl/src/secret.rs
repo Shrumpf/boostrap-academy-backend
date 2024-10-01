@@ -75,6 +75,8 @@ fn uppercase_digits() -> impl Distribution<char> {
 
 #[cfg(test)]
 mod tests {
+    use rand::rngs::mock::StepRng;
+
     use super::*;
 
     #[test]
@@ -129,5 +131,22 @@ mod tests {
         for _ in 0..4096 {
             sut.generate_mfa_recovery_code();
         }
+    }
+
+    #[test]
+    fn uppercase_digits() {
+        // Arrange
+        let expected = ('0'..='9').chain('A'..='Z').collect::<String>();
+        let rng = StepRng::new(0, (1 << 32) / expected.len() as u64);
+        let dist = super::uppercase_digits();
+
+        // Act
+        let result = dist
+            .sample_iter(rng)
+            .take(expected.len())
+            .collect::<String>();
+
+        // Assert
+        assert_eq!(result, expected);
     }
 }

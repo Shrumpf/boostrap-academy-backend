@@ -1,5 +1,6 @@
 use std::{net::IpAddr, sync::Arc};
 
+use anyhow::Context;
 use axum::{extract::State, routing, Form, Json, Router};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
@@ -19,10 +20,13 @@ pub async fn start_server(host: IpAddr, port: u16, secret: String) -> anyhow::Re
     let router = Router::new()
         .route(SITEVERIFY_ROUTE, routing::post(siteverify))
         .with_state(secret.into());
-    let listener = TcpListener::bind((host, port)).await?;
-    axum::serve(listener, router).await?;
 
-    Ok(())
+    let listener = TcpListener::bind((host, port))
+        .await
+        .with_context(|| format!("Failed to bind to {host}:{port}"))?;
+    axum::serve(listener, router)
+        .await
+        .context("Failed to start HTTP server")
 }
 
 #[derive(Deserialize)]

@@ -2,6 +2,7 @@ use academy_core_mfa_contracts::disable::MfaDisableService;
 use academy_di::Build;
 use academy_models::user::UserId;
 use academy_persistence_contracts::mfa::MfaRepository;
+use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
 pub struct MfaDisableServiceImpl<MfaRepo> {
@@ -16,11 +17,13 @@ where
     async fn disable(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<()> {
         self.mfa_repo
             .delete_totp_devices_by_user(txn, user_id)
-            .await?;
+            .await
+            .context("Failed to delete totp devices from database")?;
 
         self.mfa_repo
             .delete_mfa_recovery_code_hash(txn, user_id)
-            .await?;
+            .await
+            .context("Failed to delete MFA recovery code hash from database")?;
 
         Ok(())
     }

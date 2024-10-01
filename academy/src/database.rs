@@ -1,5 +1,6 @@
 use academy_config::DatabaseConfig;
 use academy_persistence_postgres::{PostgresDatabase, PostgresDatabaseConfig};
+use anyhow::Context;
 
 /// Connect to Postgres
 pub async fn connect(config: &DatabaseConfig) -> anyhow::Result<PostgresDatabase> {
@@ -12,4 +13,5 @@ pub async fn connect(config: &DatabaseConfig) -> anyhow::Result<PostgresDatabase
         max_lifetime: config.max_lifetime.map(Into::into),
     })
     .await
+    .context("Failed to connect to Postgres database")
 }

@@ -1,6 +1,7 @@
 use academy_auth_contracts::internal::{AuthInternalAuthenticateError, AuthInternalService};
 use academy_di::Build;
 use academy_shared_contracts::jwt::JwtService;
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 use crate::AuthServiceConfig;
@@ -17,12 +18,16 @@ where
     Jwt: JwtService,
 {
     fn issue_token(&self, audience: &str) -> anyhow::Result<String> {
-        self.jwt.sign(
-            Token {
-                aud: audience.into(),
-            },
-            self.config.internal_token_ttl,
-        )
+        self.jwt
+            .sign(
+                Token {
+                    aud: audience.into(),
+                },
+                self.config.internal_token_ttl,
+            )
+            .with_context(|| {
+                format!("Failed to issue internal access token for audience {audience}")
+            })
     }
 
     fn authenticate(

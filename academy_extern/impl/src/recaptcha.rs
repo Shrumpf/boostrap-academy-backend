@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use academy_di::Build;
 use academy_extern_contracts::recaptcha::{RecaptchaApiService, RecaptchaSiteverifyResponse};
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -44,12 +45,14 @@ impl RecaptchaApiService for RecaptchaApiServiceImpl {
             .post((*self.config.siteverify_endpoint).clone())
             .form(&SiteverifyRequest { response, secret })
             .send()
-            .await?
-            .error_for_status()?
+            .await
+            .context("Failed to send siteverify request")?
+            .error_for_status()
+            .context("Siteverify request returned an error")?
             .json::<SiteverifyResponse>()
             .await
             .map(Into::into)
-            .map_err(Into::into)
+            .context("Failed to deserialize siteverify response")
     }
 }
 

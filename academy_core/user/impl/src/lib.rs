@@ -29,7 +29,7 @@ use academy_models::{
 use academy_persistence_contracts::{user::UserRepository, Database, Transaction};
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
 use academy_utils::patch::{Patch, PatchValue};
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 
 pub mod email_confirmation;
 pub mod update;
@@ -125,7 +125,11 @@ where
 
         let mut txn = self.db.begin_transaction().await.unwrap();
 
-        self.user.list(&mut txn, query).await.map_err(Into::into)
+        self.user
+            .list(&mut txn, query)
+            .await
+            .context("Failed to list users")
+            .map_err(Into::into)
     }
 
     async fn get_user(
@@ -141,7 +145,8 @@ where
 
         self.user_repo
             .get_composite(&mut txn, user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(UserGetError::NotFound)
     }
 
@@ -160,14 +165,15 @@ where
             .await
             .map_err(|err| match err {
                 CaptchaCheckError::Failed => UserCreateError::Recaptcha,
-                CaptchaCheckError::Other(err) => err.into(),
+                CaptchaCheckError::Other(err) => err.context("Failed to check captcha").into(),
             })?;
 
         let oauth2_registration = match &request.oauth2_registration_token {
             Some(oauth2_registration_token) => Some(
                 self.oauth2_registration
                     .get(oauth2_registration_token)
-                    .await?
+                    .await
+                    .context("Failed to get OAuth2 registration")?
                     .ok_or(UserCreateError::InvalidOAuthRegistrationToken)?,
             ),
             None => None,
@@ -192,7 +198,7 @@ where
                 E::NameConflict => UserCreateError::NameConflict,
                 E::EmailConflict => UserCreateError::EmailConflict,
                 E::RemoteAlreadyLinked => UserCreateError::RemoteAlreadyLinked,
-                E::Other(err) => err.into(),
+                E::Other(err) => err.context("Failed to create user").into(),
             }
         })?;
 
@@ -200,12 +206,13 @@ where
             .session
             .create(&mut txn, user, device_name, true)
             .await
-            .map_err(UserCreateError::Other)?;
+            .context("Failed to create session")?;
 
         if let Some(oauth2_registration_token) = request.oauth2_registration_token {
             self.oauth2_registration
                 .remove(&oauth2_registration_token)
-                .await?;
+                .await
+                .context("Failed to remove OAuth2 registration")?;
         }
 
         txn.commit().await.unwrap();
@@ -247,7 +254,8 @@ where
         } = self
             .user_repo
             .get_composite(&mut txn, user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(UserUpdateError::NotFound)?;
 
         let mut commit = false;
@@ -289,7 +297,12 @@ where
         }
 
         if let PatchValue::Update(Some(vat_id)) = &invoice_info_update.vat_id {
-            if !self.vat_api.is_vat_id_valid(vat_id.as_str()).await? {
+            if !self
+                .vat_api
+                .is_vat_id_valid(vat_id.as_str())
+                .await
+                .context("Failed to validate VAT id")?
+            {
                 return Err(UserUpdateError::InvalidVatId);
             }
         }
@@ -298,7 +311,8 @@ where
         if profile_update.is_update() {
             self.user_repo
                 .update_profile(&mut txn, user_id, profile_update.as_ref())
-                .await?;
+                .await
+                .context("Failed to update user profile")?;
             profile = profile.update(profile_update);
             commit = true;
         }
@@ -318,7 +332,9 @@ where
                     UserUpdateNameError::RateLimit { until } => {
                         UserUpdateError::NameChangeRateLimit { until }
                     }
-                    UserUpdateNameError::Other(err) => err.into(),
+                    UserUpdateNameError::Other(err) => {
+                        err.context("Failed to update user name").into()
+                    }
                 })?;
             commit = true;
         }
@@ -332,7 +348,9 @@ where
                 .await
                 .map_err(|err| match err {
                     UserUpdateEmailError::Conflict => UserUpdateError::EmailConflict,
-                    UserUpdateEmailError::Other(err) => err.into(),
+                    UserUpdateEmailError::Other(err) => {
+                        err.context("Failed to update user email").into()
+                    }
                 })?;
             commit = true;
         }
@@ -340,7 +358,8 @@ where
         if let PatchValue::Update(enabled) = enabled {
             self.user_update
                 .update_enabled(&mut txn, user_id, enabled)
-                .await?;
+                .await
+                .context("Failed to update enabled status")?;
             user.enabled = enabled;
             commit = true;
         }
@@ -348,7 +367,8 @@ where
         if let PatchValue::Update(admin) = admin {
             self.user_update
                 .update_admin(&mut txn, user_id, admin)
-                .await?;
+                .await
+                .context("Failed to update admin status")?;
             user.admin = admin;
             commit = true;
         }
@@ -360,14 +380,16 @@ where
                 }
                 self.user_repo
                     .remove_password_hash(&mut txn, user.id)
-                    .await?;
+                    .await
+                    .context("Failed to remove password hash from database")?;
                 details.password_login = false;
                 commit = true;
             }
             PatchValue::Update(PasswordUpdate::Change(password)) => {
                 self.user_update
                     .update_password(&mut txn, user_id, password)
-                    .await?;
+                    .await
+                    .context("Failed to update user password")?;
                 details.password_login = true;
                 commit = true;
             }
@@ -382,7 +404,8 @@ where
                         user_id,
                         email.with_name(profile.display_name.clone().into_inner()),
                     )
-                    .await?;
+                    .await
+                    .context("Failed to request newsletter subscription email")?;
             } else {
                 user.newsletter = newsletter;
                 self.user_repo
@@ -392,7 +415,9 @@ where
                         UserPatchRef::new().update_newsletter(&newsletter),
                     )
                     .await
-                    .map_err(|err| UserUpdateError::Other(err.into()))?;
+                    .map_err(|err| {
+                        anyhow!(err).context("Failed to update user newsletter status in database")
+                    })?;
                 commit = true;
             }
         }
@@ -402,7 +427,8 @@ where
             invoice_info = self
                 .user_update
                 .update_invoice_info(&mut txn, user.id, invoice_info, invoice_info_update)
-                .await?;
+                .await
+                .context("Failed to update user invoice info")?;
             commit = true;
         }
 
@@ -420,7 +446,8 @@ where
         if invoice_info_updated && user_composite.can_receive_coins() {
             self.internal_api
                 .release_coins(user_composite.user.id)
-                .await?;
+                .await
+                .context("Failed to release coins")?;
         }
 
         Ok(user_composite)
@@ -435,9 +462,15 @@ where
 
         self.auth
             .invalidate_access_tokens(&mut txn, user_id)
-            .await?;
+            .await
+            .context("Failed to invalidate access tokens")?;
 
-        if !self.user_repo.delete(&mut txn, user_id).await? {
+        if !self
+            .user_repo
+            .delete(&mut txn, user_id)
+            .await
+            .context("Failed to delete user from database")?
+        {
             return Err(UserDeleteError::NotFound);
         }
 
@@ -460,7 +493,8 @@ where
         let user_composite = self
             .user_repo
             .get_composite(&mut txn, user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(UserRequestVerificationEmailError::NotFound)?;
 
         if user_composite.user.email_verified {
@@ -474,7 +508,8 @@ where
 
         self.user_email_confirmation
             .request_verification(email.with_name(user_composite.profile.display_name.into_inner()))
-            .await?;
+            .await
+            .context("Failed to request verification email")?;
 
         Ok(())
     }
@@ -495,7 +530,9 @@ where
             Err(UserEmailConfirmationVerifyEmailError::InvalidCode) => {
                 Err(UserVerifyEmailError::InvalidCode)
             }
-            Err(UserEmailConfirmationVerifyEmailError::Other(err)) => Err(err.into()),
+            Err(UserEmailConfirmationVerifyEmailError::Other(err)) => {
+                Err(err.context("Failed to verify email").into())
+            }
         }
     }
 
@@ -514,7 +551,8 @@ where
         let mut user_composite = self
             .user_repo
             .get_composite(&mut txn, user_id)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(UserVerifyNewsletterSubscriptionError::NotFound)?;
 
         if user_composite.user.newsletter {
@@ -528,7 +566,9 @@ where
                 UserEmailConfirmationSubscribeToNewsletterError::InvalidCode => {
                     UserVerifyNewsletterSubscriptionError::InvalidCode
                 }
-                UserEmailConfirmationSubscribeToNewsletterError::Other(err) => err.into(),
+                UserEmailConfirmationSubscribeToNewsletterError::Other(err) => err
+                    .context("Failed to confirm newsletter subscription")
+                    .into(),
             })?;
 
         user_composite.user.newsletter = true;
@@ -548,7 +588,7 @@ where
             .await
             .map_err(|err| match err {
                 CaptchaCheckError::Failed => UserRequestPasswordResetError::Recaptcha,
-                CaptchaCheckError::Other(err) => err.into(),
+                CaptchaCheckError::Other(err) => err.context("Failed to check captcha").into(),
             })?;
 
         let mut txn = self.db.begin_transaction().await?;
@@ -556,7 +596,8 @@ where
         if let Some(user_composite) = self
             .user_repo
             .get_composite_by_email(&mut txn, &email)
-            .await?
+            .await
+            .context("Failed to get user from database")?
         {
             let email = user_composite.user.email.ok_or_else(|| {
                 anyhow!(
@@ -570,7 +611,8 @@ where
                     user_composite.user.id,
                     email.with_name(user_composite.profile.display_name.into_inner()),
                 )
-                .await?;
+                .await
+                .context("Failed to request password reset email")?;
         }
 
         Ok(())
@@ -587,7 +629,8 @@ where
         let user_composite = self
             .user_repo
             .get_composite_by_email(&mut txn, &email)
-            .await?
+            .await
+            .context("Failed to get user from database")?
             .ok_or(UserResetPasswordError::Failed)?;
 
         self.user_email_confirmation
@@ -597,7 +640,9 @@ where
                 UserEmailConfirmationResetPasswordError::InvalidCode => {
                     UserResetPasswordError::Failed
                 }
-                UserEmailConfirmationResetPasswordError::Other(err) => err.into(),
+                UserEmailConfirmationResetPasswordError::Other(err) => {
+                    err.context("Failed to reset password").into()
+                }
             })?;
 
         txn.commit().await?;
