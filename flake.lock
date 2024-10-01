@@ -1069,6 +1069,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-smtp4dev": {
+      "locked": {
+        "lastModified": 1727792714,
+        "narHash": "sha256-QAXN0pEe0cptUQcsWERgSGkz2/H/Vv9XB/bqNTK4XIw=",
+        "owner": "Defelo",
+        "repo": "nixpkgs",
+        "rev": "e0d4f70bef3417cc42e810315ac64750f4fcf7f2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Defelo",
+        "ref": "smtp4dev",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1720386169,
@@ -1416,7 +1432,8 @@
         "crate2nix": "crate2nix",
         "devenv": "devenv",
         "fenix": "fenix",
-        "nixpkgs": "nixpkgs_10"
+        "nixpkgs": "nixpkgs_10",
+        "nixpkgs-smtp4dev": "nixpkgs-smtp4dev"
       }
     },
     "rust-analyzer-src": {

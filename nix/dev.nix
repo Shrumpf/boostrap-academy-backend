@@ -37,7 +37,7 @@
   };
 
   processes.smtp4dev.exec = ''
-    ${pkgs.smtp4dev}/bin/smtp4dev --smtpport=2525 --imapport=1143
+    ${pkgs.smtp4dev}/bin/smtp4dev --smtpport=2525 --imapport=1143 --user=academy=academy --allowremoteconnections- --authenticationrequired
   '';
 
   processes.testing-recaptcha.exec = ''

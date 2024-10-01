@@ -8,7 +8,7 @@ url = "postgres://academy@127.0.0.1:5432/academy" # https://docs.rs/tokio-postgr
 url = "redis://127.0.0.1:6379/0" # https://docs.rs/redis/latest/redis/#connection-parameters
 
 [email]
-smtp_url = "smtp://127.0.0.1:2525" # https://docs.rs/lettre/latest/lettre/transport/smtp/struct.AsyncSmtpTransport.html#method.from_url
+smtp_url = "smtp://academy:academy@127.0.0.1:2525" # https://docs.rs/lettre/latest/lettre/transport/smtp/struct.AsyncSmtpTransport.html#method.from_url
 from = "Bootstrap Academy DEV <dev@bootstrap.academy>"
 
 [jwt]

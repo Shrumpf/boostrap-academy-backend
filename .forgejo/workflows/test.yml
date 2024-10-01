@@ -66,15 +66,19 @@ jobs:
       - uses: https://github.com/Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
-      - run: echo 'email.smtp_url = "smtp://smtp4dev:25"' > config.extra.toml
+      - run: echo 'email.smtp_url = "smtp://academy:academy@smtp4dev:25"' > config.extra.toml
       - run: cargo test -p academy_email_impl --no-fail-fast --all-features --test '*'
         env:
           ACADEMY_CONFIG: ${{ github.workspace }}/config.extra.toml:${{ github.workspace }}/config.dev.toml
-          SMTP4DEV_URL: http://smtp4dev:8080
+          SMTP4DEV_URL: http://smtp4dev:80
           RUST_TEST_THREADS: 1
     services:
       smtp4dev:
-        image: rnwood/smtp4dev:3.3.4
+        image: rnwood/smtp4dev:3.6.1
+        env:
+          ServerOptions__AuthenticationRequired: "true"
+          ServerOptions__Users__0__Username: academy
+          ServerOptions__Users__0__Password: academy
 
   extern:
     runs-on: debian-latest

@@ -15,7 +15,7 @@ async fn send_email() {
     let result = client
         .email
         .send(Email {
-            recipient: "test@example.com".parse().unwrap(),
+            recipient: "recipient@example.com".parse().unwrap(),
             subject: "The Subject".into(),
             body: "<h1>Hello World!</h1>".into(),
             content_type: ContentType::Html,
@@ -28,7 +28,7 @@ async fn send_email() {
 
     let mail = client.wait_for_mail().await;
     assert_eq!(mail.from, client.from.0.email.as_ref());
-    assert_eq!(mail.to, "test@example.com");
+    assert_eq!(mail.to, ["recipient@example.com"]);
     assert_eq!(mail.subject, "The Subject");
 
     let details = client.fetch_email_details(mail.id).await;
@@ -155,7 +155,7 @@ struct PaginationResponse<T> {
 struct EmailSummary {
     id: Uuid,
     from: String,
-    to: String,
+    to: Vec<String>,
     subject: String,
 }
 
