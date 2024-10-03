@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use academy_config::Config;
-use academy_di::Provides;
+use academy_di::Provide;
 use academy_shared_contracts::jwt::JwtService;
 use anyhow::Context;
 use clap::Subcommand;

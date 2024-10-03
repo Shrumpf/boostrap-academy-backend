@@ -1,5 +1,5 @@
 use academy_config::RecaptchaConfig;
-use academy_di::{provider, Provides};
+use academy_di::{provider, Provide};
 use academy_extern_contracts::recaptcha::{RecaptchaApiService, RecaptchaSiteverifyResponse};
 use academy_extern_impl::recaptcha::{RecaptchaApiServiceConfig, RecaptchaApiServiceImpl};
 
@@ -56,7 +56,7 @@ fn make_sut() -> (RecaptchaApiServiceImpl, String) {
     }
 
     let mut provider = Provider {
-        _state: Default::default(),
+        _cache: Default::default(),
         recaptcha_api_service_config: RecaptchaApiServiceConfig::new(siteverify_endpoint_override),
     };
 

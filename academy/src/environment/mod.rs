@@ -59,7 +59,7 @@ provider! {
 impl Provider {
     pub fn new(config: ConfigProvider, database: Database, cache: Cache, email: Email) -> Self {
         Self {
-            _state: Default::default(),
+            _cache: Default::default(),
             database,
             cache,
             email,
@@ -206,7 +206,7 @@ impl ConfigProvider {
         };
 
         Ok(Self {
-            _state: Default::default(),
+            _cache: Default::default(),
 
             // API
             rest_server_config,
@@ -237,7 +237,7 @@ impl ConfigProvider {
 #[cfg(test)]
 mod tests {
     use academy_cache_valkey::ValkeyCache;
-    use academy_di::Provides;
+    use academy_di::Provide;
     use academy_email_impl::EmailServiceImpl;
     use academy_persistence_postgres::PostgresDatabase;
     use types::RestServer;

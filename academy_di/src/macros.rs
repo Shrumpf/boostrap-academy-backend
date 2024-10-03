@@ -6,14 +6,17 @@ macro_rules! provider {
     }) => {
         $(#[doc=$doc])*
         $vis struct $ident {
-            _state: $crate::ProviderState,
+            _cache: $crate::TypeMap,
             $( $field: $ty, )*
             $( $bfield: $base, )*
         }
 
         impl $crate::Provider for $ident {
-            fn state(&mut self) -> &mut $crate::ProviderState {
-                &mut self._state
+            fn get<T: 'static + Clone>(&self) -> Option<T> {
+                self._cache.get().cloned()
+            }
+            fn insert<T: 'static>(&mut self, value: T) {
+                self._cache.insert(value)
             }
         }
 
@@ -28,7 +31,7 @@ macro_rules! provider {
         $($(
             impl $crate::Build<$ident> for $ity {
                 fn build(provider: &mut $ident) -> Self {
-                    $crate::Provides::provide(&mut provider.$bfield)
+                    $crate::Provide::provide(&mut provider.$bfield)
                 }
             }
         )*)*

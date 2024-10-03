@@ -29,19 +29,19 @@ pub fn derive_build(input: TokenStream) -> TokenStream {
         .fields
         .iter()
         .filter(|x| !is_state(x))
-        .map(|Field { ty, .. }| quote! { ::academy_di::Provides<#ty> })
+        .map(|Field { ty, .. }| quote! { #ty: ::academy_di::Build<__Provider> })
         .collect::<Vec<_>>();
 
-    let expr = match data.fields {
+    let build_expr = match data.fields {
         syn::Fields::Named(fields) => {
             let fields = fields
                 .named
                 .iter()
-                .map(|f @ Field { ident, ty, .. }| {
+                .map(|f @ Field { ident, .. }| {
                     if is_state(f) {
                         quote! { #ident: ::core::default::Default::default() }
                     } else {
-                        quote! { #ident: ::academy_di::Provides::<#ty>::provide(provider) }
+                        quote! { #ident: ::academy_di::Build::build(provider) }
                     }
                 })
                 .collect::<Vec<_>>();
@@ -51,11 +51,11 @@ pub fn derive_build(input: TokenStream) -> TokenStream {
             let fields = fields
                 .unnamed
                 .iter()
-                .map(|f @ Field { ty, .. }| {
+                .map(|f| {
                     if is_state(f) {
                         quote! { ::core::default::Default::default() }
                     } else {
-                        quote! { ::academy_di::Provides::<#ty>::provide(provider) }
+                        quote! { ::academy_di::Build::build(provider) }
                     }
                 })
                 .collect::<Vec<_>>();
@@ -66,9 +66,18 @@ pub fn derive_build(input: TokenStream) -> TokenStream {
 
     quote! {
         impl<__Provider, #(#generics),*> ::academy_di::Build<__Provider> for #ident<#(#generics),*>
-            where __Provider: #(#bounds)+*
+        where
+            Self: ::core::clone::Clone + 'static,
+            __Provider: ::academy_di::Provider,
+            #(#bounds),*
         {
-            fn build(provider: &mut __Provider) -> Self { #expr }
+            fn build(provider: &mut __Provider) -> Self {
+                if let ::core::option::Option::Some(cached) = ::academy_di::Provider::get(provider) {
+                    cached
+                } else {
+                    #build_expr
+                }
+            }
         }
     }
     .into()

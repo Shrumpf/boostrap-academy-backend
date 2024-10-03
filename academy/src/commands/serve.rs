@@ -1,6 +1,6 @@
 use academy_cache_contracts::CacheService;
 use academy_config::Config;
-use academy_di::Provides;
+use academy_di::Provide;
 use academy_email_contracts::EmailService;
 use academy_persistence_contracts::Database;
 use tracing::{debug, info};

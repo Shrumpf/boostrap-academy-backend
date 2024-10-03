@@ -1,14 +1,12 @@
 pub use academy_di_derive::Build;
-use typemap::TypeMap;
+pub use typemap::TypeMap;
 
 mod macros;
 mod typemap;
 
-#[derive(Debug, Default)]
-pub struct ProviderState(TypeMap);
-
-pub trait Provider {
-    fn state(&mut self) -> &mut ProviderState;
+pub trait Provider: Sized {
+    fn get<T: 'static + Clone>(&self) -> Option<T>;
+    fn insert<T: 'static>(&mut self, value: T);
 }
 
 #[diagnostic::on_unimplemented(
@@ -16,26 +14,14 @@ pub trait Provider {
     note = "Add `{Self}` to the provider `{P}` or implement `Build` for `{Self}` and make sure \
             all dependencies are satisfied"
 )]
-pub trait Build<P> {
+pub trait Build<P: Provider>: Clone + 'static {
     fn build(provider: &mut P) -> Self;
 }
 
-pub trait Provides<T> {
-    fn provide(&mut self) -> T;
-}
-
-impl<T, P> Provides<T> for P
-where
-    T: Build<P> + Clone + 'static,
-    P: Provider,
-{
-    fn provide(&mut self) -> T {
-        if let Some(cached) = self.state().0.get().cloned() {
-            cached
-        } else {
-            let object = T::build(self);
-            self.state().0.insert(object.clone());
-            object
-        }
+pub trait Provide: Provider {
+    fn provide<T: Build<Self>>(&mut self) -> T {
+        T::build(self)
     }
 }
+
+impl<P: Provider> Provide for P {}

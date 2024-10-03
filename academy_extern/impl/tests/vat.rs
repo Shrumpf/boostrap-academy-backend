@@ -1,4 +1,4 @@
-use academy_di::{provider, Provides};
+use academy_di::{provider, Provide};
 use academy_extern_contracts::vat::VatApiService;
 use academy_extern_impl::vat::{VatApiServiceConfig, VatApiServiceImpl};
 
@@ -31,7 +31,7 @@ fn make_sut() -> VatApiServiceImpl {
     }
 
     let mut provider = Provider {
-        _state: Default::default(),
+        _cache: Default::default(),
         vat_api_service_config: VatApiServiceConfig::new(config.vat.validate_endpoint_override),
     };
 
