@@ -47,7 +47,7 @@ async fn new() {
     };
 
     // Act
-    let result = sut.initialize("token", UserIdOrSelf::Slf).await;
+    let result = sut.initialize(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -82,7 +82,7 @@ async fn reset_disabled() {
     };
 
     // Act
-    let result = sut.initialize("token", UserIdOrSelf::Slf).await;
+    let result = sut.initialize(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -99,7 +99,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.initialize("token", FOO.user.id.into()).await;
+    let result = sut.initialize(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -121,7 +121,7 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.initialize("token", FOO.user.id.into()).await;
+    let result = sut.initialize(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -150,7 +150,7 @@ async fn user_not_found() {
     };
 
     // Act
-    let result = sut.initialize("token", FOO.user.id.into()).await;
+    let result = sut.initialize(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(result, Err(MfaInitializeError::NotFound));
@@ -179,7 +179,7 @@ async fn already_enabled() {
     };
 
     // Act
-    let result = sut.initialize("token", UserIdOrSelf::Slf).await;
+    let result = sut.initialize(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     assert_matches!(result, Err(MfaInitializeError::AlreadyEnabled));

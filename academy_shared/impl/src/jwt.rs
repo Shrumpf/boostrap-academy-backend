@@ -1,10 +1,11 @@
-use std::{sync::Arc, time::Duration};
+use std::{fmt::Debug, sync::Arc, time::Duration};
 
 use academy_di::Build;
 use academy_shared_contracts::{
     jwt::{JwtService, VerifyJwtError},
     time::TimeService,
 };
+use academy_utils::trace_instrument;
 use anyhow::Context;
 use hmac::{digest::KeyInit, Hmac};
 use jwt::{SignWithKey, VerifyWithKey};
@@ -36,17 +37,28 @@ impl<Time> JwtService for JwtServiceImpl<Time>
 where
     Time: TimeService,
 {
-    fn sign<T: Serialize + 'static>(&self, data: T, ttl: Duration) -> anyhow::Result<String> {
+    #[trace_instrument(skip(self))]
+    fn sign<T: Serialize + Debug + 'static, S: From<String> + Debug>(
+        &self,
+        data: T,
+        ttl: Duration,
+    ) -> anyhow::Result<S> {
         let now = self.time.now().timestamp() as u64;
         let exp = now + ttl.as_secs();
 
         JwtData { exp, data }
             .sign_with_key(&*self.config.jwt_secret)
             .context("Failed to sign JWT")
+            .map(Into::into)
     }
 
-    fn verify<T: DeserializeOwned + 'static>(&self, jwt: &str) -> Result<T, VerifyJwtError<T>> {
+    #[trace_instrument(skip(self))]
+    fn verify<S: AsRef<str> + Debug, T: DeserializeOwned + Debug + 'static>(
+        &self,
+        jwt: &S,
+    ) -> Result<T, VerifyJwtError<T>> {
         let JwtData { exp, data } = jwt
+            .as_ref()
             .verify_with_key(&*self.config.jwt_secret)
             .map_err(|_| VerifyJwtError::Invalid)?;
 
@@ -92,7 +104,7 @@ mod tests {
 
         // Act
         let jwt = sut.sign(data.clone(), Duration::from_secs(20)).unwrap();
-        let verified = sut.verify::<Data>(&jwt);
+        let verified = sut.verify::<String, Data>(&jwt);
 
         // Assert
         assert_eq!(verified.unwrap(), data);
@@ -116,7 +128,7 @@ mod tests {
 
         // Act
         let jwt = sut.sign(data.clone(), Duration::from_secs(10)).unwrap();
-        let verified = sut.verify::<Data>(&jwt);
+        let verified = sut.verify::<String, Data>(&jwt);
 
         // Assert
         assert_matches!(verified, Err(VerifyJwtError::Expired(x)) if x == &data);
@@ -144,7 +156,7 @@ mod tests {
 
         // Act
         let jwt = sut.sign(data.clone(), Duration::from_secs(10)).unwrap();
-        let verified = sut2.verify::<Data>(&jwt);
+        let verified = sut2.verify::<String, Data>(&jwt);
 
         // Assert
         assert_matches!(verified, Err(VerifyJwtError::Invalid));

@@ -12,6 +12,7 @@ use academy_core_session_contracts::session::SessionService;
 use academy_di::Build;
 use academy_extern_contracts::oauth2::OAuth2ApiService;
 use academy_models::{
+    auth::AccessToken,
     oauth2::{
         OAuth2Link, OAuth2LinkId, OAuth2Login, OAuth2Provider, OAuth2ProviderId,
         OAuth2ProviderSummary, OAuth2Registration,
@@ -22,6 +23,7 @@ use academy_models::{
 use academy_persistence_contracts::{
     oauth2::OAuth2Repository, user::UserRepository, Database, Transaction,
 };
+use academy_utils::trace_instrument;
 use anyhow::Context;
 
 pub mod link;
@@ -95,6 +97,7 @@ where
     OAuth2RegistrationS: OAuth2RegistrationService,
     Session: SessionService<Db::Transaction>,
 {
+    #[trace_instrument(skip(self))]
     fn list_providers(&self) -> Vec<OAuth2ProviderSummary> {
         self.config
             .providers
@@ -107,9 +110,10 @@ where
             .collect()
     }
 
+    #[trace_instrument(skip(self))]
     async fn list_links(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> Result<Vec<OAuth2Link>, OAuth2ListLinksError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -139,9 +143,10 @@ where
         Ok(links)
     }
 
+    #[trace_instrument(skip(self))]
     async fn create_link(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         login: OAuth2Login,
     ) -> Result<OAuth2Link, OAuth2CreateLinkError> {
@@ -192,9 +197,10 @@ where
         Ok(link)
     }
 
+    #[trace_instrument(skip(self))]
     async fn delete_link(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         link_id: OAuth2LinkId,
     ) -> Result<(), OAuth2DeleteLinkError> {
@@ -234,6 +240,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self))]
     async fn create_session(
         &self,
         login: OAuth2Login,

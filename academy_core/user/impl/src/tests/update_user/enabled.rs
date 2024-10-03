@@ -47,7 +47,7 @@ async fn update_enabled() {
         // Act
         let result = sut
             .update_user(
-                "token",
+                &"token".into(),
                 UserIdOrSelf::UserId(user_composite.user.id),
                 UserUpdateRequest {
                     user: UserUpdateUserRequest {
@@ -85,7 +85,7 @@ async fn disable_self() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {

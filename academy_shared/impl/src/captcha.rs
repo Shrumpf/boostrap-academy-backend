@@ -3,6 +3,7 @@ use std::sync::Arc;
 use academy_di::Build;
 use academy_extern_contracts::recaptcha::RecaptchaApiService;
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
+use academy_utils::trace_instrument;
 use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
@@ -29,6 +30,7 @@ impl<RecaptchaApi> CaptchaService for CaptchaServiceImpl<RecaptchaApi>
 where
     RecaptchaApi: RecaptchaApiService,
 {
+    #[trace_instrument(skip(self))]
     fn get_recaptcha_sitekey(&self) -> Option<&str> {
         match &self.config {
             CaptchaServiceConfig::Recaptcha(RecaptchaCaptchaServiceConfig { sitekey, .. }) => {
@@ -38,6 +40,7 @@ where
         }
     }
 
+    #[trace_instrument(skip(self))]
     async fn check(&self, response: Option<&str>) -> Result<(), CaptchaCheckError> {
         let config = match &self.config {
             CaptchaServiceConfig::Recaptcha(config) => config,

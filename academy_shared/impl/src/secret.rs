@@ -1,6 +1,7 @@
 use academy_di::Build;
-use academy_models::{mfa::MfaRecoveryCode, VerificationCode};
+use academy_models::{mfa::MfaRecoveryCode, Sensitive, VerificationCode};
 use academy_shared_contracts::secret::SecretService;
+use academy_utils::trace_instrument;
 use rand::{
     distributions::{Alphanumeric, DistString, Uniform},
     prelude::Distribution,
@@ -11,16 +12,19 @@ use rand::{
 pub struct SecretServiceImpl;
 
 impl SecretService for SecretServiceImpl {
-    fn generate(&self, len: usize) -> String {
-        Alphanumeric.sample_string(&mut csprng(), len)
+    #[trace_instrument(skip(self))]
+    fn generate(&self, len: usize) -> Sensitive<String> {
+        Alphanumeric.sample_string(&mut csprng(), len).into()
     }
 
-    fn generate_bytes(&self, len: usize) -> Vec<u8> {
+    #[trace_instrument(skip(self))]
+    fn generate_bytes(&self, len: usize) -> Sensitive<Vec<u8>> {
         let mut out = vec![0; len];
         csprng().fill_bytes(&mut out);
-        out
+        out.into()
     }
 
+    #[trace_instrument(skip(self))]
     fn generate_verification_code(&self) -> VerificationCode {
         generate_hyphenated_code(
             csprng(),
@@ -32,6 +36,7 @@ impl SecretService for SecretServiceImpl {
         .unwrap()
     }
 
+    #[trace_instrument(skip(self))]
     fn generate_mfa_recovery_code(&self) -> MfaRecoveryCode {
         generate_hyphenated_code(
             csprng(),
@@ -87,7 +92,7 @@ mod tests {
         let sut = SecretServiceImpl;
 
         // Act
-        let result = sut.generate(n);
+        let result = sut.generate(n).0;
 
         // Assert
         assert_eq!(result.len(), n);

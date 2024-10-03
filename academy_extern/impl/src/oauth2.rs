@@ -2,14 +2,17 @@ use std::collections::HashMap;
 
 use academy_di::Build;
 use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError};
-use academy_models::oauth2::{OAuth2AuthorizationCode, OAuth2Provider, OAuth2UserInfo};
-use academy_utils::Apply;
+use academy_models::{
+    oauth2::{OAuth2AuthorizationCode, OAuth2Provider, OAuth2UserInfo},
+    url::Url,
+};
+use academy_utils::{trace_instrument, Apply};
 use anyhow::{anyhow, Context};
 use oauth2::{
     basic::BasicClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, RedirectUrl,
     RequestTokenError, TokenResponse, TokenUrl,
 };
-use url::Url;
+use tracing::trace;
 
 use crate::http::{HttpClient, USER_AGENT};
 
@@ -20,6 +23,7 @@ pub struct OAuth2ApiServiceImpl {
 }
 
 impl OAuth2ApiService for OAuth2ApiServiceImpl {
+    #[trace_instrument(skip(self))]
     fn generate_auth_url(&self, provider: &OAuth2Provider) -> Url {
         let mut url = provider.auth_url.clone();
         url.query_pairs_mut()
@@ -38,6 +42,7 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
         url
     }
 
+    #[trace_instrument(skip(self))]
     async fn resolve_code(
         &self,
         provider: OAuth2Provider,
@@ -46,11 +51,13 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
     ) -> Result<OAuth2UserInfo, OAuth2ResolveCodeError> {
         let client = BasicClient::new(
             ClientId::new(provider.client_id),
-            provider.client_secret.map(ClientSecret::new),
-            AuthUrl::from_url(provider.auth_url),
-            Some(TokenUrl::from_url(provider.token_url)),
+            provider
+                .client_secret
+                .map(|x| ClientSecret::new(x.into_inner())),
+            AuthUrl::from_url(provider.auth_url.0),
+            Some(TokenUrl::from_url(provider.token_url.0)),
         )
-        .set_redirect_uri(RedirectUrl::from_url(redirect_url));
+        .set_redirect_uri(RedirectUrl::from_url(redirect_url.0));
 
         // exchange the authorization code for an access token
         let response = client
@@ -67,11 +74,15 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
             })?;
 
         let access_token = response.access_token().secret();
+        trace!(
+            access_token,
+            "exchanged authorization code for access token"
+        );
 
         // use the access token to fetch the remote user's id and name
         let userinfo = self
             .http
-            .get(provider.userinfo_url)
+            .get(provider.userinfo_url.0)
             .bearer_auth(access_token)
             .send()
             .await
@@ -81,6 +92,7 @@ impl OAuth2ApiService for OAuth2ApiServiceImpl {
             .json::<HashMap<String, serde_json::Value>>()
             .await
             .context("Failed to deserialize userinfo")?;
+        trace!(?userinfo, "fetched userinfo");
 
         let id = match userinfo.get(&provider.userinfo_id_key) {
             Some(serde_json::Value::Number(id)) => Ok(id.to_string()),

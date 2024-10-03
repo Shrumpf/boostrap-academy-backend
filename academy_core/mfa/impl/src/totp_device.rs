@@ -10,8 +10,9 @@ use academy_shared_contracts::{
     time::TimeService,
     totp::{TotpCheckError, TotpService},
 };
-use academy_utils::patch::Patch;
+use academy_utils::{patch::Patch, trace_instrument};
 use anyhow::Context;
+use tracing::trace;
 
 #[derive(Debug, Clone, Build, Default)]
 pub struct MfaTotpDeviceServiceImpl<Id, Time, Totp, MfaRepo> {
@@ -30,6 +31,7 @@ where
     Totp: TotpService,
     MfaRepo: MfaRepository<Txn>,
 {
+    #[trace_instrument(skip(self, txn))]
     async fn create(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<TotpSetup> {
         let (secret, setup) = self.totp.generate_secret();
 
@@ -48,18 +50,21 @@ where
         Ok(setup)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn confirm(
         &self,
         txn: &mut Txn,
         totp_device: TotpDevice,
         code: TotpCode,
     ) -> Result<TotpDevice, MfaTotpDeviceConfirmError> {
+        trace!("get secret");
         let secret = self
             .mfa_repo
             .get_totp_device_secret(txn, totp_device.id)
             .await
             .context("Failed to get totp device secret from database")?;
 
+        trace!("check code");
         self.totp
             .check(&code, secret)
             .await
@@ -70,6 +75,7 @@ where
                 TotpCheckError::Other(err) => err.context("Failed to check totp code").into(),
             })?;
 
+        trace!("update device");
         let patch = TotpDevicePatch::new().update_enabled(true);
         self.mfa_repo
             .update_totp_device(txn, totp_device.id, patch.as_ref())
@@ -79,6 +85,7 @@ where
         Ok(totp_device.update(patch))
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn reset(
         &self,
         txn: &mut Txn,
@@ -86,6 +93,7 @@ where
     ) -> anyhow::Result<TotpSetup> {
         let (secret, setup) = self.totp.generate_secret();
 
+        trace!("update device");
         self.mfa_repo
             .update_totp_device(
                 txn,
@@ -95,6 +103,7 @@ where
             .await
             .context("Failed to update totp device in database")?;
 
+        trace!("update secret");
         self.mfa_repo
             .save_totp_device_secret(txn, totp_device_id, &secret)
             .await

@@ -1,6 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
+    auth::AccessToken,
     session::{SessionId, SessionRefreshTokenHash},
     user::User,
 };
@@ -15,10 +16,10 @@ pub trait AuthAccessTokenService: Send + Sync + 'static {
         user: &User,
         session_id: SessionId,
         refresh_token_hash: SessionRefreshTokenHash,
-    ) -> anyhow::Result<String>;
+    ) -> anyhow::Result<AccessToken>;
 
     /// Verify the given access token and return its content if it is valid.
-    fn verify(&self, access_token: &str) -> Option<Authentication>;
+    fn verify(&self, access_token: &AccessToken) -> Option<Authentication>;
 
     /// Manually invalidate a previously issued access token before it expires.
     fn invalidate(
@@ -40,7 +41,7 @@ impl MockAuthAccessTokenService {
         user: User,
         session_id: SessionId,
         refresh_token_hash: SessionRefreshTokenHash,
-        result: String,
+        result: AccessToken,
     ) -> Self {
         self.expect_issue()
             .once()
@@ -53,7 +54,11 @@ impl MockAuthAccessTokenService {
         self
     }
 
-    pub fn with_verify(mut self, access_token: String, result: Option<Authentication>) -> Self {
+    pub fn with_verify(
+        mut self,
+        access_token: AccessToken,
+        result: Option<Authentication>,
+    ) -> Self {
         self.expect_verify()
             .once()
             .with(mockall::predicate::eq(access_token))

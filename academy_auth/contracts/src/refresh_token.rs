@@ -1,17 +1,17 @@
-use academy_models::session::SessionRefreshTokenHash;
+use academy_models::{auth::RefreshToken, session::SessionRefreshTokenHash};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait AuthRefreshTokenService: Send + Sync + 'static {
     /// Generate a new refresh token.
-    fn issue(&self) -> String;
+    fn issue(&self) -> RefreshToken;
 
     /// Return the hash of the given refresh token.
-    fn hash(&self, refresh_token: &str) -> SessionRefreshTokenHash;
+    fn hash(&self, refresh_token: &RefreshToken) -> SessionRefreshTokenHash;
 }
 
 #[cfg(feature = "mock")]
 impl MockAuthRefreshTokenService {
-    pub fn with_issue(mut self, refresh_token: String) -> Self {
+    pub fn with_issue(mut self, refresh_token: RefreshToken) -> Self {
         self.expect_issue()
             .once()
             .with()
@@ -21,7 +21,7 @@ impl MockAuthRefreshTokenService {
 
     pub fn with_hash(
         mut self,
-        refresh_token: String,
+        refresh_token: RefreshToken,
         refresh_token_hash: SessionRefreshTokenHash,
     ) -> Self {
         self.expect_hash()

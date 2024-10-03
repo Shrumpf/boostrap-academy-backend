@@ -3,6 +3,7 @@ use academy_core_session_contracts::failed_auth_count::SessionFailedAuthCountSer
 use academy_di::Build;
 use academy_models::user::UserNameOrEmailAddress;
 use academy_shared_contracts::hash::HashService;
+use academy_utils::trace_instrument;
 use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
@@ -16,6 +17,7 @@ where
     Hash: HashService,
     Cache: CacheService,
 {
+    #[trace_instrument(skip(self))]
     async fn get(&self, name_or_email: &UserNameOrEmailAddress) -> anyhow::Result<u64> {
         self.cache
             .get(&self.cache_key(name_or_email))
@@ -24,6 +26,7 @@ where
             .context("Failed to get failed auth count from cache")
     }
 
+    #[trace_instrument(skip(self))]
     async fn increment(&self, name_or_email: &UserNameOrEmailAddress) -> anyhow::Result<()> {
         let cache_key = self.cache_key(name_or_email);
 
@@ -40,6 +43,7 @@ where
             .context("Failed to save failed auth count in cache")
     }
 
+    #[trace_instrument(skip(self))]
     async fn reset(&self, name_or_email: &UserNameOrEmailAddress) -> anyhow::Result<()> {
         self.cache
             .remove(&self.cache_key(name_or_email))
@@ -58,8 +62,7 @@ where
                 UserNameOrEmailAddress::Name(name) => name,
                 UserNameOrEmailAddress::Email(email) => email.as_str(),
             }
-            .to_lowercase()
-            .into_bytes(),
+            .to_lowercase(),
         );
         format!("failed_auth_attempts:{}", hex::encode(hash.0))
     }
@@ -76,10 +79,8 @@ mod tests {
     #[tokio::test]
     async fn get() {
         // Arrange
-        let hash = MockHashService::new().with_sha256(
-            FOO.user.name.clone().into_inner().into_bytes(),
-            *SHA256HASH1,
-        );
+        let hash =
+            MockHashService::new().with_sha256(FOO.user.name.clone().into_inner(), *SHA256HASH1);
 
         let cache = MockCacheService::new().with_get(
             format!("failed_auth_attempts:{}", SHA256HASH1_HEX),
@@ -101,7 +102,7 @@ mod tests {
     async fn increment() {
         // Arrange
         let hash = MockHashService::new().with_sha256(
-            FOO.user.email.as_ref().unwrap().as_str().as_bytes().into(),
+            FOO.user.email.as_ref().unwrap().as_str().to_owned(),
             *SHA256HASH1,
         );
 
@@ -126,10 +127,8 @@ mod tests {
     #[tokio::test]
     async fn reset() {
         // Arrange
-        let hash = MockHashService::new().with_sha256(
-            FOO.user.name.clone().into_inner().into_bytes(),
-            *SHA256HASH1,
-        );
+        let hash =
+            MockHashService::new().with_sha256(FOO.user.name.clone().into_inner(), *SHA256HASH1);
 
         let cache = MockCacheService::new()
             .with_remove(format!("failed_auth_attempts:{}", SHA256HASH1_HEX));

@@ -6,7 +6,7 @@ use academy_models::{
     user::UserId,
 };
 use academy_persistence_contracts::session::SessionRepository;
-use academy_utils::patch::PatchValue;
+use academy_utils::{patch::PatchValue, trace_instrument};
 use bb8_postgres::tokio_postgres::{types::ToSql, Row};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
@@ -19,6 +19,7 @@ pub struct PostgresSessionRepository;
 columns!(session as "s": "id", "user_id", "device_name", "created_at", "updated_at");
 
 impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
+    #[trace_instrument(skip(self, txn))]
     async fn get(
         &self,
         txn: &mut PostgresTransaction,
@@ -37,6 +38,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_by_refresh_token_hash(
         &self,
         txn: &mut PostgresTransaction,
@@ -58,6 +60,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn list_by_user(
         &self,
         txn: &mut PostgresTransaction,
@@ -77,6 +80,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn create(&self, txn: &mut PostgresTransaction, session: &Session) -> anyhow::Result<()> {
         txn.txn()
             .execute(
@@ -97,6 +101,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update(
         &self,
         txn: &mut PostgresTransaction,
@@ -129,6 +134,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete(
         &self,
         txn: &mut PostgresTransaction,
@@ -141,6 +147,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete_by_user(
         &self,
         txn: &mut PostgresTransaction,
@@ -153,6 +160,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete_by_updated_at(
         &self,
         txn: &mut PostgresTransaction,
@@ -164,6 +172,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn list_refresh_token_hashes_by_user(
         &self,
         txn: &mut PostgresTransaction,
@@ -184,6 +193,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_refresh_token_hash(
         &self,
         txn: &mut PostgresTransaction,
@@ -202,6 +212,7 @@ impl SessionRepository<PostgresTransaction> for PostgresSessionRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn save_refresh_token_hash(
         &self,
         txn: &mut PostgresTransaction,

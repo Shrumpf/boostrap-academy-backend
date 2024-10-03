@@ -1,5 +1,3 @@
-use nutype::nutype;
-
 use crate::{email_address::EmailAddress, macros::nutype_string};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

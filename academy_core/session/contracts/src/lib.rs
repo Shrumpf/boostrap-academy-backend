@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
-    auth::{AuthError, Login},
+    auth::{AccessToken, AuthError, Login, RefreshToken},
     mfa::MfaAuthentication,
     session::{DeviceName, Session, SessionId},
     user::{UserId, UserIdOrSelf, UserNameOrEmailAddress, UserPassword},
@@ -16,7 +16,7 @@ pub trait SessionFeatureService: Send + Sync + 'static {
     /// Return the currently authenticated session.
     fn get_current_session(
         &self,
-        token: &str,
+        token: &AccessToken,
     ) -> impl Future<Output = Result<Session, SessionGetCurrentError>> + Send;
 
     /// Return all sessions of the given user.
@@ -24,7 +24,7 @@ pub trait SessionFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn list_by_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<Vec<Session>, SessionListByUserError>> + Send;
 
@@ -41,7 +41,7 @@ pub trait SessionFeatureService: Send + Sync + 'static {
     /// Requires admin privileges.
     fn impersonate(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserId,
     ) -> impl Future<Output = Result<Login, SessionImpersonateError>> + Send;
 
@@ -51,7 +51,7 @@ pub trait SessionFeatureService: Send + Sync + 'static {
     /// the previous one.
     fn refresh_session(
         &self,
-        refresh_token: &str,
+        refresh_token: &RefreshToken,
     ) -> impl Future<Output = Result<Login, SessionRefreshError>> + Send;
 
     /// Delete the given session and invalidate the access and refresh tokens
@@ -60,7 +60,7 @@ pub trait SessionFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn delete_session(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         session_id: SessionId,
     ) -> impl Future<Output = Result<(), SessionDeleteError>> + Send;
@@ -69,7 +69,7 @@ pub trait SessionFeatureService: Send + Sync + 'static {
     /// and refresh tokens.
     fn delete_current_session(
         &self,
-        token: &str,
+        token: &AccessToken,
     ) -> impl Future<Output = Result<(), SessionDeleteCurrentError>> + Send;
 
     /// Delete all sessions of the given user and invalidate all access and
@@ -78,7 +78,7 @@ pub trait SessionFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn delete_by_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<(), SessionDeleteByUserError>> + Send;
 }

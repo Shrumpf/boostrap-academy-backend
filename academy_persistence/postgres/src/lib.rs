@@ -2,6 +2,7 @@ use std::{collections::HashSet, fmt::Write, time::Duration};
 
 use academy_models::Sha256Hash;
 use academy_persistence_contracts::{Database, Transaction};
+use academy_utils::trace_instrument;
 use anyhow::{anyhow, Context};
 use bb8::{Pool, PooledConnection};
 use bb8_postgres::{
@@ -9,6 +10,7 @@ use bb8_postgres::{
     PostgresConnectionManager,
 };
 use ouroboros::self_referencing;
+use tracing::trace;
 
 pub mod mfa;
 pub mod oauth2;
@@ -172,6 +174,8 @@ impl Database for PostgresDatabase {
     type Transaction = PostgresTransaction;
 
     async fn begin_transaction(&self) -> anyhow::Result<Self::Transaction> {
+        trace!("begin transaction");
+
         let conn = self
             .pool
             .get_owned()
@@ -187,6 +191,7 @@ impl Database for PostgresDatabase {
         .context("Failed to begin transaction")
     }
 
+    #[trace_instrument(skip(self))]
     async fn ping(&self) -> anyhow::Result<()> {
         let conn = self
             .pool
@@ -223,6 +228,8 @@ impl PostgresTransaction {
 
 impl Transaction for PostgresTransaction {
     async fn commit(mut self) -> anyhow::Result<()> {
+        trace!("commit transaction");
+
         self.with_txn_mut(|txn| txn.take())
             .unwrap()
             .commit()
@@ -231,6 +238,8 @@ impl Transaction for PostgresTransaction {
     }
 
     async fn rollback(mut self) -> anyhow::Result<()> {
+        trace!("rollback transaction");
+
         self.with_txn_mut(|txn| txn.take())
             .unwrap()
             .rollback()

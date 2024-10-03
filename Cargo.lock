@@ -77,7 +77,6 @@ dependencies = [
  "tokio",
  "tower-http",
  "tracing",
- "url",
  "uuid",
 ]
 
@@ -107,6 +106,7 @@ dependencies = [
  "hex",
  "serde",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -126,12 +126,14 @@ dependencies = [
  "academy_config",
  "academy_demo",
  "academy_models",
+ "academy_utils",
  "anyhow",
  "bb8-redis",
  "rmp-serde",
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -143,7 +145,6 @@ dependencies = [
  "config",
  "serde",
  "serde_json",
- "url",
 ]
 
 [[package]]
@@ -160,6 +161,8 @@ dependencies = [
  "academy_core_config_contracts",
  "academy_di",
  "academy_shared_contracts",
+ "academy_utils",
+ "tracing",
 ]
 
 [[package]]
@@ -185,6 +188,7 @@ dependencies = [
  "anyhow",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -201,6 +205,7 @@ dependencies = [
  "academy_email_contracts",
  "academy_persistence_contracts",
  "academy_shared_contracts",
+ "academy_utils",
  "chrono",
  "tokio",
  "tracing",
@@ -232,6 +237,7 @@ dependencies = [
  "anyhow",
  "serde",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -258,6 +264,7 @@ dependencies = [
  "academy_utils",
  "anyhow",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -268,7 +275,6 @@ dependencies = [
  "anyhow",
  "mockall",
  "thiserror",
- "url",
 ]
 
 [[package]]
@@ -288,7 +294,7 @@ dependencies = [
  "academy_utils",
  "anyhow",
  "tokio",
- "url",
+ "tracing",
 ]
 
 [[package]]
@@ -319,6 +325,7 @@ dependencies = [
  "anyhow",
  "hex",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -356,6 +363,7 @@ dependencies = [
  "chrono",
  "pretty_assertions",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -413,7 +421,7 @@ dependencies = [
  "reqwest 0.12.8",
  "serde",
  "tokio",
- "url",
+ "tracing",
  "uuid",
 ]
 
@@ -425,7 +433,6 @@ dependencies = [
  "anyhow",
  "mockall",
  "thiserror",
- "url",
 ]
 
 [[package]]
@@ -446,7 +453,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
- "url",
+ "tracing",
 ]
 
 [[package]]
@@ -497,6 +504,7 @@ dependencies = [
  "paste",
  "pretty_assertions",
  "tokio",
+ "tracing",
  "uuid",
 ]
 
@@ -535,6 +543,7 @@ dependencies = [
  "sha2",
  "tokio",
  "totp-rs",
+ "tracing",
  "uuid",
 ]
 
@@ -553,9 +562,11 @@ version = "0.0.0"
 dependencies = [
  "academy_di",
  "academy_templates_contracts",
+ "academy_utils",
  "anyhow",
  "serde",
  "tera",
+ "tracing",
 ]
 
 [[package]]
@@ -591,6 +602,7 @@ dependencies = [
 name = "academy_utils_derive"
 version = "0.0.0"
 dependencies = [
+ "proc-macro2",
  "quote",
  "syn",
 ]

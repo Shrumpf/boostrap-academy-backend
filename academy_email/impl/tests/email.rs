@@ -2,10 +2,9 @@ use std::time::{Duration, Instant};
 
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_email_impl::EmailServiceImpl;
-use academy_models::email_address::EmailAddressWithName;
+use academy_models::{email_address::EmailAddressWithName, url::Url};
 use anyhow::Context;
 use serde::Deserialize;
-use url::Url;
 use uuid::Uuid;
 
 #[tokio::test]

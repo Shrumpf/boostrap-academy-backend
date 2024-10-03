@@ -54,7 +54,7 @@ async fn ok() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 invoice_info: expected.invoice_info.clone(),
@@ -109,7 +109,7 @@ async fn ok_release_coins() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 invoice_info: expected.invoice_info.clone(),
@@ -153,7 +153,7 @@ async fn invalid_vat_id() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 invoice_info: expected.invoice_info.clone(),

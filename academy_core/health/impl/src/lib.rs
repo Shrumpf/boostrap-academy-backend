@@ -6,9 +6,10 @@ use academy_di::Build;
 use academy_email_contracts::EmailService;
 use academy_persistence_contracts::Database;
 use academy_shared_contracts::time::TimeService;
-use chrono::{DateTime, Utc};
+use academy_utils::trace_instrument;
+use chrono::{DateTime, TimeDelta, Utc};
 use tokio::sync::RwLock;
-use tracing::error;
+use tracing::{error, trace};
 
 #[derive(Debug, Clone, Build)]
 pub struct HealthFeatureServiceImpl<Time, Db, Cache, Email> {
@@ -45,19 +46,23 @@ where
     Cache: CacheService,
     Email: EmailService,
 {
+    #[trace_instrument(skip(self))]
     async fn get_status(&self) -> HealthStatus {
         let now = self.time.now();
 
         let status_if_not_expired = |cached: Option<CachedStatus>| {
-            cached
-                .filter(|c| now < c.timestamp + self.config.cache_ttl)
-                .map(|c| c.status)
+            let CachedStatus { status, timestamp } = cached?;
+            let ttl = timestamp + self.config.cache_ttl - now;
+            (ttl > TimeDelta::zero())
+                .then_some(status)
+                .inspect(|_| trace!(%ttl, "use cache"))
         };
 
         if let Some(status) = status_if_not_expired(*self.state.cache.read().await) {
             return status;
         }
 
+        trace!("cache miss, acquire write lock");
         let mut cache_guard = self.state.cache.write().await;
         if let Some(status) = status_if_not_expired(*cache_guard) {
             return status;

@@ -58,6 +58,7 @@
 
   env = {
     RUST_LOG = "info,academy=trace";
+    RUST_LOG_PRETTY = "1";
 
     PGDATABASE = "academy";
 

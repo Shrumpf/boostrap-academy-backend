@@ -7,7 +7,7 @@ use regex::Regex;
 
 use crate::{
     hyphenated_code_regex,
-    macros::{id, nutype_string, sha256hash},
+    macros::{id, nutype_string, sensitive_debug, sha256hash},
     user::UserId,
 };
 
@@ -27,8 +27,9 @@ pub struct TotpDevice {
 nutype_string!(TotpCode(validate(regex = TOTP_CODE_REGEX)));
 pub static TOTP_CODE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[0-9]{6}$").unwrap());
 
-#[nutype(validate(predicate = |x| x.len() >= 16), derive(Debug, Clone, PartialEq, Eq, Deref, TryFrom))]
+#[nutype(validate(predicate = |x| x.len() >= 16), derive(Clone, PartialEq, Eq, Deref, TryFrom))]
 pub struct TotpSecret(Vec<u8>);
+sensitive_debug!(TotpSecret);
 
 #[nutype(
     validate(greater_or_equal = 16),
@@ -49,10 +50,13 @@ pub struct TotpSecretLength(usize);
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TotpSetup {
     /// The base32 encoded totp secret.
-    pub secret: String,
+    pub secret: TotpSecretBase32,
 }
 
+nutype_string!(TotpSecretBase32(sensitive));
+
 nutype_string!(MfaRecoveryCode(
+    sensitive,
     sanitize(uppercase),
     validate(regex = MFA_RECOVERY_CODE_REGEX),
 ));

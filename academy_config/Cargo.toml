@@ -14,7 +14,6 @@ academy_models.workspace = true
 anyhow.workspace = true
 config = { version = "0.14.0", default-features = false, features = ["toml"] }
 serde.workspace = true
-url.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

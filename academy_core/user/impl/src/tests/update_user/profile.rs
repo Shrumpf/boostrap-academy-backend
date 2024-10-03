@@ -36,7 +36,7 @@ async fn update_profile() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 profile: expected.profile.clone().into_patch(),
@@ -68,7 +68,7 @@ async fn update_profile_no_changes() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 profile: FOO.profile.clone().into_patch(),

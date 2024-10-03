@@ -1,6 +1,6 @@
 use academy_email_contracts::{ContentType, Email, EmailService};
 use academy_models::email_address::EmailAddressWithName;
-use academy_utils::Apply;
+use academy_utils::{trace_instrument, Apply};
 use anyhow::{anyhow, Context};
 use lettre::{
     message::{header, MessageBuilder},
@@ -31,6 +31,7 @@ impl EmailServiceImpl {
 }
 
 impl EmailService for EmailServiceImpl {
+    #[trace_instrument(skip(self))]
     async fn send(&self, email: Email) -> anyhow::Result<bool> {
         let message = Message::builder()
             .from(self.from.0.clone())
@@ -51,6 +52,7 @@ impl EmailService for EmailServiceImpl {
             .context("Failed to send email")
     }
 
+    #[trace_instrument(skip(self))]
     async fn ping(&self) -> anyhow::Result<()> {
         self.transport
             .test_connection()

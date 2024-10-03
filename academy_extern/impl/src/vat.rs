@@ -2,10 +2,12 @@ use std::sync::{Arc, LazyLock};
 
 use academy_di::Build;
 use academy_extern_contracts::vat::VatApiService;
+use academy_models::url::Url;
+use academy_utils::trace_instrument;
 use anyhow::Context;
 use regex::Regex;
 use serde::Deserialize;
-use url::Url;
+use tracing::trace;
 
 use crate::http::HttpClient;
 
@@ -39,8 +41,10 @@ static VAT_ID_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^([A-Z]{2}) *([0-9A-Z]+)$").unwrap());
 
 impl VatApiService for VatApiServiceImpl {
+    #[trace_instrument(skip(self))]
     async fn is_vat_id_valid(&self, vat_id: &str) -> anyhow::Result<bool> {
         let Some(captures) = VAT_ID_REGEX.captures(vat_id) else {
+            trace!("regex mismatch");
             return Ok(false);
         };
 

@@ -9,7 +9,9 @@ use academy_shared_contracts::{
     hash::HashService,
     totp::{TotpCheckError, TotpService},
 };
+use academy_utils::trace_instrument;
 use anyhow::Context;
+use tracing::trace;
 
 #[derive(Debug, Clone, Build, Default)]
 pub struct MfaAuthenticateServiceImpl<Hash, Totp, MfaDisable, MfaRepo> {
@@ -28,12 +30,14 @@ where
     MfaDisable: MfaDisableService<Txn>,
     MfaRepo: MfaRepository<Txn>,
 {
+    #[trace_instrument(skip(self, txn))]
     async fn authenticate(
         &self,
         txn: &mut Txn,
         user_id: UserId,
         cmd: MfaAuthentication,
     ) -> Result<MfaAuthenticateResult, MfaAuthenticateError> {
+        trace!("list totp secrets");
         let totp_secrets = self
             .mfa_repo
             .list_enabled_totp_device_secrets_by_user(txn, user_id)
@@ -41,17 +45,21 @@ where
             .context("Failed to get totp secrets from database")?;
 
         if totp_secrets.is_empty() {
+            trace!("no totp secrets");
             return Ok(MfaAuthenticateResult::Disabled);
         }
 
         if let Some(recovery_code) = cmd.recovery_code {
+            trace!("try recovery code");
+
             if let Some(hash) = self
                 .mfa_repo
                 .get_mfa_recovery_code_hash(txn, user_id)
                 .await
                 .context("Failed to get recovery code hash from database")?
             {
-                if self.hash.sha256(recovery_code.as_bytes()) == *hash {
+                if self.hash.sha256(&recovery_code) == *hash {
+                    trace!("recovery code matches");
                     self.mfa_disable
                         .disable(txn, user_id)
                         .await
@@ -62,9 +70,14 @@ where
         }
 
         if let Some(code) = cmd.totp_code {
+            trace!("try totp code");
+
             for secret in totp_secrets {
                 match self.totp.check(&code, secret).await {
-                    Ok(()) => return Ok(MfaAuthenticateResult::Ok),
+                    Ok(()) => {
+                        trace!("totp code matches");
+                        return Ok(MfaAuthenticateResult::Ok);
+                    }
                     Err(TotpCheckError::InvalidCode | TotpCheckError::RecentlyUsed) => (),
                     Err(TotpCheckError::Other(err)) => {
                         return Err(err.context("Failed to check totp code").into())
@@ -72,6 +85,8 @@ where
                 }
             }
         }
+
+        trace!("all mfa options failed");
 
         Err(MfaAuthenticateError::Failed)
     }
@@ -132,10 +147,8 @@ mod tests {
         let secret =
             TotpSecret::try_new("IZ6GJPVVwQWfRhQTuxwrdBfn".to_owned().into_bytes()).unwrap();
 
-        let hash = MockHashService::new().with_sha256(
-            cmd.recovery_code.clone().unwrap().into_inner().into_bytes(),
-            *SHA256HASH1,
-        );
+        let hash =
+            MockHashService::new().with_sha256(cmd.recovery_code.clone().unwrap(), *SHA256HASH1);
 
         let mfa_disable = MockMfaDisableService::new().with_disable(FOO.user.id);
 
@@ -254,10 +267,8 @@ mod tests {
         let secret =
             TotpSecret::try_new("IZ6GJPVVwQWfRhQTuxwrdBfn".to_owned().into_bytes()).unwrap();
 
-        let hash = MockHashService::new().with_sha256(
-            cmd.recovery_code.clone().unwrap().into_inner().into_bytes(),
-            *SHA256HASH1,
-        );
+        let hash =
+            MockHashService::new().with_sha256(cmd.recovery_code.clone().unwrap(), *SHA256HASH1);
 
         let mfa_repo = MockMfaRepository::new()
             .with_list_enabled_totp_device_secrets_by_user(FOO.user.id, vec![secret])

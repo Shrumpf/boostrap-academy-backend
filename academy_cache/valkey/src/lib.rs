@@ -1,6 +1,7 @@
-use std::time::Duration;
+use std::{fmt::Debug, time::Duration};
 
 use academy_cache_contracts::CacheService;
+use academy_utils::trace_instrument;
 use anyhow::Context;
 use bb8_redis::{
     bb8::Pool,
@@ -61,7 +62,11 @@ impl ValkeyCache {
 }
 
 impl CacheService for ValkeyCache {
-    async fn get<T: DeserializeOwned + 'static>(&self, key: &str) -> anyhow::Result<Option<T>> {
+    #[trace_instrument(skip(self))]
+    async fn get<T: DeserializeOwned + Debug + 'static>(
+        &self,
+        key: &str,
+    ) -> anyhow::Result<Option<T>> {
         let mut conn = self
             .pool
             .get()
@@ -79,7 +84,8 @@ impl CacheService for ValkeyCache {
             .context("Failed to deserialize cached value")
     }
 
-    async fn set<T: Serialize + Sync + 'static>(
+    #[trace_instrument(skip(self))]
+    async fn set<T: Serialize + Debug + Sync + 'static>(
         &self,
         key: &str,
         value: &T,
@@ -101,6 +107,7 @@ impl CacheService for ValkeyCache {
         .context("Failed to write value to cache")
     }
 
+    #[trace_instrument(skip(self))]
     async fn remove(&self, key: &str) -> anyhow::Result<()> {
         let mut conn = self
             .pool
@@ -113,6 +120,7 @@ impl CacheService for ValkeyCache {
             .context("Failed to remove item from cache")
     }
 
+    #[trace_instrument(skip(self))]
     async fn ping(&self) -> anyhow::Result<()> {
         let mut conn = self
             .pool

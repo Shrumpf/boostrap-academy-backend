@@ -6,7 +6,7 @@ use academy_auth_contracts::{
 };
 use academy_di::Build;
 use academy_models::{
-    auth::AuthenticateError,
+    auth::{AccessToken, AuthenticateError, RefreshToken},
     session::SessionId,
     user::{User, UserId, UserPassword},
 };
@@ -15,7 +15,9 @@ use academy_shared_contracts::{
     password::{PasswordService, PasswordVerifyError},
     time::TimeService,
 };
+use academy_utils::trace_instrument;
 use anyhow::Context;
+use tracing::trace;
 
 pub mod access_token;
 pub mod internal;
@@ -56,7 +58,8 @@ where
     AuthAccessToken: AuthAccessTokenService,
     AuthRefreshToken: AuthRefreshTokenService,
 {
-    async fn authenticate(&self, token: &str) -> Result<Authentication, AuthenticateError> {
+    #[trace_instrument(skip(self))]
+    async fn authenticate(&self, token: &AccessToken) -> Result<Authentication, AuthenticateError> {
         let auth = self
             .auth_access_token
             .verify(token)
@@ -68,12 +71,14 @@ where
             .await
             .context("Failed to check whether access token has been invalidated")?
         {
+            trace!(?auth, "token invalidated");
             return Err(AuthenticateError::InvalidToken);
         }
 
         Ok(auth)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn authenticate_by_password(
         &self,
         txn: &mut Txn,
@@ -85,13 +90,15 @@ where
             .get_password_hash(txn, user_id)
             .await
             .context("Failed to get password hash from database")?
-            .ok_or(AuthenticateByPasswordError::InvalidCredentials)?;
+            .ok_or(AuthenticateByPasswordError::InvalidCredentials)
+            .inspect_err(|_| trace!("no password set"))?;
 
         self.password
-            .verify(password.into_inner(), password_hash)
+            .verify(password.into_inner().into(), password_hash)
             .await
             .map_err(|err| match err {
                 PasswordVerifyError::InvalidPassword => {
+                    trace!("wrong password");
                     AuthenticateByPasswordError::InvalidCredentials
                 }
                 PasswordVerifyError::Other(err) => {
@@ -100,10 +107,11 @@ where
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn authenticate_by_refresh_token(
         &self,
         txn: &mut Txn,
-        refresh_token: &str,
+        refresh_token: &RefreshToken,
     ) -> Result<SessionId, AuthenticateByRefreshTokenError> {
         let refresh_token_hash = self.auth_refresh_token.hash(refresh_token);
 
@@ -112,16 +120,19 @@ where
             .get_by_refresh_token_hash(txn, refresh_token_hash)
             .await
             .context("Failed to get session from database")?
-            .ok_or(AuthenticateByRefreshTokenError::Invalid)?;
+            .ok_or(AuthenticateByRefreshTokenError::Invalid)
+            .inspect_err(|_| trace!("no session"))?;
 
         let now = self.time.now();
         if now >= session.updated_at + self.config.refresh_token_ttl {
+            trace!("session expired");
             return Err(AuthenticateByRefreshTokenError::Expired(session.id));
         }
 
         Ok(session.id)
     }
 
+    #[trace_instrument(skip(self))]
     fn issue_tokens(&self, user: &User, session_id: SessionId) -> anyhow::Result<Tokens> {
         let refresh_token = self.auth_refresh_token.issue();
         let refresh_token_hash = self.auth_refresh_token.hash(&refresh_token);
@@ -137,6 +148,7 @@ where
         })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn invalidate_access_tokens(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<()> {
         for refresh_token_hash in self
             .session_repo

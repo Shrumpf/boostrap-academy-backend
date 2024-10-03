@@ -3,6 +3,7 @@ use academy_di::Build;
 use academy_models::{mfa::MfaRecoveryCode, user::UserId};
 use academy_persistence_contracts::mfa::MfaRepository;
 use academy_shared_contracts::{hash::HashService, secret::SecretService};
+use academy_utils::trace_instrument;
 use anyhow::Context;
 
 #[derive(Debug, Clone, Build)]
@@ -20,10 +21,11 @@ where
     Hash: HashService,
     MfaRepo: MfaRepository<Txn>,
 {
+    #[trace_instrument(skip(self, txn))]
     async fn setup(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<MfaRecoveryCode> {
         let recovery_code = self.secret.generate_mfa_recovery_code();
 
-        let hash = self.hash.sha256(recovery_code.as_bytes()).into();
+        let hash = self.hash.sha256(&recovery_code).into();
         self.mfa_repo
             .save_mfa_recovery_code_hash(txn, user_id, hash)
             .await
@@ -48,8 +50,7 @@ mod tests {
 
         let secret = MockSecretService::new().with_generate_mfa_recovery_code(expected.clone());
 
-        let hash = MockHashService::new()
-            .with_sha256(expected.clone().into_inner().into_bytes(), *SHA256HASH1);
+        let hash = MockHashService::new().with_sha256(expected.clone(), *SHA256HASH1);
 
         let mfa_repo = MockMfaRepository::new()
             .with_save_mfa_recovery_code_hash(FOO.user.id, (*SHA256HASH1).into());

@@ -51,7 +51,7 @@ async fn update_name_self() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -104,7 +104,7 @@ async fn update_name_admin_no_rate_limit() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::UserId(FOO.user.id),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -149,7 +149,7 @@ async fn update_name_self_rate_limit() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -192,7 +192,7 @@ async fn update_name_conflict() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {

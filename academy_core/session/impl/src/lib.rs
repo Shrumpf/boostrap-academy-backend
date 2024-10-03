@@ -12,7 +12,7 @@ use academy_core_session_contracts::{
 };
 use academy_di::Build;
 use academy_models::{
-    auth::Login,
+    auth::{AccessToken, Login, RefreshToken},
     session::{Session, SessionId},
     user::{UserId, UserIdOrSelf, UserNameOrEmailAddress},
     RecaptchaResponse,
@@ -21,6 +21,7 @@ use academy_persistence_contracts::{
     session::SessionRepository, user::UserRepository, Database, Transaction,
 };
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
+use academy_utils::trace_instrument;
 use anyhow::{anyhow, Context};
 
 pub mod failed_auth_count;
@@ -87,7 +88,11 @@ where
     UserRepo: UserRepository<Db::Transaction>,
     SessionRepo: SessionRepository<Db::Transaction>,
 {
-    async fn get_current_session(&self, token: &str) -> Result<Session, SessionGetCurrentError> {
+    #[trace_instrument(skip(self))]
+    async fn get_current_session(
+        &self,
+        token: &AccessToken,
+    ) -> Result<Session, SessionGetCurrentError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
 
         let mut txn = self.db.begin_transaction().await?;
@@ -98,9 +103,10 @@ where
             .ok_or_else(|| anyhow!("Failed to get authenticated session").into())
     }
 
+    #[trace_instrument(skip(self))]
     async fn list_by_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> Result<Vec<Session>, SessionListByUserError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -116,6 +122,7 @@ where
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self))]
     async fn create_session(
         &self,
         cmd: SessionCreateCommand,
@@ -234,9 +241,10 @@ where
         Ok(login)
     }
 
+    #[trace_instrument(skip(self))]
     async fn impersonate(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserId,
     ) -> Result<Login, SessionImpersonateError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -262,7 +270,11 @@ where
         Ok(login)
     }
 
-    async fn refresh_session(&self, refresh_token: &str) -> Result<Login, SessionRefreshError> {
+    #[trace_instrument(skip(self))]
+    async fn refresh_session(
+        &self,
+        refresh_token: &RefreshToken,
+    ) -> Result<Login, SessionRefreshError> {
         let mut txn = self.db.begin_transaction().await?;
 
         let session_id = match self
@@ -305,9 +317,10 @@ where
         Ok(login)
     }
 
+    #[trace_instrument(skip(self))]
     async fn delete_session(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         session_id: SessionId,
     ) -> Result<(), SessionDeleteError> {
@@ -335,7 +348,11 @@ where
         Ok(())
     }
 
-    async fn delete_current_session(&self, token: &str) -> Result<(), SessionDeleteCurrentError> {
+    #[trace_instrument(skip(self))]
+    async fn delete_current_session(
+        &self,
+        token: &AccessToken,
+    ) -> Result<(), SessionDeleteCurrentError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
 
         let mut txn = self.db.begin_transaction().await?;
@@ -350,9 +367,10 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self))]
     async fn delete_by_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> Result<(), SessionDeleteByUserError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;

@@ -16,13 +16,14 @@ academy_di.workspace = true
 academy_models.workspace = true
 academy_persistence_contracts.workspace = true
 academy_shared_contracts.workspace = true
+academy_utils.workspace = true
 anyhow.workspace = true
 serde.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 academy_core_internal_contracts = { workspace = true, features = ["mock"] }
 academy_demo.workspace = true
 academy_persistence_contracts = { workspace = true, features = ["mock"] }
 academy_shared_contracts = { workspace = true, features = ["mock"] }
-academy_utils.workspace = true
 tokio.workspace = true

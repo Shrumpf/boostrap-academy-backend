@@ -7,13 +7,16 @@ use academy_core_mfa_contracts::{
 };
 use academy_di::Build;
 use academy_models::{
+    auth::AccessToken,
     mfa::{MfaRecoveryCode, TotpCode, TotpSetup},
     user::UserIdOrSelf,
 };
 use academy_persistence_contracts::{
     mfa::MfaRepository, user::UserRepository, Database, Transaction,
 };
+use academy_utils::trace_instrument;
 use anyhow::Context;
+use tracing::trace;
 
 pub mod authenticate;
 pub mod disable;
@@ -53,9 +56,10 @@ where
     MfaDisable: MfaDisableService<Db::Transaction>,
     MfaTotpDevice: MfaTotpDeviceService<Db::Transaction>,
 {
+    #[trace_instrument(skip(self))]
     async fn initialize(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> Result<TotpSetup, MfaInitializeError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -64,6 +68,7 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
+        trace!("check user existence");
         if !self
             .user_repo
             .exists(&mut txn, user_id)
@@ -73,17 +78,20 @@ where
             return Err(MfaInitializeError::NotFound);
         }
 
+        trace!("list totp devices");
         let totp_devices = self
             .mfa_repo
             .list_totp_devices_by_user(&mut txn, user_id)
             .await
             .context("Failed to get totp devices from database")?;
+        trace!(?totp_devices);
 
         if totp_devices.iter().any(|x| x.enabled) {
             return Err(MfaInitializeError::AlreadyEnabled);
         }
 
         let setup = if let Some(disabled_totp_device) = totp_devices.first() {
+            trace!(?disabled_totp_device, "reset existing device");
             self.mfa_totp_device
                 .reset(&mut txn, disabled_totp_device.id)
                 .await
@@ -91,6 +99,7 @@ where
                     format!("Failed to reset totp device {}", *disabled_totp_device.id)
                 })?
         } else {
+            trace!("create new device");
             self.mfa_totp_device
                 .create(&mut txn, user_id)
                 .await
@@ -102,9 +111,10 @@ where
         Ok(setup)
     }
 
+    #[trace_instrument(skip(self))]
     async fn enable(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         code: TotpCode,
     ) -> Result<MfaRecoveryCode, MfaEnableError> {
@@ -114,6 +124,7 @@ where
 
         let mut txn = self.db.begin_transaction().await?;
 
+        trace!("check user existence");
         if !self
             .user_repo
             .exists(&mut txn, user_id)
@@ -123,11 +134,13 @@ where
             return Err(MfaEnableError::NotFound);
         }
 
+        trace!("list totp devices");
         let totp_devices = self
             .mfa_repo
             .list_totp_devices_by_user(&mut txn, user_id)
             .await
             .context("Failed to get totp devices from database")?;
+        trace!(?totp_devices);
 
         if totp_devices.iter().any(|x| x.enabled) {
             return Err(MfaEnableError::AlreadyEnabled);
@@ -137,6 +150,7 @@ where
             .into_iter()
             .next()
             .ok_or(MfaEnableError::NotInitialized)?;
+        trace!(?totp_device, "found device to confirm");
 
         let totp_device_id = totp_device.id;
         self.mfa_totp_device
@@ -149,6 +163,7 @@ where
                     .into(),
             })?;
 
+        trace!("setup recovery code");
         let recovery_code = self
             .mfa_recovery
             .setup(&mut txn, user_id)
@@ -160,13 +175,19 @@ where
         Ok(recovery_code)
     }
 
-    async fn disable(&self, token: &str, user_id: UserIdOrSelf) -> Result<(), MfaDisableError> {
+    #[trace_instrument(skip(self))]
+    async fn disable(
+        &self,
+        token: &AccessToken,
+        user_id: UserIdOrSelf,
+    ) -> Result<(), MfaDisableError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
         let user_id = user_id.unwrap_or(auth.user_id);
         auth.ensure_self_or_admin(user_id).map_auth_err()?;
 
         let mut txn = self.db.begin_transaction().await?;
 
+        trace!("check user existence");
         if !self
             .user_repo
             .exists(&mut txn, user_id)
@@ -176,6 +197,7 @@ where
             return Err(MfaDisableError::NotFound);
         }
 
+        trace!("list totp devices");
         let totp_devices = self
             .mfa_repo
             .list_totp_devices_by_user(&mut txn, user_id)
@@ -186,6 +208,7 @@ where
             return Err(MfaDisableError::NotEnabled);
         }
 
+        trace!("disable mfa");
         self.mfa_disable
             .disable(&mut txn, user_id)
             .await

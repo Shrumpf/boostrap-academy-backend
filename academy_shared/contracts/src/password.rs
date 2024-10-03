@@ -1,16 +1,20 @@
 use std::future::Future;
 
+use academy_models::Sensitive;
 use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait PasswordService: Send + Sync + 'static {
     /// Securely hash a password.
-    fn hash(&self, password: String) -> impl Future<Output = anyhow::Result<String>> + Send;
+    fn hash(
+        &self,
+        password: Sensitive<String>,
+    ) -> impl Future<Output = anyhow::Result<String>> + Send;
 
     /// Verify that a password matches the given hash.
     fn verify(
         &self,
-        password: String,
+        password: Sensitive<String>,
         hash: String,
     ) -> impl Future<Output = Result<(), PasswordVerifyError>> + Send;
 }
@@ -28,7 +32,7 @@ impl MockPasswordService {
     pub fn with_hash(mut self, password: String, hash: String) -> Self {
         self.expect_hash()
             .once()
-            .with(mockall::predicate::eq(password))
+            .with(mockall::predicate::eq(Sensitive(password)))
             .return_once(|_| Box::pin(std::future::ready(Ok(hash))));
         self
     }
@@ -38,7 +42,7 @@ impl MockPasswordService {
         self.expect_verify()
             .once()
             .with(
-                mockall::predicate::eq(password),
+                mockall::predicate::eq(Sensitive(password)),
                 mockall::predicate::eq(hash),
             )
             .return_once(|_, _| Box::pin(std::future::ready(result)));

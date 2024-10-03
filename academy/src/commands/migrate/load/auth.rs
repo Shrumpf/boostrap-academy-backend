@@ -129,7 +129,7 @@ pub async fn load(db: PostgresDatabase, auth: DbConnection) -> anyhow::Result<()
             let hash = if hash.len() == 64 && hash.chars().all(|c| c.is_ascii_hexdigit()) {
                 Sha256Hash(hex::decode(&hash).unwrap().try_into().unwrap())
             } else {
-                HashServiceImpl.sha256(hash.as_bytes())
+                HashServiceImpl.sha256(&hash)
             };
 
             let hash = MfaRecoveryCodeHash::new(hash);

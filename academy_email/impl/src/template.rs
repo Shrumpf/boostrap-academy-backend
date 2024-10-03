@@ -5,6 +5,7 @@ use academy_templates_contracts::{
     ResetPasswordTemplate, SubscribeNewsletterTemplate, Template, TemplateService,
     VerifyEmailTemplate,
 };
+use academy_utils::trace_instrument;
 
 #[derive(Debug, Clone, Build)]
 pub struct TemplateEmailServiceImpl<Email, Template> {
@@ -17,6 +18,7 @@ where
     EmailS: EmailService,
     Template: TemplateService,
 {
+    #[trace_instrument(skip(self))]
     async fn send_reset_password_email(
         &self,
         recipient: EmailAddressWithName,
@@ -26,6 +28,7 @@ where
             .await
     }
 
+    #[trace_instrument(skip(self))]
     async fn send_subscribe_newsletter_email(
         &self,
         recipient: EmailAddressWithName,
@@ -35,6 +38,7 @@ where
             .await
     }
 
+    #[trace_instrument(skip(self))]
     async fn send_verification_email(
         &self,
         recipient: EmailAddressWithName,

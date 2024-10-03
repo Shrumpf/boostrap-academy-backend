@@ -20,7 +20,7 @@ use academy_core_user_contracts::{
 use academy_di::Build;
 use academy_extern_contracts::{internal::InternalApiService, vat::VatApiService};
 use academy_models::{
-    auth::Login,
+    auth::{AccessToken, Login},
     email_address::EmailAddress,
     session::DeviceName,
     user::{UserComposite, UserIdOrSelf, UserInvoiceInfoPatch, UserPassword, UserPatchRef},
@@ -28,7 +28,10 @@ use academy_models::{
 };
 use academy_persistence_contracts::{user::UserRepository, Database, Transaction};
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
-use academy_utils::patch::{Patch, PatchValue};
+use academy_utils::{
+    patch::{Patch, PatchValue},
+    trace_instrument,
+};
 use anyhow::{anyhow, Context};
 
 pub mod email_confirmation;
@@ -115,9 +118,10 @@ where
     OAuth2RegistrationS: OAuth2RegistrationService,
     UserRepo: UserRepository<Db::Transaction>,
 {
+    #[trace_instrument(skip(self))]
     async fn list_users(
         &self,
-        token: &str,
+        token: &AccessToken,
         query: UserListQuery,
     ) -> Result<UserListResult, UserListError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -132,9 +136,10 @@ where
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self))]
     async fn get_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> Result<UserComposite, UserGetError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -150,6 +155,7 @@ where
             .ok_or(UserGetError::NotFound)
     }
 
+    #[trace_instrument(skip(self))]
     async fn create_user(
         &self,
         request: UserCreateRequest,
@@ -220,9 +226,10 @@ where
         Ok(result)
     }
 
+    #[trace_instrument(skip(self))]
     async fn update_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         UserUpdateRequest {
             user:
@@ -453,7 +460,12 @@ where
         Ok(user_composite)
     }
 
-    async fn delete_user(&self, token: &str, user_id: UserIdOrSelf) -> Result<(), UserDeleteError> {
+    #[trace_instrument(skip(self))]
+    async fn delete_user(
+        &self,
+        token: &AccessToken,
+        user_id: UserIdOrSelf,
+    ) -> Result<(), UserDeleteError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
         let user_id = user_id.unwrap_or(auth.user_id);
         auth.ensure_self_or_admin(user_id).map_auth_err()?;
@@ -479,9 +491,10 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self))]
     async fn request_verification_email(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> Result<(), UserRequestVerificationEmailError> {
         let auth = self.auth.authenticate(token).await.map_auth_err()?;
@@ -514,6 +527,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self))]
     async fn verify_email(&self, code: VerificationCode) -> Result<(), UserVerifyEmailError> {
         let mut txn = self.db.begin_transaction().await?;
 
@@ -536,9 +550,10 @@ where
         }
     }
 
+    #[trace_instrument(skip(self))]
     async fn verify_newsletter_subscription(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         code: VerificationCode,
     ) -> Result<UserComposite, UserVerifyNewsletterSubscriptionError> {
@@ -578,6 +593,7 @@ where
         Ok(user_composite)
     }
 
+    #[trace_instrument(skip(self))]
     async fn request_password_reset(
         &self,
         email: EmailAddress,
@@ -618,6 +634,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self))]
     async fn reset_password(
         &self,
         email: EmailAddress,

@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use academy_di::Build;
 use academy_extern_contracts::recaptcha::{RecaptchaApiService, RecaptchaSiteverifyResponse};
+use academy_models::url::Url;
+use academy_utils::trace_instrument;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
-use url::Url;
 
 use crate::http::HttpClient;
 
@@ -36,13 +37,14 @@ impl RecaptchaApiServiceConfig {
 }
 
 impl RecaptchaApiService for RecaptchaApiServiceImpl {
+    #[trace_instrument(skip(self))]
     async fn siteverify(
         &self,
         response: &str,
         secret: &str,
     ) -> anyhow::Result<RecaptchaSiteverifyResponse> {
         self.client
-            .post((*self.config.siteverify_endpoint).clone())
+            .post((**self.config.siteverify_endpoint).clone())
             .form(&SiteverifyRequest { response, secret })
             .send()
             .await

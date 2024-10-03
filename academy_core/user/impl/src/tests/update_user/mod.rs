@@ -34,7 +34,7 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .update_user("token", FOO.user.id.into(), Default::default())
+        .update_user(&"token".into(), FOO.user.id.into(), Default::default())
         .await;
 
     // Assert
@@ -58,7 +58,7 @@ async fn unauthorized() {
 
     // Act
     let result = sut
-        .update_user("token", FOO.user.id.into(), Default::default())
+        .update_user(&"token".into(), FOO.user.id.into(), Default::default())
         .await;
 
     // Assert
@@ -116,7 +116,9 @@ async fn unauthorized_admin() {
         };
 
         // Act
-        let result = sut.update_user("token", FOO.user.id.into(), request).await;
+        let result = sut
+            .update_user(&"token".into(), FOO.user.id.into(), request)
+            .await;
 
         // Assert
         assert_matches!(
@@ -147,7 +149,7 @@ async fn not_found() {
 
     // Act
     let result = sut
-        .update_user("token", FOO.user.id.into(), Default::default())
+        .update_user(&"token".into(), FOO.user.id.into(), Default::default())
         .await;
 
     // Assert

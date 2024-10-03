@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
-    auth::{AuthError, AuthenticateError, AuthorizeError},
+    auth::{AccessToken, AuthError, AuthenticateError, AuthorizeError, RefreshToken},
     session::{SessionId, SessionRefreshTokenHash},
     user::{User, UserId, UserPassword},
 };
@@ -16,7 +16,7 @@ pub trait AuthService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
     /// Authenticates a user using an access token.
     fn authenticate(
         &self,
-        token: &str,
+        token: &AccessToken,
     ) -> impl Future<Output = Result<Authentication, AuthenticateError>> + Send;
 
     /// Authenticates a user using their account password.
@@ -31,7 +31,7 @@ pub trait AuthService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
     fn authenticate_by_refresh_token(
         &self,
         txn: &mut Txn,
-        refresh_token: &str,
+        refresh_token: &RefreshToken,
     ) -> impl Future<Output = Result<SessionId, AuthenticateByRefreshTokenError>> + Send;
 
     /// Issues an access and refresh token for a given user and session.
@@ -47,8 +47,8 @@ pub trait AuthService<Txn: Send + Sync + 'static>: Send + Sync + 'static {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tokens {
-    pub access_token: String,
-    pub refresh_token: String,
+    pub access_token: AccessToken,
+    pub refresh_token: RefreshToken,
     pub refresh_token_hash: SessionRefreshTokenHash,
 }
 
@@ -123,7 +123,7 @@ impl<Txn: Send + Sync + 'static> MockAuthService<Txn> {
     ) -> Self {
         self.expect_authenticate()
             .once()
-            .with(mockall::predicate::eq("token"))
+            .with(mockall::predicate::eq(AccessToken::new("token")))
             .return_once(|_| {
                 Box::pin(std::future::ready(
                     auth.map(|(user, session)| Authentication {
@@ -161,7 +161,7 @@ impl<Txn: Send + Sync + 'static> MockAuthService<Txn> {
 
     pub fn with_authenticate_by_refresh_token(
         mut self,
-        refresh_token: String,
+        refresh_token: RefreshToken,
         result: Result<SessionId, AuthenticateByRefreshTokenError>,
     ) -> Self {
         self.expect_authenticate_by_refresh_token()

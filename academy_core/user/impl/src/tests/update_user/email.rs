@@ -49,7 +49,7 @@ async fn update_email_self() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -102,7 +102,7 @@ async fn update_email_admin() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             FOO.user.id.into(),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -155,7 +155,7 @@ async fn update_email_admin_verified() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             FOO.user.id.into(),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -209,7 +209,7 @@ async fn update_email_admin_unverified() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             FOO.user.id.into(),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -265,7 +265,7 @@ async fn update_set_email_verified() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             FOO.user.id.into(),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -317,7 +317,7 @@ async fn update_set_email_unverified() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             FOO.user.id.into(),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -360,7 +360,7 @@ async fn update_email_conflict() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {

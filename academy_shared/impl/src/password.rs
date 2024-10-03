@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use academy_di::Build;
+use academy_models::Sensitive;
 use academy_shared_contracts::password::{PasswordService, PasswordVerifyError};
+use academy_utils::trace_instrument;
 use anyhow::{anyhow, Context};
 use argon2::{
     password_hash::{self, rand_core::OsRng, SaltString},
@@ -15,25 +17,31 @@ pub struct PasswordServiceImpl {
 }
 
 impl PasswordService for PasswordServiceImpl {
-    async fn hash(&self, password: String) -> anyhow::Result<String> {
+    #[trace_instrument(skip(self))]
+    async fn hash(&self, password: Sensitive<String>) -> anyhow::Result<String> {
         let argon2 = Arc::clone(&self.argon2);
         let salt = SaltString::generate(&mut OsRng);
         tokio::task::spawn_blocking(move || {
             argon2
-                .hash_password(password.as_bytes(), &salt)
+                .hash_password(password.0.as_bytes(), &salt)
                 .map(|hash| hash.to_string())
         })
         .await?
         .context("Failed to hash password")
     }
 
-    async fn verify(&self, password: String, hash: String) -> Result<(), PasswordVerifyError> {
+    #[trace_instrument(skip(self))]
+    async fn verify(
+        &self,
+        password: Sensitive<String>,
+        hash: String,
+    ) -> Result<(), PasswordVerifyError> {
         let argon2 = Arc::clone(&self.argon2);
         tokio::task::spawn_blocking(move || {
             let hash =
                 PasswordHash::new(&hash).map_err(|err| PasswordVerifyError::Other(err.into()))?;
             argon2
-                .verify_password(password.as_bytes(), &hash)
+                .verify_password(password.0.as_bytes(), &hash)
                 .map_err(|err| match err {
                     password_hash::Error::Password => PasswordVerifyError::InvalidPassword,
                     err => anyhow!(err).context("Failed to verify password").into(),
@@ -58,8 +66,8 @@ mod tests {
         let sut = PasswordServiceImpl::default();
 
         // Act
-        let hash = sut.hash(password.into()).await.unwrap();
-        let result = sut.verify(password.into(), hash).await;
+        let hash = sut.hash(password.to_owned().into()).await.unwrap();
+        let result = sut.verify(password.to_owned().into(), hash).await;
 
         // Assert
         result.unwrap();
@@ -74,8 +82,8 @@ mod tests {
         let sut = PasswordServiceImpl::default();
 
         // Act
-        let hash = sut.hash(password.into()).await.unwrap();
-        let result = sut.verify(password2.into(), hash).await;
+        let hash = sut.hash(password.to_owned().into()).await.unwrap();
+        let result = sut.verify(password2.to_owned().into(), hash).await;
 
         // Assert
         assert_matches!(result, Err(PasswordVerifyError::InvalidPassword));

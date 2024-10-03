@@ -4,6 +4,7 @@ use academy_di::Provide;
 use academy_persistence_contracts::{Database as _, Transaction};
 use anyhow::Context;
 use clap::Subcommand;
+use tracing::info;
 
 use crate::{
     cache, database, email,
@@ -89,8 +90,7 @@ async fn create(
 
     txn.commit().await?;
 
-    println!("User has been created:");
-    println!("{user:#?}");
+    info!("User has been created:\n{user:#?}");
 
     Ok(())
 }

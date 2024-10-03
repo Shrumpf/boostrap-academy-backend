@@ -51,7 +51,7 @@ async fn enable_self() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -102,7 +102,7 @@ async fn enable_admin() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             FOO.user.id.into(),
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -151,7 +151,7 @@ async fn disable_self() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -186,7 +186,7 @@ async fn enable_self_no_email() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {

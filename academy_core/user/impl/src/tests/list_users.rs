@@ -41,7 +41,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.list_users("token", query).await;
+    let result = sut.list_users(&"token".into(), query).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -60,7 +60,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.list_users("token", query).await;
+    let result = sut.list_users(&"token".into(), query).await;
 
     // Assert
     assert_matches!(
@@ -84,7 +84,7 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.list_users("token", query).await;
+    let result = sut.list_users(&"token".into(), query).await;
 
     // Assert
     assert_matches!(

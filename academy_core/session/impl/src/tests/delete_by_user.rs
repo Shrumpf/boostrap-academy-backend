@@ -34,7 +34,7 @@ async fn ok_self() {
 
     // Act
     let result = sut
-        .delete_by_user("token", UserIdOrSelf::UserId(FOO.user.id))
+        .delete_by_user(&"token".into(), UserIdOrSelf::UserId(FOO.user.id))
         .await;
 
     // Assert
@@ -60,7 +60,7 @@ async fn ok_admin() {
 
     // Act
     let result = sut
-        .delete_by_user("token", UserIdOrSelf::UserId(FOO.user.id))
+        .delete_by_user(&"token".into(), UserIdOrSelf::UserId(FOO.user.id))
         .await;
 
     // Assert
@@ -79,7 +79,7 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .delete_by_user("token", UserIdOrSelf::UserId(FOO.user.id))
+        .delete_by_user(&"token".into(), UserIdOrSelf::UserId(FOO.user.id))
         .await;
 
     // Assert
@@ -103,7 +103,7 @@ async fn unauthorized() {
 
     // Act
     let result = sut
-        .delete_by_user("token", UserIdOrSelf::UserId(FOO.user.id))
+        .delete_by_user(&"token".into(), UserIdOrSelf::UserId(FOO.user.id))
         .await;
 
     // Assert

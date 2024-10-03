@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Field, Ident};
+use syn::{parse_macro_input, DeriveInput, Field, Ident, ItemFn};
 
 #[proc_macro_derive(Patch, attributes(no_patch))]
 pub fn derive_patch(input: TokenStream) -> TokenStream {
@@ -228,6 +228,27 @@ pub fn derive_patch(input: TokenStream) -> TokenStream {
             #vis fn is_unchanged(&self) -> bool {
                 !self.is_update()
             }
+        }
+    }
+    .into()
+}
+
+#[proc_macro_attribute]
+pub fn trace_instrument(meta: TokenStream, input: TokenStream) -> TokenStream {
+    let meta = proc_macro2::TokenStream::from(meta);
+    let ItemFn {
+        attrs,
+        vis,
+        sig,
+        block,
+    } = parse_macro_input!(input as ItemFn);
+
+    quote! {
+        #[::tracing::instrument(ret(level = "trace"), #meta)]
+        #(#attrs)*
+        #vis #sig {
+            ::tracing::trace!("call");
+            #block
         }
     }
     .into()

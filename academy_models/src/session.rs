@@ -1,6 +1,5 @@
 use academy_utils::patch::Patch;
 use chrono::{DateTime, Utc};
-use nutype::nutype;
 
 use crate::{
     macros::{id, nutype_string, sha256hash},

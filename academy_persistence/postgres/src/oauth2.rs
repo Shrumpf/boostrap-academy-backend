@@ -4,6 +4,7 @@ use academy_models::{
     user::UserId,
 };
 use academy_persistence_contracts::oauth2::{OAuth2RepoError, OAuth2Repository};
+use academy_utils::trace_instrument;
 use bb8_postgres::tokio_postgres::{self, Row};
 use uuid::Uuid;
 
@@ -15,6 +16,7 @@ pub struct PostgresOAuth2Repository;
 columns!(oauth2_links as "ol": "id", "user_id", "provider_id", "created_at", "remote_user_id", "remote_user_name");
 
 impl OAuth2Repository<PostgresTransaction> for PostgresOAuth2Repository {
+    #[trace_instrument(skip(self, txn))]
     async fn list_links_by_user(
         &self,
         txn: &mut PostgresTransaction,
@@ -34,6 +36,7 @@ impl OAuth2Repository<PostgresTransaction> for PostgresOAuth2Repository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_link(
         &self,
         txn: &mut PostgresTransaction,
@@ -52,6 +55,7 @@ impl OAuth2Repository<PostgresTransaction> for PostgresOAuth2Repository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn create_link(
         &self,
         txn: &mut PostgresTransaction,
@@ -77,6 +81,7 @@ impl OAuth2Repository<PostgresTransaction> for PostgresOAuth2Repository {
             .map_err(map_oauth2_repo_error)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete_link(
         &self,
         txn: &mut PostgresTransaction,

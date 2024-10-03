@@ -6,6 +6,7 @@ use academy_models::{
 };
 use academy_persistence_contracts::oauth2::{OAuth2RepoError, OAuth2Repository};
 use academy_shared_contracts::{id::IdService, time::TimeService};
+use academy_utils::trace_instrument;
 
 #[derive(Debug, Clone, Build)]
 pub struct OAuth2LinkServiceImpl<Id, Time, OAuth2Repo> {
@@ -22,6 +23,7 @@ where
     Time: TimeService,
     OAuth2Repo: OAuth2Repository<Txn>,
 {
+    #[trace_instrument(skip(self, txn))]
     async fn create(
         &self,
         txn: &mut Txn,

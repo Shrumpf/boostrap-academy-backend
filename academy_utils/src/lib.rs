@@ -2,6 +2,8 @@ mod macros;
 pub mod patch;
 pub mod serde;
 
+pub use academy_utils_derive::trace_instrument;
+
 pub trait Apply: Sized {
     /// Apply the function `f` with a mutable reference to `self`.
     ///

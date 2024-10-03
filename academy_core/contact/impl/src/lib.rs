@@ -7,7 +7,9 @@ use academy_models::{
     contact::ContactMessage, email_address::EmailAddressWithName, RecaptchaResponse,
 };
 use academy_shared_contracts::captcha::{CaptchaCheckError, CaptchaService};
+use academy_utils::trace_instrument;
 use anyhow::Context;
+use tracing::{error, trace};
 
 #[derive(Debug, Clone, Build)]
 #[cfg_attr(test, derive(Default))]
@@ -27,11 +29,13 @@ where
     Captcha: CaptchaService,
     EmailS: EmailService,
 {
+    #[trace_instrument(skip(self))]
     async fn send_message(
         &self,
         message: ContactMessage,
         recaptcha_response: Option<RecaptchaResponse>,
     ) -> Result<(), ContactSendMessageError> {
+        trace!("check captcha");
         self.captcha
             .check(recaptcha_response.as_deref().map(String::as_str))
             .await
@@ -58,15 +62,18 @@ where
             ),
         };
 
+        trace!("send email");
         if !self
             .email
             .send(email)
             .await
             .context("Failed to send email")?
         {
+            error!("Failed to send email");
             return Err(ContactSendMessageError::Send);
         }
 
+        trace!("email sent");
         Ok(())
     }
 }

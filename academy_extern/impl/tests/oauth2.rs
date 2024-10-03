@@ -1,10 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError};
 use academy_extern_impl::oauth2::OAuth2ApiServiceImpl;
-use academy_models::oauth2::{OAuth2Provider, OAuth2UserInfo};
+use academy_models::{
+    oauth2::{OAuth2Provider, OAuth2UserInfo},
+    url::Url,
+};
 use academy_utils::assert_matches;
-use url::Url;
 
 #[tokio::test]
 async fn oauth2() {
@@ -24,7 +26,7 @@ async fn oauth2() {
         .finish();
     let form = HashMap::from([("id", "userid123"), ("name", "theremoteusername")]);
     let response = client
-        .post(url)
+        .post(url.0)
         .form(&form)
         .send()
         .await
@@ -68,15 +70,15 @@ async fn oauth2() {
 }
 
 fn get_provider() -> OAuth2Provider {
-    let base_url = Url::parse("http://localhost:8002").unwrap();
+    let base_url = Url::from_str("http://localhost:8002").unwrap();
 
     OAuth2Provider {
         name: "test".into(),
         client_id: "client-id".into(),
         client_secret: Some("client-secret".into()),
-        auth_url: base_url.join("oauth2/authorize").unwrap(),
-        token_url: base_url.join("oauth2/token").unwrap(),
-        userinfo_url: base_url.join("user").unwrap(),
+        auth_url: base_url.join("oauth2/authorize").unwrap().into(),
+        token_url: base_url.join("oauth2/token").unwrap().into(),
+        userinfo_url: base_url.join("user").unwrap().into(),
         userinfo_id_key: "id".into(),
         userinfo_name_key: "name".into(),
         scopes: vec![],
@@ -84,5 +86,5 @@ fn get_provider() -> OAuth2Provider {
 }
 
 fn redirect_url() -> Url {
-    Url::parse("http://localhost/oauth2/callback").unwrap()
+    Url::from_str("http://localhost/oauth2/callback").unwrap()
 }

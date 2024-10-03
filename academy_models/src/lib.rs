@@ -1,8 +1,8 @@
-use std::sync::LazyLock;
+use std::{ops::Deref, sync::LazyLock};
 
-use macros::nutype_string;
-use nutype::nutype;
+use macros::{nutype_string, sensitive_debug};
 use regex::Regex;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub mod auth;
@@ -13,10 +13,17 @@ pub mod mfa;
 pub mod oauth2;
 pub mod pagination;
 pub mod session;
+pub mod url;
 pub mod user;
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Sha256Hash(#[serde(with = "academy_utils::serde::hex")] pub [u8; 32]);
+
+impl std::fmt::Debug for Sha256Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        hex::encode(self.0).fmt(f)
+    }
+}
 
 impl std::fmt::Display for Sha256Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -27,6 +34,7 @@ impl std::fmt::Display for Sha256Hash {
 nutype_string!(SearchTerm(validate(len_char_max = 256)));
 
 nutype_string!(VerificationCode(
+    sensitive,
     sanitize(uppercase),
     validate(regex = VERIFICATION_CODE_REGEX),
 ));
@@ -50,3 +58,19 @@ fn hyphenated_code_regex(chunk_count: usize, chunk_size: usize) -> Regex {
 }
 
 nutype_string!(RecaptchaResponse(validate(len_char_max = 2048)));
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, JsonSchema)]
+pub struct Sensitive<T>(pub T);
+sensitive_debug!(Sensitive<T>);
+impl<T> From<T> for Sensitive<T> {
+    fn from(value: T) -> Self {
+        Self(value)
+    }
+}
+impl<T> Deref for Sensitive<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}

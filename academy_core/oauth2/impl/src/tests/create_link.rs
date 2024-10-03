@@ -54,7 +54,9 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.create_link("token", UserIdOrSelf::Slf, login).await;
+    let result = sut
+        .create_link(&"token".into(), UserIdOrSelf::Slf, login)
+        .await;
 
     // Assert
     assert_eq!(result.unwrap(), *FOO_OAUTH2_LINK_1);
@@ -77,7 +79,9 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.create_link("token", FOO.user.id.into(), login).await;
+    let result = sut
+        .create_link(&"token".into(), FOO.user.id.into(), login)
+        .await;
 
     // Assert
     assert_matches!(
@@ -105,7 +109,9 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.create_link("token", FOO.user.id.into(), login).await;
+    let result = sut
+        .create_link(&"token".into(), FOO.user.id.into(), login)
+        .await;
 
     // Assert
     assert_matches!(
@@ -140,7 +146,9 @@ async fn not_found() {
     };
 
     // Act
-    let result = sut.create_link("token", FOO.user.id.into(), login).await;
+    let result = sut
+        .create_link(&"token".into(), FOO.user.id.into(), login)
+        .await;
 
     // Assert
     assert_matches!(result, Err(OAuth2CreateLinkError::NotFound));
@@ -173,7 +181,9 @@ async fn invalid_provider() {
     };
 
     // Act
-    let result = sut.create_link("token", UserIdOrSelf::Slf, login).await;
+    let result = sut
+        .create_link(&"token".into(), UserIdOrSelf::Slf, login)
+        .await;
 
     // Assert
     assert_matches!(result, Err(OAuth2CreateLinkError::InvalidProvider));
@@ -206,7 +216,9 @@ async fn invalid_code() {
     };
 
     // Act
-    let result = sut.create_link("token", UserIdOrSelf::Slf, login).await;
+    let result = sut
+        .create_link(&"token".into(), UserIdOrSelf::Slf, login)
+        .await;
 
     // Assert
     assert_matches!(result, Err(OAuth2CreateLinkError::InvalidCode));
@@ -247,7 +259,9 @@ async fn remote_already_linked() {
     };
 
     // Act
-    let result = sut.create_link("token", UserIdOrSelf::Slf, login).await;
+    let result = sut
+        .create_link(&"token".into(), UserIdOrSelf::Slf, login)
+        .await;
 
     // Assert
     assert_matches!(result, Err(OAuth2CreateLinkError::RemoteAlreadyLinked));

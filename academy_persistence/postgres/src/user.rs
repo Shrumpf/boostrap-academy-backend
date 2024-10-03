@@ -11,7 +11,7 @@ use academy_models::{
     },
 };
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
-use academy_utils::patch::PatchValue;
+use academy_utils::{patch::PatchValue, trace_instrument};
 use bb8_postgres::tokio_postgres::{self, types::ToSql, Row};
 use uuid::Uuid;
 
@@ -30,6 +30,7 @@ const JOIN_DETAILS: &str = "inner join user_details d on u.id=d.user_id";
 const JOIN_INVOICE_INFO: &str = "inner join user_invoice_info i on u.id=i.user_id";
 
 impl UserRepository<PostgresTransaction> for PostgresUserRepository {
+    #[trace_instrument(skip(self, txn))]
     async fn count(
         &self,
         txn: &mut PostgresTransaction,
@@ -54,6 +55,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn list_composites(
         &self,
         txn: &mut PostgresTransaction,
@@ -82,6 +84,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn exists(&self, txn: &mut PostgresTransaction, user_id: UserId) -> anyhow::Result<bool> {
         txn.txn()
             .query_opt("select id from users where id=$1", &[&*user_id])
@@ -90,6 +93,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_composite(
         &self,
         txn: &mut PostgresTransaction,
@@ -111,6 +115,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_composite_by_name(
         &self,
         txn: &mut PostgresTransaction,
@@ -133,6 +138,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_composite_by_email(
         &self,
         txn: &mut PostgresTransaction,
@@ -155,6 +161,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_composite_by_oauth2_provider_id_and_remote_user_id(
         &self,
         txn: &mut PostgresTransaction,
@@ -179,6 +186,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn create(
         &self,
         txn: &mut PostgresTransaction,
@@ -248,6 +256,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         Ok(())
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update<'a>(
         &self,
         txn: &mut PostgresTransaction,
@@ -310,6 +319,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(map_user_repo_error)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_profile<'a>(
         &self,
         txn: &mut PostgresTransaction,
@@ -347,6 +357,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_invoice_info<'a>(
         &self,
         txn: &mut PostgresTransaction,
@@ -415,6 +426,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete(&self, txn: &mut PostgresTransaction, user_id: UserId) -> anyhow::Result<bool> {
         txn.txn()
             .execute("delete from users where id=$1", &[&*user_id])
@@ -423,6 +435,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn save_password_hash(
         &self,
         txn: &mut PostgresTransaction,
@@ -439,6 +452,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
         Ok(())
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_password_hash(
         &self,
         txn: &mut PostgresTransaction,
@@ -454,6 +468,7 @@ impl UserRepository<PostgresTransaction> for PostgresUserRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn remove_password_hash(
         &self,
         txn: &mut PostgresTransaction,

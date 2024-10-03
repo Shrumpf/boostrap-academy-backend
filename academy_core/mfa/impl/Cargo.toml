@@ -18,6 +18,7 @@ academy_persistence_contracts.workspace = true
 academy_shared_contracts.workspace = true
 academy_utils.workspace = true
 anyhow.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 academy_auth_contracts = { workspace = true, features = ["mock"] }

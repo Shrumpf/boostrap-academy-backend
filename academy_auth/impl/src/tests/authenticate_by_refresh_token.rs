@@ -33,7 +33,7 @@ async fn authenticate_by_refresh_token_ok() {
 
     // Act
     let result = sut
-        .authenticate_by_refresh_token(&mut (), "the refresh token")
+        .authenticate_by_refresh_token(&mut (), &"the refresh token".into())
         .await;
 
     // Assert
@@ -57,7 +57,7 @@ async fn authenticate_by_refresh_token_invalid() {
 
     // Act
     let result = sut
-        .authenticate_by_refresh_token(&mut (), "the refresh token")
+        .authenticate_by_refresh_token(&mut (), &"the refresh token".into())
         .await;
 
     // Assert
@@ -87,7 +87,7 @@ async fn authenticate_by_refresh_token_expired() {
 
     // Act
     let result = sut
-        .authenticate_by_refresh_token(&mut (), "the refresh token")
+        .authenticate_by_refresh_token(&mut (), &"the refresh token".into())
         .await;
 
     // Assert

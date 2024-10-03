@@ -22,7 +22,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.get_user("internal token", FOO.user.id).await;
+    let result = sut.get_user(&"internal token".into(), FOO.user.id).await;
 
     // Assert
     assert_eq!(result.unwrap(), *FOO);
@@ -39,7 +39,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.get_user("internal token", FOO.user.id).await;
+    let result = sut.get_user(&"internal token".into(), FOO.user.id).await;
 
     // Assert
     assert_matches!(
@@ -66,7 +66,7 @@ async fn not_found() {
     };
 
     // Act
-    let result = sut.get_user("internal token", FOO.user.id).await;
+    let result = sut.get_user(&"internal token".into(), FOO.user.id).await;
 
     // Assert
     assert_matches!(result, Err(InternalGetUserError::NotFound));

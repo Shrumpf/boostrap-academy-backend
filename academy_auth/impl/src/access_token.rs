@@ -2,10 +2,12 @@ use academy_auth_contracts::{access_token::AuthAccessTokenService, Authenticatio
 use academy_cache_contracts::CacheService;
 use academy_di::Build;
 use academy_models::{
+    auth::AccessToken,
     session::{SessionId, SessionRefreshTokenHash},
     user::{User, UserId},
 };
 use academy_shared_contracts::jwt::JwtService;
+use academy_utils::trace_instrument;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
@@ -24,12 +26,13 @@ where
     Jwt: JwtService,
     Cache: CacheService,
 {
+    #[trace_instrument(skip(self))]
     fn issue(
         &self,
         user: &User,
         session_id: SessionId,
         refresh_token_hash: SessionRefreshTokenHash,
-    ) -> anyhow::Result<String> {
+    ) -> anyhow::Result<AccessToken> {
         let auth = Authentication {
             user_id: user.id,
             session_id,
@@ -43,13 +46,12 @@ where
             .context("Failed to sign JWT")
     }
 
-    fn verify(&self, access_token: &str) -> Option<Authentication> {
-        self.jwt
-            .verify::<Token>(access_token)
-            .map(Authentication::from)
-            .ok()
+    #[trace_instrument(skip(self))]
+    fn verify(&self, access_token: &AccessToken) -> Option<Authentication> {
+        self.jwt.verify(access_token).map(Token::into).ok()
     }
 
+    #[trace_instrument(skip(self))]
     async fn invalidate(&self, refresh_token_hash: SessionRefreshTokenHash) -> anyhow::Result<()> {
         self.cache
             .set(
@@ -65,6 +67,7 @@ where
             })
     }
 
+    #[trace_instrument(skip(self))]
     async fn is_invalidated(
         &self,
         refresh_token_hash: SessionRefreshTokenHash,
@@ -155,7 +158,7 @@ mod tests {
         let jwt = MockJwtService::new().with_sign(
             Token::from(auth),
             config.access_token_ttl,
-            Ok(expected.into()),
+            Ok(AccessToken::new(expected)),
         );
 
         let sut = AuthAccessTokenServiceImpl {
@@ -167,7 +170,7 @@ mod tests {
         let result = sut.issue(&FOO.user, UUID1.into(), (*SHA256HASH1).into());
 
         // Assert
-        assert_eq!(result.unwrap(), expected);
+        assert_eq!(result.unwrap().into_inner(), expected);
     }
 
     #[test]
@@ -183,7 +186,8 @@ mod tests {
             email_verified: FOO.user.email_verified,
         };
 
-        let jwt = MockJwtService::new().with_verify(token, Ok(Token::from(expected)));
+        let jwt =
+            MockJwtService::new().with_verify(AccessToken::new(token), Ok(Token::from(expected)));
 
         let sut = AuthAccessTokenServiceImpl {
             jwt,
@@ -191,7 +195,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.verify(token);
+        let result = sut.verify(&token.into());
 
         // Assert
         assert_eq!(result.unwrap(), expected);
@@ -202,7 +206,10 @@ mod tests {
         // Arrange
         let token = "the access token";
 
-        let jwt = MockJwtService::new().with_verify(token, Err(VerifyJwtError::<Token>::Invalid));
+        let jwt = MockJwtService::new().with_verify(
+            AccessToken::new(token),
+            Err(VerifyJwtError::<Token>::Invalid),
+        );
 
         let sut = AuthAccessTokenServiceImpl {
             jwt,
@@ -210,7 +217,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.verify(token);
+        let result = sut.verify(&token.into());
 
         // Assert
         assert_eq!(result, None);
@@ -228,8 +235,10 @@ mod tests {
             email_verified: FOO.user.email_verified,
         };
 
-        let jwt = MockJwtService::new()
-            .with_verify(token, Err(VerifyJwtError::Expired(Token::from(auth))));
+        let jwt = MockJwtService::new().with_verify(
+            AccessToken::new(token),
+            Err(VerifyJwtError::Expired(Token::from(auth))),
+        );
 
         let sut = AuthAccessTokenServiceImpl {
             jwt,
@@ -237,7 +246,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.verify(token);
+        let result = sut.verify(&token.into());
 
         // Assert
         assert_eq!(result, None);

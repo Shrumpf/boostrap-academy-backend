@@ -1,6 +1,7 @@
 use academy_core_config_contracts::ConfigFeatureService;
 use academy_di::Build;
 use academy_shared_contracts::captcha::CaptchaService;
+use academy_utils::trace_instrument;
 
 #[derive(Debug, Clone, Build)]
 pub struct ConfigFeatureServiceImpl<Captcha> {
@@ -11,6 +12,7 @@ impl<Captcha> ConfigFeatureService for ConfigFeatureServiceImpl<Captcha>
 where
     Captcha: CaptchaService,
 {
+    #[trace_instrument(skip(self))]
     fn get_recaptcha_sitekey(&self) -> Option<&str> {
         self.captcha.get_recaptcha_sitekey()
     }

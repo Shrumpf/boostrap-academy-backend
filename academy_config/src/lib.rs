@@ -4,12 +4,11 @@ use std::{
     path::Path,
 };
 
-use academy_models::{email_address::EmailAddressWithName, mfa::TotpSecretLength};
+use academy_models::{email_address::EmailAddressWithName, mfa::TotpSecretLength, url::Url};
 use anyhow::Context;
 use config::{File, FileFormat};
 use duration::Duration;
 use serde::Deserialize;
-use url::Url;
 
 pub mod duration;
 

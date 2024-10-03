@@ -1,11 +1,11 @@
-use std::{future::Future, time::Duration};
+use std::{fmt::Debug, future::Future, time::Duration};
 
 use serde::{de::DeserializeOwned, Serialize};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait CacheService: Sized + Send + Sync + 'static {
     /// Read a cache item.
-    fn get<T: DeserializeOwned + 'static>(
+    fn get<T: DeserializeOwned + Debug + 'static>(
         &self,
         key: &str,
     ) -> impl Future<Output = anyhow::Result<Option<T>>> + Send;
@@ -13,7 +13,7 @@ pub trait CacheService: Sized + Send + Sync + 'static {
     /// Create a new or update an existing cache item.
     ///
     /// If `ttl` is set, the item is automatically removed after this timeout.
-    fn set<T: Serialize + Sync + 'static>(
+    fn set<T: Serialize + Debug + Sync + 'static>(
         &self,
         key: &str,
         value: &T,
@@ -31,7 +31,7 @@ pub trait CacheService: Sized + Send + Sync + 'static {
 
 #[cfg(feature = "mock")]
 impl MockCacheService {
-    pub fn with_get<T: DeserializeOwned + Send + 'static>(
+    pub fn with_get<T: DeserializeOwned + Debug + Send + 'static>(
         mut self,
         key: String,
         result: Option<T>,
@@ -43,7 +43,7 @@ impl MockCacheService {
         self
     }
 
-    pub fn with_set<T: std::fmt::Debug + PartialEq + Serialize + Send + Sync + 'static>(
+    pub fn with_set<T: Debug + PartialEq + Serialize + Send + Sync + 'static>(
         mut self,
         key: String,
         value: T,

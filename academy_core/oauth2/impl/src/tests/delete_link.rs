@@ -39,7 +39,7 @@ async fn ok() {
 
     // Act
     let result = sut
-        .delete_link("token", FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
+        .delete_link(&"token".into(), FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
         .await;
 
     // Assert
@@ -58,7 +58,7 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .delete_link("token", FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
+        .delete_link(&"token".into(), FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
         .await;
 
     // Assert
@@ -82,7 +82,7 @@ async fn unauthorized() {
 
     // Act
     let result = sut
-        .delete_link("token", FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
+        .delete_link(&"token".into(), FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
         .await;
 
     // Assert
@@ -113,7 +113,7 @@ async fn not_found() {
 
     // Act
     let result = sut
-        .delete_link("token", FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
+        .delete_link(&"token".into(), FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
         .await;
 
     // Assert
@@ -140,7 +140,7 @@ async fn user_id_mismatch() {
 
     // Act
     let result = sut
-        .delete_link("token", BAR.user.id.into(), FOO_OAUTH2_LINK_1.id)
+        .delete_link(&"token".into(), BAR.user.id.into(), FOO_OAUTH2_LINK_1.id)
         .await;
 
     // Assert
@@ -176,7 +176,7 @@ async fn last_login_method() {
 
     // Act
     let result = sut
-        .delete_link("token", FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
+        .delete_link(&"token".into(), FOO.user.id.into(), FOO_OAUTH2_LINK_1.id)
         .await;
 
     // Assert

@@ -1,10 +1,12 @@
-use academy_models::oauth2::{
-    OAuth2AuthorizationCode, OAuth2Link, OAuth2LinkId, OAuth2Login, OAuth2ProviderId,
-    OAuth2ProviderName, OAuth2ProviderSummary, OAuth2RemoteUserName,
+use academy_models::{
+    oauth2::{
+        OAuth2AuthorizationCode, OAuth2Link, OAuth2LinkId, OAuth2Login, OAuth2ProviderId,
+        OAuth2ProviderName, OAuth2ProviderSummary, OAuth2RemoteUserName,
+    },
+    url::Url,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use url::Url;
 
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct ApiOAuth2ProviderSummary {

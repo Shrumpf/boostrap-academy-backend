@@ -6,7 +6,7 @@ use academy_models::{
     user::UserId,
 };
 use academy_persistence_contracts::mfa::MfaRepository;
-use academy_utils::patch::PatchValue;
+use academy_utils::{patch::PatchValue, trace_instrument};
 use bb8_postgres::tokio_postgres::{types::ToSql, Row};
 use uuid::Uuid;
 
@@ -18,6 +18,7 @@ pub struct PostgresMfaRepository;
 columns!(totp_device as "td": "id", "user_id", "enabled", "created_at");
 
 impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
+    #[trace_instrument(skip(self, txn))]
     async fn list_totp_devices_by_user(
         &self,
         txn: &mut PostgresTransaction,
@@ -37,6 +38,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn create_totp_device(
         &self,
         txn: &mut PostgresTransaction,
@@ -64,6 +66,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
         Ok(())
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_totp_device<'a>(
         &self,
         txn: &mut PostgresTransaction,
@@ -87,6 +90,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete_totp_devices_by_user(
         &self,
         txn: &mut PostgresTransaction,
@@ -99,6 +103,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn list_enabled_totp_device_secrets_by_user(
         &self,
         txn: &mut PostgresTransaction,
@@ -119,6 +124,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_totp_device_secret(
         &self,
         txn: &mut PostgresTransaction,
@@ -134,6 +140,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             .and_then(|row| decode_totp_device_secret(row.get(0)))
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn save_totp_device_secret(
         &self,
         txn: &mut PostgresTransaction,
@@ -151,6 +158,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn get_mfa_recovery_code_hash(
         &self,
         txn: &mut PostgresTransaction,
@@ -169,6 +177,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn save_mfa_recovery_code_hash(
         &self,
         txn: &mut PostgresTransaction,
@@ -186,6 +195,7 @@ impl MfaRepository<PostgresTransaction> for PostgresMfaRepository {
             .map_err(Into::into)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete_mfa_recovery_code_hash(
         &self,
         txn: &mut PostgresTransaction,

@@ -1,13 +1,17 @@
+use std::fmt::Debug;
+
 use academy_di::Build;
 use academy_models::Sha256Hash;
 use academy_shared_contracts::hash::HashService;
+use academy_utils::trace_instrument;
 use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone, Copy, Build)]
 pub struct HashServiceImpl;
 
 impl HashService for HashServiceImpl {
-    fn sha256(&self, data: &[u8]) -> Sha256Hash {
+    #[trace_instrument(skip(self))]
+    fn sha256<T: AsRef<[u8]> + Debug>(&self, data: &T) -> Sha256Hash {
         Sha256Hash(Sha256::new().chain_update(data).finalize().into())
     }
 }

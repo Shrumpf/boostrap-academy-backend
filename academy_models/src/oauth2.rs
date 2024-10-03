@@ -1,10 +1,9 @@
 use chrono::{DateTime, Utc};
-use nutype::nutype;
 use serde::{Deserialize, Serialize};
-use url::Url;
 
 use crate::{
     macros::{id, nutype_string},
+    url::Url,
     user::UserId,
 };
 
@@ -14,7 +13,7 @@ id!(OAuth2LinkId);
 pub struct OAuth2Provider {
     pub name: OAuth2ProviderName,
     pub client_id: String,
-    pub client_secret: Option<String>,
+    pub client_secret: Option<OAuth2ProviderClientSecret>,
     pub auth_url: Url,
     pub token_url: Url,
     pub userinfo_url: Url,
@@ -54,16 +53,23 @@ pub struct OAuth2Login {
 
 nutype_string!(OAuth2ProviderId);
 nutype_string!(OAuth2ProviderName);
+nutype_string!(OAuth2ProviderClientSecret(sensitive));
 
-nutype_string!(OAuth2AuthorizationCode(validate(len_char_max = 256)));
+nutype_string!(OAuth2AuthorizationCode(
+    sensitive,
+    validate(len_char_max = 256)
+));
 
 nutype_string!(OAuth2RemoteUserId(validate(len_char_max = 256)));
 nutype_string!(OAuth2RemoteUserName(validate(len_char_max = 256)));
 
-nutype_string!(OAuth2RegistrationToken(validate(
-    len_char_min = OAuth2RegistrationToken::LEN,
-    len_char_max = OAuth2RegistrationToken::LEN
-)));
+nutype_string!(OAuth2RegistrationToken(
+    sensitive,
+    validate(
+        len_char_min = OAuth2RegistrationToken::LEN,
+        len_char_max = OAuth2RegistrationToken::LEN
+    )
+));
 impl OAuth2RegistrationToken {
     pub const LEN: usize = 64;
 }

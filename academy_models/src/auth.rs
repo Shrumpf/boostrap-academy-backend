@@ -1,13 +1,13 @@
 use thiserror::Error;
 
-use crate::{session::Session, user::UserComposite};
+use crate::{macros::nutype_string, session::Session, user::UserComposite};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Login {
     pub user_composite: UserComposite,
     pub session: Session,
-    pub access_token: String,
-    pub refresh_token: String,
+    pub access_token: AccessToken,
+    pub refresh_token: RefreshToken,
 }
 
 #[derive(Debug, Error)]
@@ -33,3 +33,7 @@ pub enum AuthorizeError {
     #[error("The user's email address is not verified.")]
     EmailVerified,
 }
+
+nutype_string!(AccessToken(sensitive));
+nutype_string!(RefreshToken(sensitive));
+nutype_string!(InternalToken(sensitive));

@@ -1,14 +1,15 @@
+use academy_models::auth::InternalToken;
 use thiserror::Error;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait AuthInternalService: Send + Sync + 'static {
     /// Generate a new internal authentication token.
-    fn issue_token(&self, audience: &str) -> anyhow::Result<String>;
+    fn issue_token(&self, audience: &str) -> anyhow::Result<InternalToken>;
 
     /// Verify an internal authentication token.
     fn authenticate(
         &self,
-        token: &str,
+        token: &InternalToken,
         audience: &str,
     ) -> Result<(), AuthInternalAuthenticateError>;
 }
@@ -21,7 +22,7 @@ pub enum AuthInternalAuthenticateError {
 
 #[cfg(feature = "mock")]
 impl MockAuthInternalService {
-    pub fn with_issue_token(mut self, audience: &'static str, token: String) -> Self {
+    pub fn with_issue_token(mut self, audience: &'static str, token: InternalToken) -> Self {
         self.expect_issue_token()
             .once()
             .with(mockall::predicate::eq(audience))
@@ -33,7 +34,7 @@ impl MockAuthInternalService {
         self.expect_authenticate()
             .once()
             .with(
-                mockall::predicate::eq("internal token"),
+                mockall::predicate::eq(InternalToken::new("internal token")),
                 mockall::predicate::eq(audience),
             )
             .return_once(move |_, _| {

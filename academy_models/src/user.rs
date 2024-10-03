@@ -116,10 +116,10 @@ nutype_string!(UserDisplayName(validate(
     len_char_max = 64
 )));
 
-nutype_string!(UserPassword(validate(
-    len_char_min = 1,
-    len_char_max = UserPassword::MAX_LENGTH
-)));
+nutype_string!(UserPassword(
+    sensitive,
+    validate(len_char_min = 1, len_char_max = UserPassword::MAX_LENGTH)
+));
 impl UserPassword {
     pub const MAX_LENGTH: usize = 4096;
 }

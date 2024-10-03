@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
-    auth::AuthError,
+    auth::{AccessToken, AuthError},
     mfa::{MfaRecoveryCode, TotpCode, TotpSetup},
     user::UserIdOrSelf,
 };
@@ -19,7 +19,7 @@ pub trait MfaFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn initialize(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<TotpSetup, MfaInitializeError>> + Send;
 
@@ -29,7 +29,7 @@ pub trait MfaFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn enable(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         code: TotpCode,
     ) -> impl Future<Output = Result<MfaRecoveryCode, MfaEnableError>> + Send;
@@ -39,7 +39,7 @@ pub trait MfaFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn disable(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<(), MfaDisableError>> + Send;
 }

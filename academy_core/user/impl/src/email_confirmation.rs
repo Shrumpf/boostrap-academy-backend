@@ -16,6 +16,7 @@ use academy_shared_contracts::{password::PasswordService, secret::SecretService}
 use academy_templates_contracts::{
     ResetPasswordTemplate, SubscribeNewsletterTemplate, VerifyEmailTemplate,
 };
+use academy_utils::trace_instrument;
 use anyhow::{anyhow, Context};
 
 use crate::UserFeatureConfig;
@@ -44,6 +45,7 @@ where
     Password: PasswordService,
     UserRepo: UserRepository<Txn>,
 {
+    #[trace_instrument(skip(self))]
     async fn request_verification(&self, email: EmailAddressWithName) -> anyhow::Result<()> {
         let code = self.secret.generate_verification_code();
 
@@ -70,6 +72,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn verify_email(
         &self,
         txn: &mut Txn,
@@ -123,6 +126,7 @@ where
         Ok(user_composite)
     }
 
+    #[trace_instrument(skip(self))]
     async fn request_password_reset(
         &self,
         user_id: UserId,
@@ -153,6 +157,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn reset_password(
         &self,
         txn: &mut Txn,
@@ -173,7 +178,7 @@ where
 
         let password_hash = self
             .password
-            .hash(new_password.into_inner())
+            .hash(new_password.into_inner().into())
             .await
             .context("Failed to hash password")?;
 
@@ -190,6 +195,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self))]
     async fn request_newsletter_subscription(
         &self,
         user_id: UserId,
@@ -220,6 +226,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn subscribe_to_newsletter(
         &self,
         txn: &mut Txn,

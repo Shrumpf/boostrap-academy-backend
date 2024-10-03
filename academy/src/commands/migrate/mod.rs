@@ -8,6 +8,7 @@ use academy_persistence_postgres::{
 use anyhow::Context;
 use clap::Subcommand;
 use load::LoadCommand;
+use tracing::info;
 
 use crate::database;
 
@@ -89,14 +90,14 @@ async fn down(db: PostgresDatabase, cnt: Option<usize>) -> anyhow::Result<()> {
 
 async fn reset(db: PostgresDatabase) -> anyhow::Result<()> {
     db.reset().await?;
-    println!("Database reset successful");
+    info!("Database reset successful");
 
     Ok(())
 }
 
 async fn demo(db: PostgresDatabase) -> anyhow::Result<()> {
     db.reset().await.context("Failed to reset database")?;
-    println!("Database reset successful");
+    info!("Database reset successful");
     migration_logs(
         &db.run_migrations(None)
             .await
@@ -115,7 +116,7 @@ async fn demo(db: PostgresDatabase) -> anyhow::Result<()> {
     .await
     .context("Failed to restore demo dataset")?;
     txn.commit().await?;
-    println!("Demo dataset has been restored");
+    info!("Demo dataset has been restored");
 
     Ok(())
 }
@@ -123,10 +124,10 @@ async fn demo(db: PostgresDatabase) -> anyhow::Result<()> {
 fn migration_logs(logs: &[&str], action: &str) {
     let mut none = true;
     for &name in logs {
-        println!("[{action}] {name}");
+        info!("{action} {name}");
         none = false;
     }
     if none {
-        println!("No migrations have been {action}.");
+        info!("No migrations have been {action}.");
     }
 }

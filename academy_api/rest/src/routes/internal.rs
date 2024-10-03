@@ -4,7 +4,7 @@ use academy_auth_contracts::internal::AuthInternalAuthenticateError;
 use academy_core_internal_contracts::{
     InternalGetUserByEmailError, InternalGetUserError, InternalService,
 };
-use academy_models::email_address::EmailAddress;
+use academy_models::{auth::InternalToken, email_address::EmailAddress};
 use aide::{
     axum::{routing, ApiRouter},
     transform::TransformOperation,
@@ -23,7 +23,7 @@ use crate::{
     docs::TransformOperationExt,
     error_code,
     errors::{internal_server_error, internal_server_error_docs},
-    extractors::auth::{ApiToken, InternalApiToken},
+    extractors::auth::ApiToken,
     models::user::{ApiUser, PathUserId},
 };
 
@@ -45,7 +45,7 @@ pub fn router(service: Arc<impl InternalService>) -> ApiRouter<()> {
 
 async fn get_user(
     service: State<Arc<impl InternalService>>,
-    token: ApiToken<InternalApiToken>,
+    token: ApiToken<InternalToken>,
     Path(PathUserId { user_id }): Path<PathUserId>,
 ) -> Response {
     match service.get_user(&token.0, user_id).await {
@@ -71,7 +71,7 @@ struct GetUserByEmailPath {
 
 async fn get_user_by_email(
     service: State<Arc<impl InternalService>>,
-    token: ApiToken<InternalApiToken>,
+    token: ApiToken<InternalToken>,
     Path(GetUserByEmailPath { email }): Path<GetUserByEmailPath>,
 ) -> Response {
     match service.get_user_by_email(&token.0, email).await {

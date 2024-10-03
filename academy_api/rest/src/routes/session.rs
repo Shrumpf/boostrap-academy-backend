@@ -6,6 +6,7 @@ use academy_core_session_contracts::{
     SessionListByUserError, SessionRefreshError,
 };
 use academy_models::{
+    auth::RefreshToken,
     mfa::{MfaAuthentication, MfaRecoveryCode, TotpCode},
     session::{DeviceName, SessionId},
     user::{UserNameOrEmailAddress, UserPassword},
@@ -193,7 +194,7 @@ fn impersonate_docs(op: TransformOperation) -> TransformOperation {
 
 #[derive(Deserialize, JsonSchema)]
 struct RefreshRequest {
-    refresh_token: String,
+    refresh_token: RefreshToken,
 }
 
 async fn refresh(

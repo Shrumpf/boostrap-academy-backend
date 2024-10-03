@@ -28,7 +28,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.authenticate("my auth token").await;
+    let result = sut.authenticate(&"my auth token".into()).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -46,7 +46,7 @@ async fn invalid_token() {
     };
 
     // Act
-    let result = sut.authenticate("my auth token").await;
+    let result = sut.authenticate(&"my auth token".into()).await;
 
     // Assert
     assert_matches!(result, Err(AuthenticateError::InvalidToken));
@@ -73,7 +73,7 @@ async fn access_token_invalidated() {
     };
 
     // Act
-    let result = sut.authenticate("my auth token").await;
+    let result = sut.authenticate(&"my auth token".into()).await;
 
     // Assert
     assert_matches!(result, Err(AuthenticateError::InvalidToken));

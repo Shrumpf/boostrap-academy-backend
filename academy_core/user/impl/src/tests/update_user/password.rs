@@ -35,7 +35,7 @@ async fn update_password() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -72,7 +72,7 @@ async fn remove_password_oauth() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {
@@ -113,7 +113,7 @@ async fn remove_password_no_oauth() {
     // Act
     let result = sut
         .update_user(
-            "token",
+            &"token".into(),
             UserIdOrSelf::Slf,
             UserUpdateRequest {
                 user: UserUpdateUserRequest {

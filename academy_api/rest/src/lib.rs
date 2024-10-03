@@ -12,6 +12,7 @@ use academy_core_oauth2_contracts::OAuth2FeatureService;
 use academy_core_session_contracts::SessionFeatureService;
 use academy_core_user_contracts::UserFeatureService;
 use academy_di::Build;
+use academy_models::auth::{AccessToken, InternalToken};
 use academy_utils::Apply;
 use aide::{
     axum::ApiRouter,
@@ -22,7 +23,7 @@ use axum::{
     response::{IntoResponse, Response},
     Extension, Json,
 };
-use extractors::auth::{ApiTokenType, InternalApiToken, UserApiToken};
+use extractors::auth::ApiTokenType;
 use tokio::net::TcpListener;
 
 mod docs;
@@ -109,8 +110,8 @@ where
                         extensions: Default::default(),
                     });
                     [
-                        (UserApiToken::NAME.into(), bearer.clone()),
-                        (InternalApiToken::NAME.into(), bearer),
+                        (AccessToken::NAME.into(), bearer.clone()),
+                        (InternalToken::NAME.into(), bearer),
                     ]
                     .into()
                 },

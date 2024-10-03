@@ -36,7 +36,7 @@ async fn ok_current() {
 
     // Act
     let result = sut
-        .delete_session("token", UserIdOrSelf::Slf, FOO_1.id)
+        .delete_session(&"token".into(), UserIdOrSelf::Slf, FOO_1.id)
         .await;
 
     // Assert
@@ -64,7 +64,7 @@ async fn ok_self() {
 
     // Act
     let result = sut
-        .delete_session("token", UserIdOrSelf::Slf, FOO_2.id)
+        .delete_session(&"token".into(), UserIdOrSelf::Slf, FOO_2.id)
         .await;
 
     // Assert
@@ -93,7 +93,7 @@ async fn ok_admin() {
 
     // Act
     let result = sut
-        .delete_session("token", UserIdOrSelf::UserId(FOO.user.id), FOO_2.id)
+        .delete_session(&"token".into(), UserIdOrSelf::UserId(FOO.user.id), FOO_2.id)
         .await;
 
     // Assert
@@ -112,7 +112,7 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .delete_session("token", UserIdOrSelf::UserId(FOO.user.id), FOO_1.id)
+        .delete_session(&"token".into(), UserIdOrSelf::UserId(FOO.user.id), FOO_1.id)
         .await;
 
     // Assert
@@ -136,7 +136,7 @@ async fn unauthorized() {
 
     // Act
     let result = sut
-        .delete_session("token", UserIdOrSelf::UserId(FOO.user.id), FOO_1.id)
+        .delete_session(&"token".into(), UserIdOrSelf::UserId(FOO.user.id), FOO_1.id)
         .await;
 
     // Assert
@@ -167,7 +167,7 @@ async fn not_found() {
 
     // Act
     let result = sut
-        .delete_session("token", UserIdOrSelf::UserId(FOO.user.id), FOO_1.id)
+        .delete_session(&"token".into(), UserIdOrSelf::UserId(FOO.user.id), FOO_1.id)
         .await;
 
     // Assert
@@ -193,7 +193,7 @@ async fn different_user() {
 
     // Act
     let result = sut
-        .delete_session("token", UserIdOrSelf::UserId(BAR.user.id), FOO_1.id)
+        .delete_session(&"token".into(), UserIdOrSelf::UserId(BAR.user.id), FOO_1.id)
         .await;
 
     // Assert

@@ -32,7 +32,7 @@ async fn ok_self() {
     };
 
     // Act
-    let result = sut.delete_user("token", UserIdOrSelf::Slf).await;
+    let result = sut.delete_user(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     result.unwrap();
@@ -57,7 +57,7 @@ async fn ok_admin() {
     };
 
     // Act
-    let result = sut.delete_user("token", FOO.user.id.into()).await;
+    let result = sut.delete_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     result.unwrap();
@@ -74,7 +74,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.delete_user("token", FOO.user.id.into()).await;
+    let result = sut.delete_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -96,7 +96,7 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.delete_user("token", FOO.user.id.into()).await;
+    let result = sut.delete_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -126,7 +126,7 @@ async fn not_found() {
     };
 
     // Act
-    let result = sut.delete_user("token", FOO.user.id.into()).await;
+    let result = sut.delete_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(result, Err(UserDeleteError::NotFound));

@@ -19,7 +19,9 @@ academy_extern_contracts.workspace = true
 academy_models.workspace = true
 academy_persistence_contracts.workspace = true
 academy_shared_contracts.workspace = true
+academy_utils.workspace = true
 anyhow.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 academy_cache_contracts = { workspace = true, features = ["mock"] }
@@ -30,6 +32,4 @@ academy_demo.workspace = true
 academy_extern_contracts = { workspace = true, features = ["mock"] }
 academy_persistence_contracts = { workspace = true, features = ["mock"] }
 academy_shared_contracts = { workspace = true, features = ["mock"] }
-academy_utils.workspace = true
 tokio.workspace = true
-url.workspace = true

@@ -9,6 +9,7 @@ use academy_shared_contracts::{
     time::TimeService,
     totp::{TotpCheckError, TotpService},
 };
+use academy_utils::trace_instrument;
 use anyhow::Context;
 use totp_rs::{Rfc6238, TOTP};
 
@@ -34,20 +35,22 @@ where
     Hash: HashService,
     Cache: CacheService,
 {
+    #[trace_instrument(skip(self))]
     fn generate_secret(&self) -> (TotpSecret, TotpSetup) {
-        let secret = self.secret.generate_bytes(*self.config.secret_length);
+        let secret = self.secret.generate_bytes(*self.config.secret_length).0;
 
         let totp = TOTP::from_rfc6238(Rfc6238::with_defaults(secret).unwrap()).unwrap();
         let setup = TotpSetup {
-            secret: totp.get_secret_base32(),
+            secret: totp.get_secret_base32().into(),
         };
 
         (TotpSecret::try_new(totp.secret).unwrap(), setup)
     }
 
+    #[trace_instrument(skip(self))]
     async fn check(&self, code: &TotpCode, secret: TotpSecret) -> Result<(), TotpCheckError> {
         let now = self.time.now().timestamp();
-        let secret_hash = self.hash.sha256(&secret);
+        let secret_hash = self.hash.sha256(&*secret);
 
         let totp =
             TOTP::from_rfc6238(Rfc6238::with_defaults(secret.into_inner()).unwrap()).unwrap();

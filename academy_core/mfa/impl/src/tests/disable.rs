@@ -44,7 +44,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.disable("token", UserIdOrSelf::Slf).await;
+    let result = sut.disable(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     result.unwrap();
@@ -61,7 +61,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.disable("token", FOO.user.id.into()).await;
+    let result = sut.disable(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -83,7 +83,7 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.disable("token", FOO.user.id.into()).await;
+    let result = sut.disable(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -112,7 +112,7 @@ async fn user_not_found() {
     };
 
     // Act
-    let result = sut.disable("token", FOO.user.id.into()).await;
+    let result = sut.disable(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(result, Err(MfaDisableError::NotFound));
@@ -138,7 +138,7 @@ async fn not_initialized() {
     };
 
     // Act
-    let result = sut.disable("token", UserIdOrSelf::Slf).await;
+    let result = sut.disable(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     assert_matches!(result, Err(MfaDisableError::NotEnabled));
@@ -165,7 +165,7 @@ async fn not_enabled() {
     };
 
     // Act
-    let result = sut.disable("token", UserIdOrSelf::Slf).await;
+    let result = sut.disable(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     assert_matches!(result, Err(MfaDisableError::NotEnabled));

@@ -1,5 +1,6 @@
 use academy_models::{
     email_address::EmailAddress,
+    url::Url,
     user::{
         UserBio, UserCity, UserComposite, UserCountry, UserDisplayName, UserFilter, UserFirstName,
         UserId, UserIdOrSelf, UserLastName, UserName, UserPassword, UserStreet, UserTags,
@@ -14,7 +15,6 @@ use schemars::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use url::Url;
 
 use crate::const_schema;
 

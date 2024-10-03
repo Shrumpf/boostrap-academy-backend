@@ -44,7 +44,11 @@ async fn ok() {
 
     // Act
     let result = sut
-        .verify_newsletter_subscription("token", UserIdOrSelf::Slf, VERIFICATION_CODE_1.clone())
+        .verify_newsletter_subscription(
+            &"token".into(),
+            UserIdOrSelf::Slf,
+            VERIFICATION_CODE_1.clone(),
+        )
         .await;
 
     // Assert
@@ -63,7 +67,11 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .verify_newsletter_subscription("token", FOO.user.id.into(), VERIFICATION_CODE_1.clone())
+        .verify_newsletter_subscription(
+            &"token".into(),
+            FOO.user.id.into(),
+            VERIFICATION_CODE_1.clone(),
+        )
         .await;
 
     // Assert
@@ -87,7 +95,11 @@ async fn unauthorized() {
 
     // Act
     let result = sut
-        .verify_newsletter_subscription("token", FOO.user.id.into(), VERIFICATION_CODE_1.clone())
+        .verify_newsletter_subscription(
+            &"token".into(),
+            FOO.user.id.into(),
+            VERIFICATION_CODE_1.clone(),
+        )
         .await;
 
     // Assert
@@ -117,7 +129,11 @@ async fn not_found() {
 
     // Act
     let result = sut
-        .verify_newsletter_subscription("token", UserIdOrSelf::Slf, VERIFICATION_CODE_1.clone())
+        .verify_newsletter_subscription(
+            &"token".into(),
+            UserIdOrSelf::Slf,
+            VERIFICATION_CODE_1.clone(),
+        )
         .await;
 
     // Assert
@@ -142,7 +158,11 @@ async fn already_subscribed() {
 
     // Act
     let result = sut
-        .verify_newsletter_subscription("token", UserIdOrSelf::Slf, VERIFICATION_CODE_1.clone())
+        .verify_newsletter_subscription(
+            &"token".into(),
+            UserIdOrSelf::Slf,
+            VERIFICATION_CODE_1.clone(),
+        )
         .await;
 
     // Assert
@@ -181,7 +201,11 @@ async fn invalid_code() {
 
     // Act
     let result = sut
-        .verify_newsletter_subscription("token", UserIdOrSelf::Slf, VERIFICATION_CODE_1.clone())
+        .verify_newsletter_subscription(
+            &"token".into(),
+            UserIdOrSelf::Slf,
+            VERIFICATION_CODE_1.clone(),
+        )
         .await;
 
     // Assert

@@ -1,5 +1,5 @@
 use academy_models::{
-    auth::Login,
+    auth::{AccessToken, Login, RefreshToken},
     session::{DeviceName, Session, SessionId},
     user::UserId,
 };
@@ -35,8 +35,8 @@ impl From<Session> for ApiSession {
 pub struct ApiLogin {
     user: ApiUser,
     session: ApiSession,
-    access_token: String,
-    refresh_token: String,
+    access_token: AccessToken,
+    refresh_token: RefreshToken,
 }
 
 impl From<Login> for ApiLogin {

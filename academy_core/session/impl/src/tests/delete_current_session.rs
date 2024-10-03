@@ -26,7 +26,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.delete_current_session("token").await;
+    let result = sut.delete_current_session(&"token".into()).await;
 
     // Assert
     result.unwrap();
@@ -44,7 +44,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.delete_current_session("token").await;
+    let result = sut.delete_current_session(&"token".into()).await;
 
     // Assert
     assert_matches!(

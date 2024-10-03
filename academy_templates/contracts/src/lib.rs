@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use serde::Serialize;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
@@ -21,7 +23,7 @@ impl MockTemplateService {
     }
 }
 
-pub trait Template: Serialize {
+pub trait Template: Serialize + Debug {
     const NAME: &'static str;
     const TEMPLATE: &'static str;
 }

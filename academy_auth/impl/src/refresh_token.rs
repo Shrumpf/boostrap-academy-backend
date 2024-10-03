@@ -1,7 +1,8 @@
 use academy_auth_contracts::refresh_token::AuthRefreshTokenService;
 use academy_di::Build;
-use academy_models::session::SessionRefreshTokenHash;
+use academy_models::{auth::RefreshToken, session::SessionRefreshTokenHash};
 use academy_shared_contracts::{hash::HashService, secret::SecretService};
+use academy_utils::trace_instrument;
 
 use crate::AuthServiceConfig;
 
@@ -18,12 +19,17 @@ where
     Secret: SecretService,
     Hash: HashService,
 {
-    fn issue(&self) -> String {
-        self.secret.generate(self.config.refresh_token_length)
+    #[trace_instrument(skip(self))]
+    fn issue(&self) -> RefreshToken {
+        self.secret
+            .generate(self.config.refresh_token_length)
+            .0
+            .into()
     }
 
-    fn hash(&self, refresh_token: &str) -> SessionRefreshTokenHash {
-        self.hash.sha256(refresh_token.as_bytes()).into()
+    #[trace_instrument(skip(self))]
+    fn hash(&self, refresh_token: &RefreshToken) -> SessionRefreshTokenHash {
+        self.hash.sha256(refresh_token).into()
     }
 }
 
@@ -56,7 +62,7 @@ mod tests {
         let result = sut.issue();
 
         // Assert
-        assert_eq!(result, refresh_token);
+        assert_eq!(result.into_inner(), refresh_token);
     }
 
     #[test]
@@ -64,7 +70,8 @@ mod tests {
         // Arrange
         let refresh_token = "the refresh token";
 
-        let hash = MockHashService::new().with_sha256(refresh_token.into(), *SHA256HASH1);
+        let hash =
+            MockHashService::new().with_sha256(RefreshToken::new(refresh_token), *SHA256HASH1);
 
         let sut = AuthRefreshTokenServiceImpl {
             hash,
@@ -72,7 +79,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.hash(refresh_token);
+        let result = sut.hash(&refresh_token.into());
 
         // Assert
         assert_eq!(result, (*SHA256HASH1).into());

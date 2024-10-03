@@ -3,6 +3,7 @@ use academy_core_oauth2_contracts::registration::OAuth2RegistrationService;
 use academy_di::Build;
 use academy_models::oauth2::{OAuth2Registration, OAuth2RegistrationToken};
 use academy_shared_contracts::secret::SecretService;
+use academy_utils::trace_instrument;
 use anyhow::Context;
 
 use crate::OAuth2FeatureConfig;
@@ -20,12 +21,13 @@ where
     Secret: SecretService,
     Cache: CacheService,
 {
+    #[trace_instrument(skip(self))]
     async fn save(
         &self,
         registration: &OAuth2Registration,
     ) -> anyhow::Result<OAuth2RegistrationToken> {
         let registration_token =
-            OAuth2RegistrationToken::try_new(self.secret.generate(OAuth2RegistrationToken::LEN))
+            OAuth2RegistrationToken::try_new(self.secret.generate(OAuth2RegistrationToken::LEN).0)
                 .unwrap();
 
         self.cache
@@ -40,6 +42,7 @@ where
         Ok(registration_token)
     }
 
+    #[trace_instrument(skip(self))]
     async fn get(
         &self,
         registration_token: &OAuth2RegistrationToken,
@@ -50,6 +53,7 @@ where
             .context("Failed to get OAuth2 registration from cache")
     }
 
+    #[trace_instrument(skip(self))]
     async fn remove(&self, registration_token: &OAuth2RegistrationToken) -> anyhow::Result<()> {
         self.cache
             .remove(&oauth2_registration_cache_key(registration_token))

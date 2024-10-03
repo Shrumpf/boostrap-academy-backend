@@ -1,6 +1,8 @@
 use academy_auth_contracts::internal::{AuthInternalAuthenticateError, AuthInternalService};
 use academy_di::Build;
+use academy_models::auth::InternalToken;
 use academy_shared_contracts::jwt::JwtService;
+use academy_utils::trace_instrument;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +19,8 @@ impl<Jwt> AuthInternalService for AuthInternalServiceImpl<Jwt>
 where
     Jwt: JwtService,
 {
-    fn issue_token(&self, audience: &str) -> anyhow::Result<String> {
+    #[trace_instrument(skip(self))]
+    fn issue_token(&self, audience: &str) -> anyhow::Result<InternalToken> {
         self.jwt
             .sign(
                 Token {
@@ -30,13 +33,14 @@ where
             })
     }
 
+    #[trace_instrument(skip(self))]
     fn authenticate(
         &self,
-        token: &str,
+        token: &InternalToken,
         audience: &str,
     ) -> Result<(), AuthInternalAuthenticateError> {
         self.jwt
-            .verify::<Token>(token)
+            .verify::<_, Token>(token)
             .ok()
             .filter(|data| data.aud == audience)
             .map(|_| ())
@@ -68,7 +72,7 @@ mod tests {
         let jwt = MockJwtService::new().with_sign(
             Token { aud: "test".into() },
             config.internal_token_ttl,
-            Ok(expected.into()),
+            Ok(InternalToken::new(expected)),
         );
 
         let sut = AuthInternalServiceImpl {
@@ -80,13 +84,16 @@ mod tests {
         let result = sut.issue_token("test");
 
         // Assert
-        assert_eq!(result.unwrap(), expected);
+        assert_eq!(result.unwrap().into_inner(), expected);
     }
 
     #[test]
     fn authenticate_ok() {
         // Arrange
-        let jwt = MockJwtService::new().with_verify("token", Ok(Token { aud: "auth".into() }));
+        let jwt = MockJwtService::new().with_verify(
+            InternalToken::new("token"),
+            Ok(Token { aud: "auth".into() }),
+        );
 
         let sut = AuthInternalServiceImpl {
             jwt,
@@ -94,7 +101,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.authenticate("token", "auth");
+        let result = sut.authenticate(&"token".into(), "auth");
 
         // Assert
         result.unwrap();
@@ -103,7 +110,10 @@ mod tests {
     #[test]
     fn authenticate_invalid() {
         // Arrange
-        let jwt = MockJwtService::new().with_verify("token", Err(VerifyJwtError::<Token>::Invalid));
+        let jwt = MockJwtService::new().with_verify(
+            InternalToken::new("token"),
+            Err(VerifyJwtError::<Token>::Invalid),
+        );
 
         let sut = AuthInternalServiceImpl {
             jwt,
@@ -111,7 +121,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.authenticate("token", "auth");
+        let result = sut.authenticate(&"token".into(), "auth");
 
         // Assert
         assert_matches!(result, Err(AuthInternalAuthenticateError::InvalidToken));
@@ -121,7 +131,7 @@ mod tests {
     fn authenticate_expired() {
         // Arrange
         let jwt = MockJwtService::new().with_verify(
-            "token",
+            InternalToken::new("token"),
             Err(VerifyJwtError::Expired(Token { aud: "auth".into() })),
         );
 
@@ -131,7 +141,7 @@ mod tests {
         };
 
         // Act
-        let result = sut.authenticate("token", "auth");
+        let result = sut.authenticate(&"token".into(), "auth");
 
         // Assert
         assert_matches!(result, Err(AuthInternalAuthenticateError::InvalidToken));

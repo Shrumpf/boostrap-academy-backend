@@ -24,7 +24,7 @@ async fn ok() {
 
     // Act
     let result = sut
-        .get_user_by_email("internal token", FOO.user.email.clone().unwrap())
+        .get_user_by_email(&"internal token".into(), FOO.user.email.clone().unwrap())
         .await;
 
     // Assert
@@ -43,7 +43,7 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .get_user_by_email("internal token", FOO.user.email.clone().unwrap())
+        .get_user_by_email(&"internal token".into(), FOO.user.email.clone().unwrap())
         .await;
 
     // Assert
@@ -73,7 +73,7 @@ async fn not_found() {
 
     // Act
     let result = sut
-        .get_user_by_email("internal token", FOO.user.email.clone().unwrap())
+        .get_user_by_email(&"internal token".into(), FOO.user.email.clone().unwrap())
         .await;
 
     // Assert

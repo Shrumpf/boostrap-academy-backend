@@ -13,7 +13,10 @@ use academy_models::{
 };
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_shared_contracts::{password::PasswordService, time::TimeService};
-use academy_utils::patch::{Patch, PatchValue};
+use academy_utils::{
+    patch::{Patch, PatchValue},
+    trace_instrument,
+};
 use anyhow::{anyhow, Context};
 
 use crate::UserFeatureConfig;
@@ -39,6 +42,7 @@ where
     Session: SessionService<Txn>,
     UserRepo: UserRepository<Txn>,
 {
+    #[trace_instrument(skip(self, txn))]
     async fn update_name(
         &self,
         txn: &mut Txn,
@@ -80,6 +84,7 @@ where
             })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_email(
         &self,
         txn: &mut Txn,
@@ -116,6 +121,7 @@ where
         Ok(result)
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_password(
         &self,
         txn: &mut Txn,
@@ -124,7 +130,7 @@ where
     ) -> anyhow::Result<()> {
         let hash = self
             .password
-            .hash(password.into_inner())
+            .hash(password.into_inner().into())
             .await
             .context("Failed to hash password")?;
 
@@ -136,6 +142,7 @@ where
         Ok(())
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_enabled(
         &self,
         txn: &mut Txn,
@@ -155,6 +162,7 @@ where
             .context("Failed to update user in database")
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_admin(
         &self,
         txn: &mut Txn,
@@ -174,6 +182,7 @@ where
             .context("Failed to update user in database")
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn update_invoice_info(
         &self,
         txn: &mut Txn,

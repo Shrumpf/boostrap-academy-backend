@@ -1,12 +1,12 @@
-use academy_models::{mfa::MfaRecoveryCode, VerificationCode};
+use academy_models::{mfa::MfaRecoveryCode, Sensitive, VerificationCode};
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait SecretService: Send + Sync + 'static {
     /// Generate a new random alphanumeric string of the given length.
-    fn generate(&self, len: usize) -> String;
+    fn generate(&self, len: usize) -> Sensitive<String>;
 
     /// Generate `len` bytes of random data.
-    fn generate_bytes(&self, len: usize) -> Vec<u8>;
+    fn generate_bytes(&self, len: usize) -> Sensitive<Vec<u8>>;
 
     /// Generate a new random verification code.
     fn generate_verification_code(&self) -> VerificationCode;
@@ -21,7 +21,7 @@ impl MockSecretService {
         self.expect_generate()
             .once()
             .with(mockall::predicate::eq(len))
-            .return_once(|_| result);
+            .return_once(|_| result.into());
         self
     }
 
@@ -29,7 +29,7 @@ impl MockSecretService {
         self.expect_generate_bytes()
             .once()
             .with(mockall::predicate::eq(len))
-            .return_once(|_| result);
+            .return_once(|_| result.into());
         self
     }
 

@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
-    auth::{AuthError, Login},
+    auth::{AccessToken, AuthError, Login},
     email_address::EmailAddress,
     oauth2::OAuth2RegistrationToken,
     session::DeviceName,
@@ -26,7 +26,7 @@ pub trait UserFeatureService: Send + Sync + 'static {
     /// Requires admin privileges.
     fn list_users(
         &self,
-        token: &str,
+        token: &AccessToken,
         query: UserListQuery,
     ) -> impl Future<Output = Result<UserListResult, UserListError>> + Send;
 
@@ -35,7 +35,7 @@ pub trait UserFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn get_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<UserComposite, UserGetError>> + Send;
 
@@ -66,7 +66,7 @@ pub trait UserFeatureService: Send + Sync + 'static {
     ///   - `email_verified`
     fn update_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         request: UserUpdateRequest,
     ) -> impl Future<Output = Result<UserComposite, UserUpdateError>> + Send;
@@ -76,7 +76,7 @@ pub trait UserFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn delete_user(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<(), UserDeleteError>> + Send;
 
@@ -86,7 +86,7 @@ pub trait UserFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn request_verification_email(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<(), UserRequestVerificationEmailError>> + Send;
 
@@ -102,7 +102,7 @@ pub trait UserFeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn verify_newsletter_subscription(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         code: VerificationCode,
     ) -> impl Future<Output = Result<UserComposite, UserVerifyNewsletterSubscriptionError>> + Send;

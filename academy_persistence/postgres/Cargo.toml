@@ -23,6 +23,7 @@ bb8-postgres = { version = "0.8.1", default-features = false, features = ["with-
 chrono.workspace = true
 ouroboros = { version = "0.18.4", default-features = false }
 paste.workspace = true
+tracing.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

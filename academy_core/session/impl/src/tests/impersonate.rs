@@ -40,7 +40,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.impersonate("token", FOO.user.id).await;
+    let result = sut.impersonate(&"token".into(), FOO.user.id).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -57,7 +57,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.impersonate("token", FOO.user.id).await;
+    let result = sut.impersonate(&"token".into(), FOO.user.id).await;
 
     // Assert
     assert_matches!(
@@ -79,7 +79,7 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.impersonate("token", FOO.user.id).await;
+    let result = sut.impersonate(&"token".into(), FOO.user.id).await;
 
     // Assert
     assert_matches!(
@@ -108,7 +108,7 @@ async fn user_not_found() {
     };
 
     // Act
-    let result = sut.impersonate("token", FOO.user.id).await;
+    let result = sut.impersonate(&"token".into(), FOO.user.id).await;
 
     // Assert
     assert_matches!(result, Err(SessionImpersonateError::NotFound));

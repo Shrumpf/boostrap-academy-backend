@@ -47,7 +47,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.list_links("token", FOO.user.id.into()).await;
+    let result = sut.list_links(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_eq!(result.unwrap(), [FOO_OAUTH2_LINK_1.clone()]);
@@ -64,7 +64,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.list_links("token", FOO.user.id.into()).await;
+    let result = sut.list_links(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -86,7 +86,7 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.list_links("token", FOO.user.id.into()).await;
+    let result = sut.list_links(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -115,7 +115,7 @@ async fn not_found() {
     };
 
     // Act
-    let result = sut.list_links("token", FOO.user.id.into()).await;
+    let result = sut.list_links(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(result, Err(OAuth2ListLinksError::NotFound));

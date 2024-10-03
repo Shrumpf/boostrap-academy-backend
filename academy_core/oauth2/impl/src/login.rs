@@ -2,6 +2,7 @@ use academy_core_oauth2_contracts::login::{OAuth2LoginService, OAuth2LoginServic
 use academy_di::Build;
 use academy_extern_contracts::oauth2::{OAuth2ApiService, OAuth2ResolveCodeError};
 use academy_models::oauth2::{OAuth2Login, OAuth2UserInfo};
+use academy_utils::trace_instrument;
 
 use crate::OAuth2FeatureConfig;
 
@@ -16,6 +17,7 @@ impl<OAuth2Api> OAuth2LoginService for OAuth2LoginServiceImpl<OAuth2Api>
 where
     OAuth2Api: OAuth2ApiService,
 {
+    #[trace_instrument(skip(self))]
     async fn login(&self, login: OAuth2Login) -> Result<OAuth2UserInfo, OAuth2LoginServiceError> {
         let provider = self
             .config

@@ -29,7 +29,7 @@ async fn ok_self() {
     };
 
     // Act
-    let result = sut.get_user("token", UserIdOrSelf::Slf).await;
+    let result = sut.get_user(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     assert_eq!(result.unwrap(), *FOO);
@@ -52,7 +52,7 @@ async fn ok_admin() {
     };
 
     // Act
-    let result = sut.get_user("token", FOO.user.id.into()).await;
+    let result = sut.get_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_eq!(result.unwrap(), *FOO);
@@ -69,7 +69,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.get_user("token", FOO.user.id.into()).await;
+    let result = sut.get_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -91,7 +91,7 @@ async fn unauthorized() {
     };
 
     // Act
-    let result = sut.get_user("token", FOO.user.id.into()).await;
+    let result = sut.get_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(
@@ -119,7 +119,7 @@ async fn not_found() {
     };
 
     // Act
-    let result = sut.get_user("token", FOO.user.id.into()).await;
+    let result = sut.get_user(&"token".into(), FOO.user.id.into()).await;
 
     // Assert
     assert_matches!(result, Err(UserGetError::NotFound));

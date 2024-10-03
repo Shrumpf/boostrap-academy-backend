@@ -8,7 +8,7 @@ use academy_models::{
 };
 use academy_persistence_contracts::{session::SessionRepository, user::UserRepository};
 use academy_shared_contracts::{id::IdService, time::TimeService};
-use academy_utils::patch::Patch;
+use academy_utils::{patch::Patch, trace_instrument};
 use anyhow::Context;
 
 #[derive(Debug, Clone, Build, Default)]
@@ -32,6 +32,7 @@ where
     SessionRepo: SessionRepository<Txn>,
     UserRepo: UserRepository<Txn>,
 {
+    #[trace_instrument(skip(self, txn))]
     async fn create(
         &self,
         txn: &mut Txn,
@@ -81,6 +82,7 @@ where
         })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn refresh(
         &self,
         txn: &mut Txn,
@@ -141,6 +143,7 @@ where
         })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete(&self, txn: &mut Txn, session_id: SessionId) -> anyhow::Result<bool> {
         if let Some(refresh_token_hash) = self
             .session_repo
@@ -160,6 +163,7 @@ where
             .context("Failed to delete session from database")
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn delete_by_user(&self, txn: &mut Txn, user_id: UserId) -> anyhow::Result<()> {
         self.auth
             .invalidate_access_tokens(txn, user_id)

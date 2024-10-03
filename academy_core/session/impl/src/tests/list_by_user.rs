@@ -33,7 +33,7 @@ async fn ok_self() {
     };
 
     // Act
-    let result = sut.list_by_user("token", UserIdOrSelf::Slf).await;
+    let result = sut.list_by_user(&"token".into(), UserIdOrSelf::Slf).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -61,7 +61,7 @@ async fn ok_admin() {
 
     // Act
     let result = sut
-        .list_by_user("token", UserIdOrSelf::UserId(FOO.user.id))
+        .list_by_user(&"token".into(), UserIdOrSelf::UserId(FOO.user.id))
         .await;
 
     // Assert
@@ -79,7 +79,7 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .list_by_user("token", UserIdOrSelf::UserId(FOO.user.id))
+        .list_by_user(&"token".into(), UserIdOrSelf::UserId(FOO.user.id))
         .await;
 
     // Assert
@@ -102,7 +102,7 @@ async fn unauthorized() {
 
     // Act
     let result = sut
-        .list_by_user("token", UserIdOrSelf::UserId(FOO.user.id))
+        .list_by_user(&"token".into(), UserIdOrSelf::UserId(FOO.user.id))
         .await;
 
     // Assert

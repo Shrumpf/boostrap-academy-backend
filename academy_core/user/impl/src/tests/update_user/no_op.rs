@@ -27,7 +27,7 @@ async fn no_op_self() {
 
     // Act
     let result = sut
-        .update_user("token", UserIdOrSelf::Slf, Default::default())
+        .update_user(&"token".into(), UserIdOrSelf::Slf, Default::default())
         .await;
 
     // Assert
@@ -53,7 +53,7 @@ async fn no_op_admin() {
 
     // Act
     let result = sut
-        .update_user("token", FOO.user.id.into(), Default::default())
+        .update_user(&"token".into(), FOO.user.id.into(), Default::default())
         .await;
 
     // Assert

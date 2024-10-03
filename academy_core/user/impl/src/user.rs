@@ -6,6 +6,7 @@ use academy_di::Build;
 use academy_models::user::{User, UserComposite, UserDetails, UserInvoiceInfo, UserProfile};
 use academy_persistence_contracts::user::{UserRepoError, UserRepository};
 use academy_shared_contracts::{id::IdService, password::PasswordService, time::TimeService};
+use academy_utils::trace_instrument;
 use anyhow::{anyhow, Context};
 
 #[derive(Debug, Clone, Copy, Build, Default)]
@@ -27,6 +28,7 @@ where
     UserRepo: UserRepository<Txn>,
     OAuth2Link: OAuth2LinkService<Txn>,
 {
+    #[trace_instrument(skip(self, txn))]
     async fn list(&self, txn: &mut Txn, query: UserListQuery) -> anyhow::Result<UserListResult> {
         let total = self
             .user_repo
@@ -46,6 +48,7 @@ where
         })
     }
 
+    #[trace_instrument(skip(self, txn))]
     async fn create(
         &self,
         txn: &mut Txn,
@@ -63,7 +66,7 @@ where
         let password_hash = match password {
             Some(password) => Some(
                 self.password
-                    .hash(password.into_inner())
+                    .hash(password.into_inner().into())
                     .await
                     .context("Failed to hash password")?,
             ),

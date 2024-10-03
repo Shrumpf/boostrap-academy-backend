@@ -39,7 +39,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.refresh_session("refresh token").await;
+    let result = sut.refresh_session(&"refresh token".into()).await;
 
     // Assert
     assert_eq!(result.unwrap(), expected);
@@ -62,7 +62,7 @@ async fn invalid_token() {
     };
 
     // Act
-    let result = sut.refresh_session("refresh token").await;
+    let result = sut.refresh_session(&"refresh token".into()).await;
 
     // Assert
     assert_matches!(result, Err(SessionRefreshError::InvalidRefreshToken));
@@ -88,7 +88,7 @@ async fn expired() {
     };
 
     // Act
-    let result = sut.refresh_session("refresh token").await;
+    let result = sut.refresh_session(&"refresh token".into()).await;
 
     // Assert
     assert_matches!(result, Err(SessionRefreshError::InvalidRefreshToken));
@@ -115,7 +115,7 @@ async fn not_found() {
     };
 
     // Act
-    let result = sut.refresh_session("refresh token").await;
+    let result = sut.refresh_session(&"refresh token".into()).await;
 
     // Assert
     assert_matches!(result, Err(SessionRefreshError::InvalidRefreshToken));

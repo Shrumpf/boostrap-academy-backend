@@ -1,8 +1,10 @@
 use std::future::Future;
 
-use academy_models::oauth2::{OAuth2AuthorizationCode, OAuth2Provider, OAuth2UserInfo};
+use academy_models::{
+    oauth2::{OAuth2AuthorizationCode, OAuth2Provider, OAuth2UserInfo},
+    url::Url,
+};
 use thiserror::Error;
-use url::Url;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
 pub trait OAuth2ApiService: Send + Sync + 'static {

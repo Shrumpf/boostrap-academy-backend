@@ -23,16 +23,7 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().with_filter(EnvFilter::from_default_env()))
-        .with(
-            sentry::integrations::tracing::layer().event_filter(|meta| match *meta.level() {
-                Level::ERROR => EventFilter::Exception,
-                Level::WARN => EventFilter::Event,
-                Level::INFO | Level::DEBUG | Level::TRACE => EventFilter::Breadcrumb,
-            }),
-        )
-        .init();
+    init_tracing();
 
     let config = academy_config::load().context("Failed to load config")?;
 
@@ -117,6 +108,24 @@ enum Command {
         #[clap(value_enum)]
         shell: Shell,
     },
+}
+
+fn init_tracing() {
+    let fmt_layer = tracing_subscriber::fmt::layer().with_writer(std::io::stderr);
+
+    #[cfg(tracing_pretty)]
+    let fmt_layer = fmt_layer.pretty();
+
+    tracing_subscriber::registry()
+        .with(fmt_layer.with_filter(EnvFilter::from_default_env()))
+        .with(
+            sentry::integrations::tracing::layer().event_filter(|meta| match *meta.level() {
+                Level::ERROR => EventFilter::Exception,
+                Level::WARN => EventFilter::Event,
+                Level::INFO | Level::DEBUG | Level::TRACE => EventFilter::Breadcrumb,
+            }),
+        )
+        .init();
 }
 
 #[cfg(test)]

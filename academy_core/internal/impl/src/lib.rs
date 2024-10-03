@@ -4,10 +4,12 @@ use academy_core_internal_contracts::{
 };
 use academy_di::Build;
 use academy_models::{
+    auth::InternalToken,
     email_address::EmailAddress,
     user::{UserComposite, UserId},
 };
 use academy_persistence_contracts::{user::UserRepository, Database};
+use academy_utils::trace_instrument;
 use anyhow::Context;
 
 #[cfg(test)]
@@ -26,9 +28,10 @@ where
     AuthInternal: AuthInternalService,
     UserRepo: UserRepository<Db::Transaction>,
 {
+    #[trace_instrument(skip(self))]
     async fn get_user(
         &self,
-        token: &str,
+        token: &InternalToken,
         user_id: UserId,
     ) -> Result<UserComposite, InternalGetUserError> {
         self.auth_internal.authenticate(token, "auth")?;
@@ -42,9 +45,10 @@ where
             .ok_or(InternalGetUserError::NotFound)
     }
 
+    #[trace_instrument(skip(self))]
     async fn get_user_by_email(
         &self,
-        token: &str,
+        token: &InternalToken,
         email: EmailAddress,
     ) -> Result<UserComposite, InternalGetUserByEmailError> {
         self.auth_internal.authenticate(token, "auth")?;

@@ -1,5 +1,6 @@
-use std::{convert::Infallible, marker::PhantomData};
+use std::convert::Infallible;
 
+use academy_models::auth::{AccessToken, InternalToken};
 use aide::{gen::GenContext, openapi::Operation, OperationInput};
 use axum::{
     async_trait,
@@ -8,25 +9,24 @@ use axum::{
 };
 
 /// Extract Bearer API tokens from the Authorization header
-pub struct ApiToken<T: ApiTokenType = UserApiToken>(pub String, PhantomData<T>);
+pub struct ApiToken<T: ApiTokenType = AccessToken>(pub T);
 
-pub trait ApiTokenType: private::Sealed {
+pub trait ApiTokenType: for<'a> From<&'a str> + private::Sealed {
     const NAME: &str;
 }
-pub struct UserApiToken;
-pub struct InternalApiToken;
-impl ApiTokenType for UserApiToken {
+
+impl ApiTokenType for AccessToken {
     const NAME: &str = "Token";
 }
-impl ApiTokenType for InternalApiToken {
+impl ApiTokenType for InternalToken {
     const NAME: &str = "InternalToken";
 }
 
 mod private {
     use super::*;
     pub trait Sealed {}
-    impl Sealed for UserApiToken {}
-    impl Sealed for InternalApiToken {}
+    impl Sealed for AccessToken {}
+    impl Sealed for InternalToken {}
 }
 
 #[async_trait]
@@ -39,9 +39,9 @@ impl<S: Send + Sync, T: ApiTokenType> FromRequestParts<S> for ApiToken<T> {
                 .headers
                 .get(AUTHORIZATION)
                 .and_then(|x| x.to_str().ok())
-                .map(|x| x.strip_prefix("Bearer ").unwrap_or(x).into())
-                .unwrap_or_default(),
-            Default::default(),
+                .map(|x| x.strip_prefix("Bearer ").unwrap_or(x))
+                .unwrap_or_default()
+                .into(),
         ))
     }
 }

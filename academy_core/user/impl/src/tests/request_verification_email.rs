@@ -47,7 +47,7 @@ async fn ok_self() {
 
     // Act
     let result = sut
-        .request_verification_email("token", UserIdOrSelf::Slf)
+        .request_verification_email(&"token".into(), UserIdOrSelf::Slf)
         .await;
 
     // Assert
@@ -86,7 +86,7 @@ async fn ok_admin() {
 
     // Act
     let result = sut
-        .request_verification_email("token", FOO.user.id.into())
+        .request_verification_email(&"token".into(), FOO.user.id.into())
         .await;
 
     // Assert
@@ -105,7 +105,7 @@ async fn unauthenticated() {
 
     // Act
     let result = sut
-        .request_verification_email("token", FOO.user.id.into())
+        .request_verification_email(&"token".into(), FOO.user.id.into())
         .await;
 
     // Assert
@@ -129,7 +129,7 @@ async fn unauthorized() {
 
     // Act
     let result = sut
-        .request_verification_email("token", FOO.user.id.into())
+        .request_verification_email(&"token".into(), FOO.user.id.into())
         .await;
 
     // Assert
@@ -160,7 +160,7 @@ async fn not_found() {
 
     // Act
     let result = sut
-        .request_verification_email("token", FOO.user.id.into())
+        .request_verification_email(&"token".into(), FOO.user.id.into())
         .await;
 
     // Assert
@@ -185,7 +185,7 @@ async fn already_verified() {
 
     // Act
     let result = sut
-        .request_verification_email("token", UserIdOrSelf::Slf)
+        .request_verification_email(&"token".into(), UserIdOrSelf::Slf)
         .await;
 
     // Assert
@@ -213,7 +213,7 @@ async fn no_email() {
 
     // Act
     let result = sut
-        .request_verification_email("token", UserIdOrSelf::Slf)
+        .request_verification_email(&"token".into(), UserIdOrSelf::Slf)
         .await;
 
     // Assert

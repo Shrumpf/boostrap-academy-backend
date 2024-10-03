@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use academy_models::{
-    auth::{AuthError, Login},
+    auth::{AccessToken, AuthError, Login},
     oauth2::{
         OAuth2Link, OAuth2LinkId, OAuth2Login, OAuth2ProviderSummary, OAuth2RegistrationToken,
     },
@@ -23,7 +23,7 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn list_links(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
     ) -> impl Future<Output = Result<Vec<OAuth2Link>, OAuth2ListLinksError>> + Send;
 
@@ -32,7 +32,7 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn create_link(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         login: OAuth2Login,
     ) -> impl Future<Output = Result<OAuth2Link, OAuth2CreateLinkError>> + Send;
@@ -42,7 +42,7 @@ pub trait OAuth2FeatureService: Send + Sync + 'static {
     /// Requires admin privileges if not used on the authenticated user.
     fn delete_link(
         &self,
-        token: &str,
+        token: &AccessToken,
         user_id: UserIdOrSelf,
         link_id: OAuth2LinkId,
     ) -> impl Future<Output = Result<(), OAuth2DeleteLinkError>> + Send;

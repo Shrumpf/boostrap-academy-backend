@@ -24,7 +24,7 @@ async fn ok() {
     };
 
     // Act
-    let result = sut.get_current_session("token").await;
+    let result = sut.get_current_session(&"token".into()).await;
 
     // Assert
     assert_eq!(result.unwrap(), *FOO_1);
@@ -41,7 +41,7 @@ async fn unauthenticated() {
     };
 
     // Act
-    let result = sut.get_current_session("token").await;
+    let result = sut.get_current_session(&"token".into()).await;
 
     // Assert
     assert_matches!(
