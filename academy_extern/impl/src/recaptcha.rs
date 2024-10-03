@@ -16,7 +16,7 @@ const SITEVERIFY_ENDPOINT: &str = "https://www.google.com/recaptcha/api/siteveri
 #[derive(Debug, Clone, Build)]
 pub struct RecaptchaApiServiceImpl {
     config: RecaptchaApiServiceConfig,
-    #[state]
+    #[di(default)]
     client: HttpClient,
 }
 

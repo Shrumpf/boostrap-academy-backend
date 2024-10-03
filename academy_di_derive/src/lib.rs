@@ -1,8 +1,17 @@
+use std::collections::HashMap;
+
+use darling::{util::Flag, FromField};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Field};
 
-#[proc_macro_derive(Build, attributes(state))]
+#[derive(Debug, FromField)]
+#[darling(attributes(di))]
+struct FieldArgs {
+    default: Flag,
+}
+
+#[proc_macro_derive(Build, attributes(di))]
 pub fn derive_build(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -18,27 +27,30 @@ pub fn derive_build(input: TokenStream) -> TokenStream {
         return quote! { ::core::compile_error!("Build can only be derived for structs"); }.into();
     };
 
-    fn is_state(field: &Field) -> bool {
-        field
-            .attrs
-            .iter()
-            .any(|x| x.path().get_ident().is_some_and(|x| x == "state"))
-    }
+    let field_args = match data
+        .fields
+        .iter()
+        .map(|f| FieldArgs::from_field(f).map(|args| (f, args)))
+        .collect::<Result<HashMap<_, _>, _>>()
+    {
+        Ok(args) => args,
+        Err(err) => return err.write_errors().into(),
+    };
 
     let bounds = data
         .fields
         .iter()
-        .filter(|x| !is_state(x))
+        .filter(|x| !field_args[x].default.is_present())
         .map(|Field { ty, .. }| quote! { #ty: ::academy_di::Build<__Provider> })
         .collect::<Vec<_>>();
 
-    let build_expr = match data.fields {
+    let build_expr = match &data.fields {
         syn::Fields::Named(fields) => {
             let fields = fields
                 .named
                 .iter()
                 .map(|f @ Field { ident, .. }| {
-                    if is_state(f) {
+                    if field_args[f].default.is_present() {
                         quote! { #ident: ::core::default::Default::default() }
                     } else {
                         quote! { #ident: ::academy_di::Build::build(provider) }
@@ -52,7 +64,7 @@ pub fn derive_build(input: TokenStream) -> TokenStream {
                 .unnamed
                 .iter()
                 .map(|f| {
-                    if is_state(f) {
+                    if field_args[f].default.is_present() {
                         quote! { ::core::default::Default::default() }
                     } else {
                         quote! { ::academy_di::Build::build(provider) }

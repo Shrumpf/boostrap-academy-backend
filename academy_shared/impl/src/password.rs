@@ -10,7 +10,7 @@ use argon2::{
 
 #[derive(Debug, Clone, Default, Build)]
 pub struct PasswordServiceImpl {
-    #[state]
+    #[di(default)]
     argon2: Arc<Argon2<'static>>,
 }
 

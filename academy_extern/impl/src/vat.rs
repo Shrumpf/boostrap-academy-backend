@@ -16,7 +16,7 @@ const VALIDATE_ENDPOINT: &str = "https://ec.europa.eu/taxation_customs/vies/rest
 #[derive(Debug, Clone, Build)]
 pub struct VatApiServiceImpl {
     config: VatApiServiceConfig,
-    #[state]
+    #[di(default)]
     http: HttpClient,
 }
 

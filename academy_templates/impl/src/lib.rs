@@ -7,7 +7,7 @@ use tera::Tera;
 
 #[derive(Debug, Clone, Build)]
 pub struct TemplateServiceImpl {
-    #[state]
+    #[di(default)]
     state: State,
 }
 

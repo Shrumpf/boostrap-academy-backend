@@ -15,7 +15,7 @@ use crate::http::{HttpClient, USER_AGENT};
 
 #[derive(Debug, Clone, Build, Default)]
 pub struct OAuth2ApiServiceImpl {
-    #[state]
+    #[di(default)]
     http: HttpClient,
 }
 

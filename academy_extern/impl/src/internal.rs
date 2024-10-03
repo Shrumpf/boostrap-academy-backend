@@ -10,7 +10,7 @@ use crate::http::HttpClient;
 pub struct InternalApiServiceImpl<AuthInternal> {
     auth_internal: AuthInternal,
     config: InternalApiServiceConfig,
-    #[state]
+    #[di(default)]
     http: HttpClient,
 }
 

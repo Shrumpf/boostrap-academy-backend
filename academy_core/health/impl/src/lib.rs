@@ -17,7 +17,7 @@ pub struct HealthFeatureServiceImpl<Time, Db, Cache, Email> {
     cache: Cache,
     email: Email,
     config: HealthFeatureConfig,
-    #[state]
+    #[di(default)]
     state: Arc<State>,
 }
 
