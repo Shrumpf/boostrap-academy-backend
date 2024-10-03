@@ -5,8 +5,7 @@ mod macros;
 mod typemap;
 
 pub trait Provider: Sized {
-    fn get<T: 'static + Clone>(&self) -> Option<T>;
-    fn insert<T: 'static>(&mut self, value: T);
+    fn cache(&mut self) -> &mut TypeMap;
 }
 
 #[diagnostic::on_unimplemented(

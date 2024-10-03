@@ -12,11 +12,8 @@ macro_rules! provider {
         }
 
         impl $crate::Provider for $ident {
-            fn get<T: 'static + Clone>(&self) -> Option<T> {
-                self._cache.get().cloned()
-            }
-            fn insert<T: 'static>(&mut self, value: T) {
-                self._cache.insert(value)
+            fn cache(&mut self) -> &mut $crate::TypeMap {
+                &mut self._cache
             }
         }
 

@@ -84,10 +84,12 @@ pub fn derive_build(input: TokenStream) -> TokenStream {
             #(#bounds),*
         {
             fn build(provider: &mut __Provider) -> Self {
-                if let ::core::option::Option::Some(cached) = ::academy_di::Provider::get(provider) {
+                if let ::core::option::Option::Some(cached) = provider.cache().get().cloned() {
                     cached
                 } else {
-                    #build_expr
+                    let value = #build_expr;
+                    provider.cache().insert(::core::clone::Clone::clone(&value));
+                    value
                 }
             }
         }
