@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-smtp4dev.url = "github:Defelo/nixpkgs/smtp4dev";
     fenix.url = "github:nix-community/fenix";
     crate2nix.url = "github:nix-community/crate2nix";
     devenv = {
@@ -13,7 +12,6 @@
   outputs = {
     self,
     nixpkgs,
-    nixpkgs-smtp4dev,
     fenix,
     crate2nix,
     devenv,
@@ -26,10 +24,7 @@
       "aarch64-linux"
     ];
 
-    overlays = [
-      (final: prev: {inherit (nixpkgs-smtp4dev.legacyPackages.${final.system}) smtp4dev;})
-    ];
-    importNixpkgs = system: import nixpkgs {inherit system overlays;};
+    importNixpkgs = system: import nixpkgs {inherit system;};
   in {
     packages = eachDefaultSystem (system: let
       pkgs = importNixpkgs system;
