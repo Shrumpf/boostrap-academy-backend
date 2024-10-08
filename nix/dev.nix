@@ -68,7 +68,7 @@
     ACADEMY_CONFIG = "${config.devenv.root}/config.dev.toml";
   };
 
-  process.implementation = "hivemind";
+  process.manager.implementation = "hivemind";
 
   scripts = {
     devenv-reset.exec = ''
