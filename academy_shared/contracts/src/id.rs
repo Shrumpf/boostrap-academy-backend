@@ -11,7 +11,7 @@ pub trait IdService: Send + Sync + 'static {
 #[cfg(feature = "mock")]
 impl MockIdService {
     pub fn with_generate<I: From<Uuid> + Debug + Send + 'static>(mut self, id: I) -> Self {
-        self.expect_generate().once().return_once(|| id);
+        self.expect_generate().once().with().return_once(|| id);
         self
     }
 }

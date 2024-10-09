@@ -25,6 +25,7 @@ use axum::{
 };
 use extractors::auth::ApiTokenType;
 use tokio::net::TcpListener;
+use tracing::{debug, info};
 
 mod docs;
 mod errors;
@@ -135,6 +136,13 @@ where
         let listener = TcpListener::bind(addr)
             .await
             .with_context(|| format!("Failed to bind to {addr}"))?;
+
+        let url = format!("http://{}", listener.local_addr()?);
+        info!("Starting REST API server on {url}");
+        debug!("Swagger UI is available on {url}/docs");
+        debug!("Redoc is available on {url}/redoc");
+        debug!("OpenAPI spec is available on {url}/openapi.json");
+
         axum::serve(listener, router)
             .await
             .context("Failed to start HTTP server")

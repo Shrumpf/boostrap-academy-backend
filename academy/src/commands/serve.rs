@@ -3,7 +3,7 @@ use academy_config::Config;
 use academy_di::Provide;
 use academy_email_contracts::EmailService;
 use academy_persistence_contracts::Database;
-use tracing::{debug, info};
+use tracing::info;
 
 use crate::{
     cache, database, email,
@@ -37,12 +37,5 @@ pub async fn serve(config: Config) -> anyhow::Result<()> {
     let mut provider = Provider::new(config_provider, database, cache, email);
 
     let server: RestServer = provider.provide();
-
-    let url = format!("http://{}", config.http.address);
-    info!("Starting REST API server on {url}");
-    debug!("Swagger UI is available on {url}/docs");
-    debug!("Redoc is available on {url}/redoc");
-    debug!("OpenAPI spec is available on {url}/openapi.json");
-
     server.serve().await
 }
