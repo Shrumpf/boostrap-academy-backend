@@ -37,7 +37,7 @@
 
     services.academy.backend = {
       enable = true;
-      logLevel = "debug,academy=trace";
+      logLevel = "info,academy=debug";
       extraConfigFiles = ["/run/academy-backend/secrets.toml"];
       settings = {
         http.address = "127.0.0.1:8000";

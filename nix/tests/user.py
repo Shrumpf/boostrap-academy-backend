@@ -25,7 +25,9 @@ assert resp.status_code == 412
 assert resp.json() == {"detail": "Recaptcha failed"}
 
 ## success
+start = time.time() - 1
 resp = c.post("/auth/users", json={**req, "recaptcha_response": "success-0.7"})
+end = time.time() + 1
 assert resp.status_code == 200
 login = resp.json()
 assert login == {
@@ -66,9 +68,9 @@ assert login == {
     "access_token": login["access_token"],
     "refresh_token": login["refresh_token"],
 }
-assert abs(time.time() - login["user"]["registration"]) < 2
-assert abs(time.time() - login["user"]["last_login"]) < 2
-assert abs(time.time() - login["session"]["last_update"]) < 2
+assert start <= login["user"]["registration"] <= end
+assert start <= login["user"]["last_login"] <= end
+assert start <= login["session"]["last_update"] <= end
 
 resp = c.post(
     "/auth/users",
@@ -202,12 +204,14 @@ assert c.get("/auth/users/me").json() == user
 assert c.get(f"http://127.0.0.1:8004/shop/_internal/coins/{user['id']}/withheld").json() == 2
 
 ## name
+start = time.time() - 1
 resp = c.patch("/auth/users/me", json={"name": "test"})
+end = time.time() + 1
 assert resp.status_code == 200
 resp = resp.json()
 user["name"] = "test"
 user["last_name_change"] = resp["last_name_change"]
-assert abs(time.time() - resp["last_name_change"]) < 2
+assert start <= resp["last_name_change"] <= end
 assert resp == user
 assert c.get("/auth/users/me").json() == user
 
@@ -238,13 +242,15 @@ assert resp.status_code == 401
 assert resp.json() == {"detail": "Invalid credentials"}
 
 password = new_password
+start = time.time() - 1
 resp = c.post("/auth/sessions", json={"name_or_email": user["name"], "password": password})
+end = time.time() + 1
 assert resp.status_code == 200
 login = resp.json()
 save_auth(login)
 
 user["last_login"] = login["user"]["last_login"]
-assert abs(time.time() - user["last_login"]) < 2
+assert start <= user["last_login"] <= end
 assert login["user"] == user
 
 ## newsletter
@@ -324,13 +330,15 @@ resp = c.put("/auth/password_reset", json={"email": user["email"], "code": code[
 assert resp.status_code == 200
 assert resp.json() == user
 
+start = time.time() - 1
 resp = c.post("/auth/sessions", json={"name_or_email": user["name"], "password": password})
+end = time.time() + 1
 assert resp.status_code == 200
 login = resp.json()
 save_auth(login)
 
 user["last_login"] = login["user"]["last_login"]
-assert abs(time.time() - user["last_login"]) < 2
+assert start <= user["last_login"] <= end
 assert login["user"] == user
 
 # delete self

@@ -57,7 +57,7 @@ def discard_auth(client=None):
 
 
 def make_client():
-    return httpx.Client(base_url="http://127.0.0.1:8000")
+    return httpx.Client(base_url="http://127.0.0.1:8000", timeout=httpx.Timeout(60))
 
 
 def create_account(name, email, password, client=None):
