@@ -57,8 +57,14 @@
   '';
 
   env = {
-    RUST_LOG = "info,academy=trace";
-    RUST_LOG_PRETTY = "1";
+    ACADEMY_DEVENV = "1";
+
+    RUST_LOG = let
+      log = builtins.getEnv "RUST_LOG";
+    in
+      if log != ""
+      then log
+      else "info,academy=trace";
 
     PGDATABASE = "academy";
 

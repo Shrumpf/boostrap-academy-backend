@@ -4,12 +4,28 @@ The official backend of [Bootstrap Academy](https://bootstrap.academy/).
 If you would like to submit a bug report or feature request, or are looking for general information about the project or the publicly available instances, please refer to the [Bootstrap-Academy repository](https://github.com/Bootstrap-Academy/Bootstrap-Academy).
 
 ## Development Setup
-1. Install [Nix](https://nixos.org/) with [flakes](https://wiki.nixos.org/wiki/Flakes) enabled. If you are on NixOS, just ensure that flakes are enabled. If you are using a different Linux distribution or OS, we recommend using the [Determinate Nix Installer](https://github.com/DeterminateSystems/nix-installer?tab=readme-ov-file#the-determinate-nix-installer). Also make sure to add your user to the [`trusted-users`](https://nix.dev/manual/nix/2.19/command-ref/conf-file#conf-trusted-users) option in `/etc/nix/nix.conf` (run `sudo systemctl restart nix-daemon` after changing this file).
-2. [Install direnv](https://github.com/direnv/direnv/blob/master/docs/installation.md) (optional, but recommended). To install it via Nix, run the command `nix profile install nixpkgs#direnv`. Don't forget to install the shell hook (e.g. for bash run `echo 'eval "$(direnv hook bash)"' >> ~/.bashrc`).
-3. Clone this repository and `cd` into it.
-4. If you installed direnv, run `direnv allow` to automatically load the development environment when entering this repository. Otherwise you need to run `nix develop --no-pure-eval` manually each time to enter the development shell.
-5. Run `devenv up` to start a local Postgres database, Valkey cache, SMTP server and some other services needed for testing.
-6. In a new terminal, you can now run `cargo run -- serve`. By default, the Swagger UI documentation is now available on http://127.0.0.1:8000/docs
+1. Install [Nix](https://nixos.org/) with [flakes](https://wiki.nixos.org/wiki/Flakes) enabled:
+    - If you are on NixOS, just ensure that flakes are enabled by setting `nix.settings.experimental-features = ["nix-command" "flakes"];` in `configuration.nix`.
+    - If you are using a different Linux distribution or OS, we recommend using the [Determinate Nix Installer](https://github.com/DeterminateSystems/nix-installer?tab=readme-ov-file#the-determinate-nix-installer).
+2. Add your user to the [`trusted-users`](https://nix.dev/manual/nix/2.19/command-ref/conf-file#conf-trusted-users) Nix option (replace `YOUR_USERNAME` with the actual name of the user account you use for development):
+    - If you are on NixOS, set `nix.settings.trusted-users = ["root" "YOUR_USERNAME"];` in `configuration.nix`.
+    - If you are using a different Linux distribution or OS, add the line `trusted-users = root YOUR_USERNAME` to `/etc/nix/nix.conf` and run `sudo systemctl restart nix-daemon`.
+3. [Install direnv](https://github.com/direnv/direnv/blob/master/docs/installation.md) (optional, but strongly recommended):
+    - If you are on NixOS, set `programs.direnv.enable = true;` in `configuration.nix`.
+    - If you are using a different Linux distribution or OS, run the command `nix profile install nixpkgs#direnv`. Don't forget to [install the shell hook](https://github.com/direnv/direnv/blob/master/docs/hook.md) (e.g. for bash run `echo 'eval "$(direnv hook bash)"' >> ~/.bashrc`).
+4. Clone this repository and `cd` into it.
+5. If you installed direnv, run `direnv allow` to automatically load the development environment when entering this repository. Otherwise you need to run `nix develop --no-pure-eval` manually each time to enter the development shell.
+6. Run `devenv up` to start a local Postgres database, Valkey cache, SMTP server and some other services needed by the backend.
+7. In a different terminal, you can now run `cargo run -- serve`. By default, the Swagger UI documentation is now available on http://127.0.0.1:8000/docs
+
+### Environment Variables
+You can set the following additional environment variables to customize the development environment.
+If you use direnv, create a file with the name `.env` in the repository root with `NAME=VALUE` pairs on each line.
+Otherwise you need to set these variables manually.
+
+- `DEVENV_RUST`: Set to `0` if you already have a Rust toolchain installed which you would like to use instead of the one provided by devenv.
+- `RUST_LOG`: Set the tracing filter (log level). See the [`tracing-subscriber` docs](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives) for details.
+- `RUST_LOG_PRETTY`: Set to `0` to use the single-line instead of the multi-line log format.
 
 ### VSCode Setup
 For development in [VSCode](https://code.visualstudio.com/)/[VSCodium](https://vscodium.com/), simply open this repository, install the recommended extensions and confirm restarting the extensions after direnv successfully initialized.
