@@ -23,8 +23,8 @@ jobs:
           name: academy-backend
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           useDaemon: false
-      - run: nix build -L
-      - run: nix build -L .#testing
-      - run: nix build -L .#devShell --no-pure-eval
-      - run: nix build -L .#devenv-up --no-pure-eval
-      - run: nix build -L .#tests.composite
+      - run: nix build -L --keep-going
+      - run: nix build -L --keep-going .#testing
+      - run: nix build -L --keep-going .#devShell --no-pure-eval
+      - run: nix build -L --keep-going .#devenv-up --no-pure-eval
+      - run: nix build -L --keep-going .#tests.composite

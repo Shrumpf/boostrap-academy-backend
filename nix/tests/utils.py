@@ -12,8 +12,8 @@ def fetch_mail() -> Message:
     t = time.time()
     p = Path("/var/mail/root/new")
     mail = None
-    while (not p.is_dir() or not ((mail := next(p.iterdir(), None)))) and time.time() - t < 5:
-        time.sleep(0.1)
+    while (not p.is_dir() or not ((mail := next(p.iterdir(), None)))) and time.time() - t < 20:
+        time.sleep(1)
     assert mail, "No email received"
     msg = email.message_from_bytes(mail.read_bytes())
     mail.unlink()

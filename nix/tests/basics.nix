@@ -12,7 +12,6 @@ testers.runNixOSTest {
 
   testScript = ''
     import json
-    import time
 
     machine.start()
     machine.succeed("academy --version")
@@ -38,7 +37,7 @@ testers.runNixOSTest {
     ]}, "some migrations are missing or have not been applied"
 
     machine.succeed("academy email test root@localhost")
-    time.sleep(1)
+    machine.wait_until_succeeds("test -e /var/mail/root/new/*", 20)
     machine.succeed("grep 'Email deliverability seems to be working!' /var/mail/root/new/*")
 
     status = json.loads(machine.succeed("curl -s http://127.0.0.1:8000/health"))
