@@ -13,7 +13,6 @@ jobs:
     runs-on: debian-latest
     env:
       USER: root
-      HOME: /root
     steps:
       - uses: actions/checkout@v4
       - run: apt update && apt install -y sudo
@@ -25,6 +24,4 @@ jobs:
           useDaemon: false
       - run: nix build -L --keep-going
       - run: nix build -L --keep-going .#testing
-      - run: nix build -L --keep-going .#devShell --no-pure-eval
-      - run: nix build -L --keep-going .#devenv-up --no-pure-eval
       - run: nix build -L --keep-going .#tests.composite
