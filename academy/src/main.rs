@@ -122,7 +122,8 @@ fn init_tracing() {
             sentry::integrations::tracing::layer().event_filter(|meta| match *meta.level() {
                 Level::ERROR => EventFilter::Exception,
                 Level::WARN => EventFilter::Event,
-                Level::INFO | Level::DEBUG | Level::TRACE => EventFilter::Breadcrumb,
+                Level::INFO | Level::DEBUG => EventFilter::Breadcrumb,
+                Level::TRACE => EventFilter::Ignore,
             }),
         )
         .init();
