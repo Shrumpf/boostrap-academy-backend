@@ -1,25 +1,28 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
   "extends": ["config:recommended"],
+
+  "addLabels": ["renovate"],
+
   "rangeStrategy": "bump",
+
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true
   },
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true
-    }, {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "matchManagers": ["cargo"],
-      "groupName": "rust minor"
-    }
-  ],
-  "platformAutomerge": true,
-  "automergeStrategy": "fast-forward",
   "nix": {
     "enabled": true
   },
-  "addLabels": ["renovate"]
+
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": ["cargo"],
+      "groupName": "rust minor/patch",
+      "automerge": true
+    }
+  ],
+
+  "platformAutomerge": true
 }
