@@ -154,7 +154,7 @@
       '';
     };
 
-  mkNixosTest = name: callPackage ./${name} {inherit defaultModule;};
+  mkNixosTest = name: callPackage ./${name} {inherit defaultModule self;};
 
   composite = linkFarm "academy-tests-composite" (builtins.mapAttrs (_: toString) tests);
 in

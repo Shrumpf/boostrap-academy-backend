@@ -29,7 +29,7 @@
     packages = eachDefaultSystem (system: let
       pkgs = importNixpkgs system;
     in
-      (pkgs.callPackages ./nix/packages.nix {inherit crate2nix fenix;})
+      (pkgs.callPackages ./nix/packages.nix {inherit crate2nix fenix self;})
       // {
         tests = pkgs.callPackages ./nix/tests {inherit self;};
         devShell = self.devShells.${system}.default;

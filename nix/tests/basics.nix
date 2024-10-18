@@ -2,6 +2,8 @@
   lib,
   testers,
   defaultModule,
+  self,
+  system,
 }:
 testers.runNixOSTest {
   name = "academy-basics";
@@ -49,7 +51,7 @@ testers.runNixOSTest {
 
     openapi = json.loads(machine.succeed("curl -s http://127.0.0.1:8000/openapi.json"))
     assert openapi["info"]["title"] == "Bootstrap Academy Backend"
-    assert openapi["info"]["version"] == "${lib.pipe ../../Cargo.toml [builtins.readFile fromTOML (lib.getAttrFromPath ["workspace" "package" "version"])]}"
+    assert openapi["info"]["version"] == "${self.packages.${system}.default.version}"
     assert "https://github.com/Bootstrap-Academy" in openapi["info"]["description"]
 
     machine.succeed("academy admin user create --admin --verified admin admin@example.com supersecureadminpassword")

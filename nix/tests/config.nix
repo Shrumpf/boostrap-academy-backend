@@ -1,6 +1,7 @@
 {
   testers,
   defaultModule,
+  ...
 }:
 testers.runNixOSTest {
   name = "academy-config";
