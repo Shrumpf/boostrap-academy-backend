@@ -37,6 +37,7 @@
 
     services.academy.backend = {
       enable = true;
+      package = self.packages.${system}.default.unwrapped;
       logLevel = "info,academy=debug";
       extraConfigFiles = ["/run/academy-backend/secrets.toml"];
       settings = {
@@ -90,7 +91,7 @@
       wantedBy = ["academy-backend.service"];
       before = ["academy-backend.service"];
       script = ''
-        ${self.packages.${system}.testing}/bin/academy-testing recaptcha
+        ${self.packages.${system}.testing.unwrapped}/bin/academy-testing recaptcha
       '';
     };
 
@@ -98,7 +99,7 @@
       wantedBy = ["academy-backend.service"];
       before = ["academy-backend.service"];
       script = ''
-        ${self.packages.${system}.testing}/bin/academy-testing oauth2
+        ${self.packages.${system}.testing.unwrapped}/bin/academy-testing oauth2
       '';
     };
 
@@ -106,7 +107,7 @@
       wantedBy = ["academy-backend.service"];
       before = ["academy-backend.service"];
       script = ''
-        ${self.packages.${system}.testing}/bin/academy-testing vat
+        ${self.packages.${system}.testing.unwrapped}/bin/academy-testing vat
       '';
     };
 
@@ -114,7 +115,7 @@
       wantedBy = ["academy-backend.service"];
       before = ["academy-backend.service"];
       script = ''
-        ${self.packages.${system}.testing}/bin/academy-testing internal
+        ${self.packages.${system}.testing.unwrapped}/bin/academy-testing internal
       '';
     };
 
@@ -154,7 +155,7 @@
       '';
     };
 
-  mkNixosTest = name: callPackage ./${name} {inherit defaultModule self;};
+  mkNixosTest = name: callPackage ./${name} {inherit defaultModule;};
 
   composite = linkFarm "academy-tests-composite" (builtins.mapAttrs (_: toString) tests);
 in

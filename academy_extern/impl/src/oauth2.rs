@@ -122,7 +122,7 @@ async fn http_client(
 ) -> Result<oauth2::HttpResponse, oauth2::reqwest::AsyncHttpClientError> {
     request.headers.insert(
         oauth2::http::header::USER_AGENT,
-        oauth2::http::HeaderValue::from_static(USER_AGENT),
+        oauth2::http::HeaderValue::from_static(&USER_AGENT),
     );
     oauth2::reqwest::async_http_client(request).await
 }

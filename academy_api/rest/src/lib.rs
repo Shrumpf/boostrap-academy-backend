@@ -13,7 +13,7 @@ use academy_core_session_contracts::SessionFeatureService;
 use academy_core_user_contracts::UserFeatureService;
 use academy_di::Build;
 use academy_models::auth::{AccessToken, InternalToken};
-use academy_utils::Apply;
+use academy_utils::{academy_version, Apply};
 use aide::{
     axum::ApiRouter,
     openapi::{Components, Info, OpenApi, ReferenceOr, SecurityScheme, Tag},
@@ -82,7 +82,7 @@ where
         let mut api = OpenApi {
             info: Info {
                 title: "Bootstrap Academy Backend".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
+                version: academy_version().into(),
                 description: Some(format!("GitHub: [{0}]({0})", env!("CARGO_PKG_REPOSITORY"))),
                 ..Default::default()
             },

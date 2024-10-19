@@ -4,11 +4,15 @@ self: {
   pkgs,
   ...
 }: let
-  package = self.packages.${pkgs.system}.default;
   settingsFormat = pkgs.formats.toml {};
 in {
   options.services.academy.backend = {
     enable = lib.mkEnableOption "Bootstrap Academy Backend";
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = self.packages.${pkgs.system}.default;
+    };
 
     localDatabase = lib.mkOption {
       type = lib.types.bool;
@@ -50,8 +54,8 @@ in {
     ACADEMY_CONFIG = builtins.concatStringsSep ":" (cfg.extraConfigFiles ++ [settings]);
 
     wrapper = pkgs.stdenvNoCC.mkDerivation {
-      inherit (package) pname version;
-      src = package;
+      inherit (cfg.package) pname version;
+      src = cfg.package;
       nativeBuildInputs = [pkgs.makeWrapper];
       installPhase = ''
         cp -r . $out
@@ -83,7 +87,7 @@ in {
             // {
               wantedBy = ["multi-user.target"];
               script = ''
-                ${package}/bin/academy serve
+                ${cfg.package}/bin/academy serve
               '';
             };
         }
@@ -95,7 +99,7 @@ in {
               // {
                 startAt = schedule;
                 script = ''
-                  ${package}/bin/academy task ${task}
+                  ${cfg.package}/bin/academy task ${task}
                 '';
               };
           })

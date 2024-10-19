@@ -8,7 +8,6 @@ use url::Url;
 const _: () = {
     assert!(!env!("CARGO_PKG_HOMEPAGE").is_empty());
     assert!(!env!("CARGO_PKG_REPOSITORY").is_empty());
-    assert!(!env!("CARGO_PKG_VERSION").is_empty());
 };
 
 #[tokio::main]

@@ -2,6 +2,7 @@ use academy::commands::{
     admin::AdminCommand, email::EmailCommand, jwt::JwtCommand, migrate::MigrateCommand,
     serve::serve, tasks::TaskCommand,
 };
+use academy_utils::academy_version;
 use anyhow::Context;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
@@ -31,7 +32,7 @@ async fn main() -> anyhow::Result<()> {
         sentry::init((
             sentry_config.dsn.as_str(),
             sentry::ClientOptions {
-                release: Some(env!("CARGO_PKG_VERSION").into()),
+                release: Some(academy_version().into()),
                 attach_stacktrace: true,
                 ..Default::default()
             },
@@ -55,7 +56,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 #[derive(Debug, Parser)]
-#[command(version)]
+#[command(version = academy_version())]
 struct Cli {
     #[command(subcommand)]
     command: Command,

@@ -2,7 +2,19 @@ mod macros;
 pub mod patch;
 pub mod serde;
 
+use std::sync::LazyLock;
+
 pub use academy_utils_derive::trace_instrument;
+
+static ACADEMY_VERSION: LazyLock<&str> = LazyLock::new(|| {
+    std::env::var("ACADEMY_VERSION")
+        .map(|x| &*x.leak())
+        .unwrap_or("0.0.0-dev")
+});
+
+pub fn academy_version() -> &'static str {
+    &ACADEMY_VERSION
+}
 
 pub trait Apply: Sized {
     /// Apply the function `f` with a mutable reference to `self`.

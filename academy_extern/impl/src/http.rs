@@ -1,19 +1,18 @@
-use std::ops::Deref;
+use std::{ops::Deref, sync::LazyLock};
 
-pub const USER_AGENT: &str = concat!(
-    "Bootstrap Academy Backend (",
-    env!("CARGO_PKG_HOMEPAGE"),
-    ", ",
-    env!("CARGO_PKG_REPOSITORY"),
-    ", Version ",
-    env!("CARGO_PKG_VERSION"),
-    ")"
-);
+use academy_utils::academy_version;
+
+pub static USER_AGENT: LazyLock<String> = LazyLock::new(|| {
+    let homepage = env!("CARGO_PKG_HOMEPAGE");
+    let repository = env!("CARGO_PKG_REPOSITORY");
+    let version = academy_version();
+
+    format!("Bootstrap Academy Backend ({homepage}, {repository}, Version {version})")
+});
 
 const _: () = {
     assert!(!env!("CARGO_PKG_HOMEPAGE").is_empty());
     assert!(!env!("CARGO_PKG_REPOSITORY").is_empty());
-    assert!(!env!("CARGO_PKG_VERSION").is_empty());
 };
 
 #[derive(Debug, Clone)]
@@ -31,7 +30,7 @@ impl Default for HttpClient {
     fn default() -> Self {
         Self(
             reqwest::Client::builder()
-                .user_agent(USER_AGENT)
+                .user_agent(&*USER_AGENT)
                 .build()
                 .unwrap(),
         )

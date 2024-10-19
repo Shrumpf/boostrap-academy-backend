@@ -31,6 +31,7 @@ dependencies = [
  "academy_shared_contracts",
  "academy_shared_impl",
  "academy_templates_impl",
+ "academy_utils",
  "anyhow",
  "base32 0.5.1",
  "bb8",

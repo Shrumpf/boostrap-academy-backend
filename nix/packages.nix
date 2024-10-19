@@ -7,6 +7,8 @@
   pkgs,
   system,
   self,
+  stdenv,
+  makeWrapper,
 }: let
   toolchain = fenix.packages.${system}.stable;
 
@@ -16,6 +18,22 @@
     day = builtins.substring 6 2 self.sourceInfo.lastModifiedDate;
     rev = self.sourceInfo.shortRev or self.sourceInfo.dirtyShortRev;
   in "${year}.${month}.${day}+${rev}";
+
+  setVersion = drv:
+    stdenv.mkDerivation {
+      inherit (drv) pname;
+      inherit version;
+      dontUnpack = true;
+      nativeBuildInputs = [makeWrapper];
+      installPhase = ''
+        cp -a ${drv} $out
+        chmod -R +w $out
+        for bin in $out/bin/*; do
+          wrapProgram $bin --set ACADEMY_VERSION ${lib.escapeShellArg version}
+        done
+      '';
+      passthru.unwrapped = drv;
+    };
 
   crateDirs = lib.pipe ../. [
     builtins.readDir
@@ -45,7 +63,6 @@
   mergeOverrideSets = a: b: a // b // (builtins.mapAttrs (k: _: mergeOverrides a.${k} b.${k}) (lib.intersectAttrs a b));
 
   defaultOverrides = lib.genAttrs workspaceMembers (crate: attrs: {
-    inherit version;
     preBuild = ''
       ${attrs.preBuild or ""}
       export CARGO_PKG_HOMEPAGE=${lib.escapeShellArg cargoToml.workspace.package.homepage}
@@ -92,7 +109,8 @@
     });
     defaultCrateOverrides = mergeOverrideSets pkgs.defaultCrateOverrides crateOverrides;
   };
-in {
-  default = cargoNix.workspaceMembers.academy.build;
-  testing = cargoNix.workspaceMembers.academy_testing.build;
-}
+in
+  builtins.mapAttrs (_: setVersion) {
+    default = cargoNix.workspaceMembers.academy.build;
+    testing = cargoNix.workspaceMembers.academy_testing.build;
+  }
