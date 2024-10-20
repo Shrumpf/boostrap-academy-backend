@@ -12,6 +12,7 @@ permissions:
 jobs:
   unit:
     runs-on: ubuntu-latest
+    if: ${{ !(github.event_name == 'push' && github.actor == 'github-merge-queue[bot]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -23,6 +24,7 @@ jobs:
 
   postgres:
     runs-on: ubuntu-latest
+    if: ${{ !(github.event_name == 'push' && github.actor == 'github-merge-queue[bot]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -46,6 +48,7 @@ jobs:
 
   valkey:
     runs-on: ubuntu-latest
+    if: ${{ !(github.event_name == 'push' && github.actor == 'github-merge-queue[bot]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -65,6 +68,7 @@ jobs:
 
   email:
     runs-on: ubuntu-latest
+    if: ${{ !(github.event_name == 'push' && github.actor == 'github-merge-queue[bot]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -90,6 +94,7 @@ jobs:
 
   extern:
     runs-on: ubuntu-latest
+    if: ${{ !(github.event_name == 'push' && github.actor == 'github-merge-queue[bot]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
