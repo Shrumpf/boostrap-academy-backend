@@ -23,13 +23,12 @@
     stdenv.mkDerivation {
       inherit (drv) pname;
       inherit version;
-      dontUnpack = true;
+      src = drv;
       nativeBuildInputs = [makeWrapper];
       installPhase = ''
-        cp -a ${drv} $out
-        chmod -R +w $out
+        cp -r . $out
         for bin in $out/bin/*; do
-          wrapProgram $bin --set ACADEMY_VERSION ${lib.escapeShellArg version}
+          wrapProgram $bin --argv0 $(basename $bin) --set ACADEMY_VERSION ${lib.escapeShellArg version}
         done
       '';
       passthru.unwrapped = drv;
