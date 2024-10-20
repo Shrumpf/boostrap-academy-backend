@@ -143,7 +143,9 @@ pub struct InternalConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct HealthConfig {
-    pub cache_ttl: Duration,
+    pub database_cache_ttl: Duration,
+    pub cache_cache_ttl: Duration,
+    pub email_cache_ttl: Duration,
 }
 
 #[derive(Debug, Deserialize)]

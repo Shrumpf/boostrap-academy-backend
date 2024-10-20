@@ -49,7 +49,11 @@
           from = "test@bootstrap.academy";
         };
         internal.shop_url = "http://127.0.0.1:8004/shop/";
-        health.cache_ttl = "2s";
+        health = {
+          database_cache_ttl = "2s";
+          cache_cache_ttl = "2s";
+          email_cache_ttl = "2s";
+        };
         contact.email = "contact@academy";
         recaptcha = {
           enable = lib.mkDefault true;

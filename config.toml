@@ -30,7 +30,9 @@ jwt_ttl = "10s"
 # shop_url = ""
 
 [health]
-cache_ttl = "10s"
+database_cache_ttl = "10s"
+cache_cache_ttl = "10s"
+email_cache_ttl = "10s"
 
 [user]
 name_change_rate_limit = "30d"
