@@ -184,7 +184,9 @@ impl ConfigProvider {
         };
 
         let health_feature_config = HealthFeatureConfig {
-            cache_ttl: config.health.cache_ttl.into(),
+            database_cache_ttl: config.health.database_cache_ttl.into(),
+            cache_cache_ttl: config.health.cache_cache_ttl.into(),
+            email_cache_ttl: config.health.email_cache_ttl.into(),
         };
 
         let session_feature_config = SessionFeatureConfig {

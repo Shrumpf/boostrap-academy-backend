@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::{future::Future, sync::Arc, time::Duration};
 
 use academy_cache_contracts::CacheService;
 use academy_core_health_contracts::{HealthFeatureService, HealthStatus};
@@ -24,17 +24,21 @@ pub struct HealthFeatureServiceImpl<Time, Db, Cache, Email> {
 
 #[derive(Debug, Clone)]
 pub struct HealthFeatureConfig {
-    pub cache_ttl: Duration,
+    pub database_cache_ttl: Duration,
+    pub cache_cache_ttl: Duration,
+    pub email_cache_ttl: Duration,
 }
 
 #[derive(Debug, Default)]
 struct State {
-    cache: RwLock<Option<CachedStatus>>,
+    database_cache: RwLock<Option<CachedStatusItem>>,
+    cache_cache: RwLock<Option<CachedStatusItem>>,
+    email_cache: RwLock<Option<CachedStatusItem>>,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct CachedStatus {
-    status: HealthStatus,
+struct CachedStatusItem {
+    status: bool,
     timestamp: DateTime<Utc>,
 }
 
@@ -48,63 +52,98 @@ where
 {
     #[trace_instrument(skip(self))]
     async fn get_status(&self) -> HealthStatus {
+        let database = self.ping_cached(
+            "database",
+            &self.state.database_cache,
+            self.config.database_cache_ttl,
+            || async {
+                self.db
+                    .ping()
+                    .await
+                    .inspect_err(|err| error!("Failed to ping database: {err}"))
+                    .is_ok()
+            },
+        );
+
+        let cache = self.ping_cached(
+            "cache",
+            &self.state.cache_cache,
+            self.config.cache_cache_ttl,
+            || async {
+                self.cache
+                    .ping()
+                    .await
+                    .inspect_err(|err| error!("Failed to ping cache: {err}"))
+                    .is_ok()
+            },
+        );
+
+        let email = self.ping_cached(
+            "email",
+            &self.state.email_cache,
+            self.config.email_cache_ttl,
+            || async {
+                self.email
+                    .ping()
+                    .await
+                    .inspect_err(|err| error!("Failed to ping smtp server: {err}"))
+                    .is_ok()
+            },
+        );
+
+        let (database, cache, email) = tokio::join!(database, cache, email);
+
+        HealthStatus {
+            database,
+            cache,
+            email,
+        }
+    }
+}
+
+impl<Time, Db, Cache, Email> HealthFeatureServiceImpl<Time, Db, Cache, Email>
+where
+    Time: TimeService,
+{
+    #[trace_instrument(skip(self, f))]
+    async fn ping_cached<F>(
+        &self,
+        _item: &'static str,
+        cache: &RwLock<Option<CachedStatusItem>>,
+        ttl: Duration,
+        f: impl FnOnce() -> F,
+    ) -> bool
+    where
+        F: Future<Output = bool>,
+    {
         let now = self.time.now();
 
-        let status_if_not_expired = |cached: Option<CachedStatus>| {
-            let CachedStatus { status, timestamp } = cached?;
-            let ttl = timestamp + self.config.cache_ttl - now;
+        let status_if_not_expired = |cached: Option<CachedStatusItem>| {
+            let CachedStatusItem { status, timestamp } = cached?;
+            let ttl = timestamp + ttl - now;
             (ttl > TimeDelta::zero())
                 .then_some(status)
                 .inspect(|_| trace!(%ttl, "use cache"))
         };
 
-        if let Some(status) = status_if_not_expired(*self.state.cache.read().await) {
+        if let Some(status) = status_if_not_expired(*cache.read().await) {
             return status;
         }
 
         trace!("cache miss, acquire write lock");
-        let mut cache_guard = self.state.cache.write().await;
+        let mut cache_guard = cache.write().await;
         if let Some(status) = status_if_not_expired(*cache_guard) {
             return status;
         }
 
-        let database = async {
-            self.db
-                .ping()
-                .await
-                .inspect_err(|err| error!("Failed to ping database: {err}"))
-                .is_ok()
-        };
+        trace!("ping");
+        let status = f().await;
 
-        let cache = async {
-            self.cache
-                .ping()
-                .await
-                .inspect_err(|err| error!("Failed to ping cache: {err}"))
-                .is_ok()
-        };
+        *cache_guard = Some(CachedStatusItem {
+            status,
+            timestamp: now,
+        });
 
-        let email = async {
-            self.email
-                .ping()
-                .await
-                .inspect_err(|err| error!("Failed to ping smtp server: {err}"))
-                .is_ok()
-        };
-
-        let (database, cache, email) = tokio::join!(database, cache, email);
-
-        let status = HealthStatus {
-            database,
-            cache,
-            email,
-        };
-
-        cache_guard
-            .insert(CachedStatus {
-                status,
-                timestamp: now,
-            })
-            .status
+        status
     }
 }
