@@ -21,7 +21,7 @@
 
     eachDefaultSystem = lib.genAttrs [
       "x86_64-linux"
-      "aarch64-linux"
+      "aarch64-linux" # untested
     ];
 
     importNixpkgs = system: import nixpkgs {inherit system;};
@@ -49,6 +49,12 @@
     });
 
     formatter = eachDefaultSystem (system: (importNixpkgs system).alejandra);
+
+    checks = let
+      checks = builtins.mapAttrs (_: packages: builtins.removeAttrs packages ["tests" "devShell" "devenv-up"]) self.packages;
+    in {
+      inherit (checks) x86_64-linux;
+    };
   };
 
   nixConfig = {
