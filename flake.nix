@@ -48,11 +48,7 @@
 
     formatter = eachDefaultSystem (system: (importNixpkgs system).alejandra);
 
-    checks = let
-      checks = builtins.mapAttrs (_: packages: builtins.removeAttrs packages ["tests" "devShell" "devenv-up"]) self.packages;
-    in {
-      inherit (checks) x86_64-linux;
-    };
+    checks = builtins.mapAttrs (_: packages: builtins.removeAttrs packages ["tests" "devShell" "devenv-up"]) self.packages;
   };
 
   nixConfig = {
