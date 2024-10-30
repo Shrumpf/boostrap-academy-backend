@@ -4,6 +4,7 @@
   lib,
   pkgs,
   testing,
+  generate,
   ...
 }: {
   languages.rust = {
@@ -11,15 +12,18 @@
     toolchain = fenix.packages.${pkgs.system}.stable;
   };
 
-  packages = with pkgs; [
-    alejandra
-    just
-    cargo-llvm-cov
-    lcov
-    smtp4dev
-    oath-toolkit
-    (python3.withPackages (p: with p; [httpx pyotp]))
-  ];
+  packages =
+    [generate]
+    ++ (with pkgs; [
+      crate2nix
+      alejandra
+      just
+      cargo-llvm-cov
+      lcov
+      smtp4dev
+      oath-toolkit
+      (python3.withPackages (p: with p; [httpx pyotp]))
+    ]);
 
   services.postgres = {
     enable = true;
