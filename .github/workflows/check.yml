@@ -32,3 +32,13 @@ jobs:
         with:
           cache-on-failure: "true"
       - run: cargo clippy --all-targets -- -D warnings
+
+  cargo-nix:
+    name: cargo-nix
+    runs-on: ubuntu-latest
+    if: ${{ !(github.event_name == 'push' && github.actor == 'github-merge-queue[bot]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix run .#generate
+      - run: git diff --exit-code

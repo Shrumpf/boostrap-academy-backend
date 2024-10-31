@@ -1,5 +1,4 @@
 {
-  crate2nix,
   fenix,
   callPackage,
   installShellFiles,
@@ -40,10 +39,6 @@
     (builtins.filter (lib.hasPrefix "academy"))
     (map (x: ../${x}))
   ];
-  src = lib.fileset.toSource {
-    root = ../.;
-    fileset = lib.fileset.unions ([../Cargo.toml ../Cargo.lock] ++ crateDirs);
-  };
 
   workspaceMembers = lib.pipe crateDirs [
     (map lib.filesystem.listFilesRecursive)
@@ -95,12 +90,7 @@
     };
   };
 
-  generated = crate2nix.tools.${system}.generatedCargoNix {
-    name = "academy";
-    inherit src;
-  };
-
-  cargoNix = callPackage generated {
+  cargoNix = callPackage ../Cargo.nix {
     pkgs = pkgs.extend (final: prev: {
       inherit (toolchain) cargo;
       # workaround for https://github.com/NixOS/nixpkgs/blob/d80a3129b239f8ffb9015473c59b09ac585b378b/pkgs/build-support/rust/build-rust-crate/default.nix#L19-L23
@@ -112,4 +102,9 @@ in
   builtins.mapAttrs (_: setVersion) {
     default = cargoNix.workspaceMembers.academy.build;
     testing = cargoNix.workspaceMembers.academy_testing.build;
+  }
+  // {
+    generate = pkgs.writeShellScriptBin "generate" ''
+      ${lib.getExe pkgs.crate2nix} generate
+    '';
   }

@@ -15,5 +15,10 @@
       "groupName": "rust minor/patch",
       "automerge": true
     }
-  ]
+  ],
+
+  "postUpgradeTasks": {
+    "commands": ["nix run .#generate"],
+    "executionMode": "branch"
+  }
 }
