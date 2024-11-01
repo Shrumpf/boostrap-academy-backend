@@ -12488,9 +12488,9 @@ rec {
       };
       "thiserror" = rec {
         crateName = "thiserror";
-        version = "1.0.65";
+        version = "1.0.66";
         edition = "2021";
-        sha256 = "1mdkawq9l9p02zvq7y4py739rjk9wk2ha27mbsb3i6sdb7csn4ax";
+        sha256 = "1pny3n17lcpy1lwy2j0sj4ib3hifp4yygqdfn6xiv0davdciy5sx";
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
         ];
@@ -12504,9 +12504,9 @@ rec {
       };
       "thiserror-impl" = rec {
         crateName = "thiserror-impl";
-        version = "1.0.65";
+        version = "1.0.66";
         edition = "2021";
-        sha256 = "00l6gyrx6qlm1d7if3dcfl2sl0mg8k21caknkpk7glnb481pfwdf";
+        sha256 = "1db54zcwgn9p2cc6xcr4ns10s81irl0dniffac39a1ykggqy12xh";
         procMacro = true;
         libName = "thiserror_impl";
         authors = [
