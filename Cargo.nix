@@ -3381,9 +3381,9 @@ rec {
       };
       "anyhow" = rec {
         crateName = "anyhow";
-        version = "1.0.91";
+        version = "1.0.92";
         edition = "2018";
-        sha256 = "1j2hg3d0lk2pihfsknxrncmijhz07fspkzd5c0vxhzyp7s7i0hn0";
+        sha256 = "04xgvbdlgcfd80ahvgsk1dq9q4969ilj9n4xp62052nlsxk73wvl";
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
         ];
