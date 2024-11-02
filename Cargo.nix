@@ -12279,9 +12279,9 @@ rec {
       };
       "syn" = rec {
         crateName = "syn";
-        version = "2.0.86";
+        version = "2.0.87";
         edition = "2021";
-        sha256 = "0k42k01nj5jbpxa2h7spcb6dyd77jws0xrm6h7xkw0rq3lq7b4p8";
+        sha256 = "0bd3mfcswvn4jkrp7ich5kk58kmpph8412yxd36nsfnh8vilrai5";
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
         ];
