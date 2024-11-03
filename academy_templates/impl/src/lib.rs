@@ -1,7 +1,8 @@
 use std::{fmt::Debug, sync::Arc};
 
+use academy_assets::templates;
 use academy_di::Build;
-use academy_templates_contracts::{Template, TemplateService, BASE_TEMPLATE, TEMPLATES};
+use academy_templates_contracts::{Template, TemplateService, TEMPLATES};
 use academy_utils::trace_instrument;
 use anyhow::Context;
 use tera::Tera;
@@ -19,7 +20,7 @@ impl Default for State {
     fn default() -> Self {
         let mut tera = Tera::default();
 
-        tera.add_raw_template("base", BASE_TEMPLATE).unwrap();
+        tera.add_raw_template("base", templates::BASE_HTML).unwrap();
 
         for &(name, template) in TEMPLATES {
             tera.add_raw_template(name, template).unwrap();

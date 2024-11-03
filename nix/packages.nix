@@ -82,7 +82,7 @@
   crateOverrides = mergeOverrideSets defaultOverrides {
     academy = binOverride "academy";
     academy_testing = binOverride "academy-testing";
-    academy_config = attrs: {
+    academy_assets = attrs: {
       patchPhase = ''
         sed -i 's|env!("CARGO_MANIFEST_DIR"), "/../config.toml"|"${../config.toml}"|' src/lib.rs
         ${attrs.patchPhase or ""}
@@ -105,6 +105,19 @@ in
   }
   // {
     generate = pkgs.writeShellScriptBin "generate" ''
+      cd "$(${lib.getExe pkgs.git} rev-parse --show-toplevel)"
+
       ${lib.getExe pkgs.crate2nix} generate
+    '';
+
+    update-swagger-ui = pkgs.writeShellScriptBin "update-swagger-ui" ''
+      export PATH=${lib.escapeShellArg (lib.makeBinPath (with pkgs; [git coreutils curl jq gnutar gzip]))}
+
+      cd "$(git rev-parse --show-toplevel)/academy_assets/assets/swagger-ui"
+
+      url=$(curl https://api.github.com/repos/swagger-api/swagger-ui/releases/latest | jq -r .tarball_url)
+      curl -L "$url" | tar xvz --wildcards --no-wildcards-match-slash '*/dist'
+      mv swagger-api-swagger-ui-*/dist/{swagger-ui-bundle.js,swagger-ui.css} .
+      rm -rf swagger-api-swagger-ui-*
     '';
   }

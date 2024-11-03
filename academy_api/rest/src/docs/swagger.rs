@@ -1,51 +1,21 @@
+use std::sync::LazyLock;
+
+use academy_assets::swagger_ui::{SWAGGER_UI_BUNDLE_JS, SWAGGER_UI_CSS};
 use axum::{
     response::{Html, IntoResponse, Response},
     routing, Router,
 };
 
-const SWAGGER_UI_HTML: &str = concat!(
-    r#"
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>Swagger UI - Bootstrap Academy</title>
-    <link rel="icon" href="https://static.bootstrap.academy/logo.svg">
-    <style type="text/css">
-"#,
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/assets/swagger-ui/swagger-ui.css"
-    )),
-    r#"
-</style>
-  </head>
-
-  <body>
-    <div id="swagger-ui"></div>
-    <script>
-"#,
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/assets/swagger-ui/swagger-ui-bundle.js"
-    )),
-    r#"
-      window.ui = SwaggerUIBundle({
-        url: "/openapi.json",
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        displayRequestDuration: true,
-      });
-    </script>
-  </body>
-</html>
-"#
-);
+static SWAGGER_UI_HTML: LazyLock<String> = LazyLock::new(|| {
+    academy_assets::swagger_ui::SWAGGER_UI_HTML
+        .replace("{{SWAGGER_UI_CSS}}", SWAGGER_UI_CSS)
+        .replace("{{SWAGGER_UI_JS}}", SWAGGER_UI_BUNDLE_JS)
+});
 
 pub fn router() -> Router<()> {
     Router::new().route("/docs", routing::get(serve_swagger_ui))
 }
 
 async fn serve_swagger_ui() -> Response {
-    Html(SWAGGER_UI_HTML).into_response()
+    Html(SWAGGER_UI_HTML.as_str()).into_response()
 }

@@ -5,6 +5,7 @@
   pkgs,
   testing,
   generate,
+  update-swagger-ui,
   ...
 }: {
   languages.rust = {
@@ -13,7 +14,7 @@
   };
 
   packages =
-    [generate]
+    [generate update-swagger-ui]
     ++ (with pkgs; [
       crate2nix
       alejandra

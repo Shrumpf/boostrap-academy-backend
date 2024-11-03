@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use academy_assets::templates;
 use serde::Serialize;
 
 #[cfg_attr(feature = "mock", mockall::automock)]
@@ -28,14 +29,12 @@ pub trait Template: Serialize + Debug {
     const TEMPLATE: &'static str;
 }
 
-pub const BASE_TEMPLATE: &str = include_str!("../templates/base.html");
-
 macro_rules! templates {
-    ($( $ident:ident ( $path:literal ), )* ) => {
+    ($( $ident:ident ( $template:expr ), )* ) => {
         $(
             impl Template for $ident {
                 const NAME: &'static str = stringify!($ident);
-                const TEMPLATE: &'static str = include_str!(concat!("../templates/", $path));
+                const TEMPLATE: &'static str = $template;
             }
         )*
 
@@ -46,9 +45,9 @@ macro_rules! templates {
 }
 
 templates! {
-    ResetPasswordTemplate("reset_password.html"),
-    VerifyEmailTemplate("verify_email.html"),
-    SubscribeNewsletterTemplate("subscribe_newsletter.html"),
+    ResetPasswordTemplate(templates::RESET_PASSWORD_HTML),
+    VerifyEmailTemplate(templates::VERIFY_EMAIL_HTML),
+    SubscribeNewsletterTemplate(templates::SUBSCRIBE_NEWSLETTER_HTML),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

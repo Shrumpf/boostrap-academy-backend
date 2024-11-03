@@ -10,6 +10,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+academy_assets.workspace = true
 academy_di.workspace = true
 academy_templates_contracts.workspace = true
 academy_utils.workspace = true

@@ -57,6 +57,16 @@ rec {
       # File a bug if you depend on any for non-debug work!
       debug = internal.debugCrate { inherit packageId; };
     };
+    "academy_assets" = rec {
+      packageId = "academy_assets";
+      build = internal.buildRustCrateWithFeatures {
+        packageId = "academy_assets";
+      };
+
+      # Debug support which might change between releases.
+      # File a bug if you depend on any for non-debug work!
+      debug = internal.debugCrate { inherit packageId; };
+    };
     "academy_auth_contracts" = rec {
       packageId = "academy_auth_contracts";
       build = internal.buildRustCrateWithFeatures {
@@ -691,6 +701,10 @@ rec {
         src = lib.cleanSourceWith { filter = sourceFilter;  src = ./academy_api/rest; };
         dependencies = [
           {
+            name = "academy_assets";
+            packageId = "academy_assets";
+          }
+          {
             name = "academy_auth_contracts";
             packageId = "academy_auth_contracts";
           }
@@ -829,6 +843,13 @@ rec {
             features = [ "std" ];
           }
         ];
+
+      };
+      "academy_assets" = rec {
+        crateName = "academy_assets";
+        version = "0.0.0";
+        edition = "2021";
+        src = lib.cleanSourceWith { filter = sourceFilter;  src = ./academy_assets; };
 
       };
       "academy_auth_contracts" = rec {
@@ -1070,6 +1091,10 @@ rec {
         edition = "2021";
         src = lib.cleanSourceWith { filter = sourceFilter;  src = ./academy_config; };
         dependencies = [
+          {
+            name = "academy_assets";
+            packageId = "academy_assets";
+          }
           {
             name = "academy_models";
             packageId = "academy_models";
@@ -2773,6 +2798,10 @@ rec {
         src = lib.cleanSourceWith { filter = sourceFilter;  src = ./academy_templates/contracts; };
         dependencies = [
           {
+            name = "academy_assets";
+            packageId = "academy_assets";
+          }
+          {
             name = "anyhow";
             packageId = "anyhow";
             usesDefaultFeatures = false;
@@ -2802,6 +2831,10 @@ rec {
         edition = "2021";
         src = lib.cleanSourceWith { filter = sourceFilter;  src = ./academy_templates/impl; };
         dependencies = [
+          {
+            name = "academy_assets";
+            packageId = "academy_assets";
+          }
           {
             name = "academy_di";
             packageId = "academy_di";
