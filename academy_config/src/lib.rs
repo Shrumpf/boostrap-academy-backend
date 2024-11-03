@@ -4,6 +4,7 @@ use std::{
     path::Path,
 };
 
+use academy_assets::CONFIG_TOML;
 use academy_models::{email_address::EmailAddressWithName, mfa::TotpSecretLength, url::Url};
 use anyhow::Context;
 use config::{File, FileFormat};
@@ -12,7 +13,6 @@ use serde::Deserialize;
 
 pub mod duration;
 
-const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../config.toml"));
 const DEV_CONFIG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../config.dev.toml");
 
 pub const ENVIRONMENT_VARIABLE: &str = "ACADEMY_CONFIG";
@@ -37,7 +37,7 @@ fn parse_env_var() -> anyhow::Result<Vec<String>> {
 
 fn load_paths(paths: &[impl AsRef<Path>], overrides: &[&str]) -> anyhow::Result<Config> {
     let mut builder =
-        config::Config::builder().add_source(File::from_str(DEFAULT_CONFIG, FileFormat::Toml));
+        config::Config::builder().add_source(File::from_str(CONFIG_TOML, FileFormat::Toml));
 
     for path in paths {
         let path = path.as_ref();

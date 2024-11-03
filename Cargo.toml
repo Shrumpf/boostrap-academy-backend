@@ -3,6 +3,7 @@ resolver = "2"
 members = [
   "academy",
   "academy_api/*",
+  "academy_assets",
   "academy_auth/*",
   "academy_cache/*",
   "academy_config",
@@ -43,6 +44,7 @@ todo = "warn"
 [workspace.dependencies]
 academy.path = "academy"
 academy_api_rest.path = "academy_api/rest"
+academy_assets.path = "academy_assets"
 academy_auth_contracts.path = "academy_auth/contracts"
 academy_auth_impl.path = "academy_auth/impl"
 academy_cache_contracts.path = "academy_cache/contracts"

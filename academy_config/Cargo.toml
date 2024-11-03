@@ -10,6 +10,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+academy_assets.workspace = true
 academy_models.workspace = true
 anyhow.workspace = true
 config = { version = "0.14.1", default-features = false, features = ["toml"] }

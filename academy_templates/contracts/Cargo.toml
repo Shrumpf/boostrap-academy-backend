@@ -13,6 +13,7 @@ workspace = true
 mock = ["dep:mockall"]
 
 [dependencies]
+academy_assets.workspace = true
 anyhow.workspace = true
 mockall = { workspace = true, optional = true }
 serde.workspace = true
