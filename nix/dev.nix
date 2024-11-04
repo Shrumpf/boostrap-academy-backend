@@ -75,7 +75,7 @@
 
     SMTP4DEV_URL = "http://127.0.0.1:5000";
 
-    PYTHONPATH = "${config.env.DEVENV_ROOT}/nix/tests";
+    PYTHONPATH = "${config.devenv.root}/nix/tests";
 
     ACADEMY_CONFIG = "${config.devenv.root}/config.dev.toml";
   };

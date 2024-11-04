@@ -25,4 +25,5 @@ jobs:
           useDaemon: false
       - run: nix build -L --keep-going
       - run: nix build -L --keep-going .#testing
+      - run: nix build -L --keep-going .#devShell
       - run: nix build -L --keep-going .#tests.composite

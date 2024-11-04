@@ -23,6 +23,19 @@
     ];
 
     importNixpkgs = system: import nixpkgs {inherit system;};
+
+    mkDevShell = {
+      system,
+      root ? null,
+    }:
+      devenv.lib.mkShell {
+        inputs = inputs // {inherit (self.packages.${system}) testing generate update-swagger-ui;};
+        pkgs = importNixpkgs system;
+        modules = [
+          ./nix/dev.nix
+          {devenv.root = lib.mkIf (root != null) root;}
+        ];
+      };
   in {
     packages = eachDefaultSystem (system: let
       pkgs = importNixpkgs system;
@@ -30,8 +43,10 @@
       (pkgs.callPackages ./nix/packages.nix {inherit fenix self;})
       // {
         tests = pkgs.callPackages ./nix/tests {inherit self;};
-        devShell = self.devShells.${system}.default;
-        devenv-up = self.devShells.${system}.default.config.procfileScript;
+        devShell = mkDevShell {
+          inherit system;
+          root = "/fake-root";
+        };
       });
 
     nixosModules = {
@@ -39,16 +54,12 @@
     };
 
     devShells = eachDefaultSystem (system: {
-      default = devenv.lib.mkShell {
-        inputs = inputs // {inherit (self.packages.${system}) testing generate update-swagger-ui;};
-        pkgs = importNixpkgs system;
-        modules = [./nix/dev.nix];
-      };
+      default = mkDevShell {inherit system;};
     });
 
     formatter = eachDefaultSystem (system: (importNixpkgs system).alejandra);
 
-    checks = builtins.mapAttrs (_: packages: builtins.removeAttrs packages ["tests" "devShell" "devenv-up"]) self.packages;
+    checks = builtins.mapAttrs (system: packages: builtins.removeAttrs packages ["tests"]) self.packages;
   };
 
   nixConfig = {
