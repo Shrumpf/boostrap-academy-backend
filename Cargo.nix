@@ -7347,49 +7347,18 @@ rec {
         ];
 
       };
-      "idna 0.5.0" = rec {
+      "idna" = rec {
         crateName = "idna";
-        version = "0.5.0";
+        version = "1.0.3";
         edition = "2018";
-        sha256 = "1xhjrcjqq0l5bpzvdgylvpkgk94panxgsirzhjnnqfdgc4a9nkb3";
+        sha256 = "0zlajvm2k3wy0ay8plr07w22hxkkmrxkffa6ah57ac6nci984vv8";
         authors = [
           "The rust-url developers"
         ];
         dependencies = [
           {
-            name = "unicode-bidi";
-            packageId = "unicode-bidi";
-            usesDefaultFeatures = false;
-            features = [ "hardcoded-data" ];
-          }
-          {
-            name = "unicode-normalization";
-            packageId = "unicode-normalization";
-            usesDefaultFeatures = false;
-          }
-        ];
-        features = {
-          "default" = [ "std" ];
-          "std" = [ "alloc" "unicode-bidi/std" "unicode-normalization/std" ];
-        };
-        resolvedDefaultFeatures = [ "alloc" "default" "std" ];
-      };
-      "idna 1.0.2" = rec {
-        crateName = "idna";
-        version = "1.0.2";
-        edition = "2018";
-        sha256 = "1p9c4igd4cz14jqvk1bc7d0dp4z20yh22ph17hq9i7jikcdj2sdx";
-        authors = [
-          "The rust-url developers"
-        ];
-        dependencies = [
-          {
-            name = "icu_normalizer";
-            packageId = "icu_normalizer";
-          }
-          {
-            name = "icu_properties";
-            packageId = "icu_properties";
+            name = "idna_adapter";
+            packageId = "idna_adapter";
           }
           {
             name = "smallvec";
@@ -7402,11 +7371,34 @@ rec {
           }
         ];
         features = {
-          "compiled_data" = [ "icu_normalizer/compiled_data" "icu_properties/compiled_data" ];
+          "compiled_data" = [ "idna_adapter/compiled_data" ];
           "default" = [ "std" "compiled_data" ];
           "std" = [ "alloc" ];
         };
         resolvedDefaultFeatures = [ "alloc" "compiled_data" "default" "std" ];
+      };
+      "idna_adapter" = rec {
+        crateName = "idna_adapter";
+        version = "1.2.0";
+        edition = "2021";
+        sha256 = "0wggnkiivaj5lw0g0384ql2d7zk4ppkn3b1ry4n0ncjpr7qivjns";
+        authors = [
+          "The rust-url developers"
+        ];
+        dependencies = [
+          {
+            name = "icu_normalizer";
+            packageId = "icu_normalizer";
+          }
+          {
+            name = "icu_properties";
+            packageId = "icu_properties";
+          }
+        ];
+        features = {
+          "compiled_data" = [ "icu_normalizer/compiled_data" "icu_properties/compiled_data" ];
+        };
+        resolvedDefaultFeatures = [ "compiled_data" ];
       };
       "ignore" = rec {
         crateName = "ignore";
@@ -7834,7 +7826,7 @@ rec {
           }
           {
             name = "idna";
-            packageId = "idna 1.0.2";
+            packageId = "idna";
           }
           {
             name = "mime";
@@ -14034,9 +14026,9 @@ rec {
       };
       "url" = rec {
         crateName = "url";
-        version = "2.5.2";
+        version = "2.5.3";
         edition = "2018";
-        sha256 = "0v2dx50mx7xzl9454cl5qmpjnhkbahmn59gd3apyipbgyyylsy12";
+        sha256 = "1nis27cv09039nds9n83di92a23q5rqvl40zvkzh0ifijqdpy5cd";
         authors = [
           "The rust-url developers"
         ];
@@ -14044,14 +14036,20 @@ rec {
           {
             name = "form_urlencoded";
             packageId = "form_urlencoded";
+            usesDefaultFeatures = false;
+            features = [ "alloc" ];
           }
           {
             name = "idna";
-            packageId = "idna 0.5.0";
+            packageId = "idna";
+            usesDefaultFeatures = false;
+            features = [ "alloc" "compiled_data" ];
           }
           {
             name = "percent-encoding";
             packageId = "percent-encoding";
+            usesDefaultFeatures = false;
+            features = [ "alloc" ];
           }
           {
             name = "serde";
@@ -14068,9 +14066,11 @@ rec {
           }
         ];
         features = {
+          "default" = [ "std" ];
           "serde" = [ "dep:serde" ];
+          "std" = [ "idna/std" "percent-encoding/std" "form_urlencoded/std" ];
         };
-        resolvedDefaultFeatures = [ "default" "serde" ];
+        resolvedDefaultFeatures = [ "default" "serde" "std" ];
       };
       "urlencoding" = rec {
         crateName = "urlencoding";
