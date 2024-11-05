@@ -8,6 +8,7 @@
   update-swagger-ui,
   ...
 }: {
+  languages.c.enable = true;
   languages.rust = {
     enable = builtins.getEnv "DEVENV_RUST" != "0";
     toolchain = fenix.packages.${pkgs.system}.stable;
@@ -19,12 +20,15 @@
       crate2nix
       alejandra
       just
-      cargo-llvm-cov
       lcov
       smtp4dev
       oath-toolkit
       (python3.withPackages (p: with p; [httpx pyotp]))
-    ]);
+    ])
+    ++ (lib.optional (!pkgs.cargo-llvm-cov.meta.broken) pkgs.cargo-llvm-cov)
+    ++ (lib.optionals (pkgs.stdenv.hostPlatform.isDarwin) (with pkgs.darwin.apple_sdk.frameworks; [
+      SystemConfiguration
+    ]));
 
   services.postgres = {
     enable = true;
