@@ -43,6 +43,7 @@
       (pkgs.callPackages ./nix/packages.nix {inherit fenix self;})
       // {
         tests = pkgs.callPackages ./nix/tests {inherit self;};
+        devenv-up = self.devShells.${system}.default.config.procfileScript;
         devShell = mkDevShell {
           inherit system;
           root = "/fake-root";
@@ -59,7 +60,7 @@
 
     formatter = eachDefaultSystem (system: (importNixpkgs system).alejandra);
 
-    checks = builtins.mapAttrs (system: packages: builtins.removeAttrs packages ["tests"]) self.packages;
+    checks = builtins.mapAttrs (system: packages: builtins.removeAttrs packages ["tests" "devenv-up"]) self.packages;
   };
 
   nixConfig = {
