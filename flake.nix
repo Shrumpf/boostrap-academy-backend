@@ -19,7 +19,11 @@
 
     eachDefaultSystem = lib.genAttrs [
       "x86_64-linux"
-      "aarch64-linux" # untested
+
+      # untested
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
     ];
 
     importNixpkgs = system: import nixpkgs {inherit system;};

@@ -68,7 +68,12 @@
     pname = bin;
     name = "${bin}-${attrs.version}";
     CARGO_BIN_NAME = bin;
-    nativeBuildInputs = attrs.postInstall or [] ++ [installShellFiles];
+    nativeBuildInputs = attrs.nativeBuildInputs or [] ++ [installShellFiles];
+    buildInputs =
+      (attrs.buildInputs or [])
+      ++ (lib.optionals (stdenv.hostPlatform.isDarwin) (with pkgs.darwin.apple_sdk.frameworks; [
+        SystemConfiguration
+      ]));
     postInstall = ''
       ${attrs.postInstall or ""}
       installShellCompletion --cmd ${bin} \

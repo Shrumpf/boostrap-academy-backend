@@ -2,12 +2,10 @@
   callPackage,
   lib,
   linkFarm,
-  python3,
   self,
   testers,
   writeShellScriptBin,
   writeTextDir,
-  system,
 }: let
   tests = lib.pipe ./. [
     builtins.readDir
@@ -32,7 +30,13 @@
     then mkPythonTest name
     else mkNixosTest name;
 
-  defaultModule = {config, ...}: {
+  defaultModule = {
+    config,
+    pkgs,
+    ...
+  }: let
+    inherit (pkgs) system;
+  in {
     imports = [self.nixosModules.default];
 
     services.academy.backend = {
@@ -143,9 +147,9 @@
     testers.runNixOSTest {
       name = "academy-${removeSuffix name}";
 
-      nodes.machine = {
+      nodes.machine = {pkgs, ...}: {
         imports = [defaultModule];
-        environment.systemPackages = [(python3.withPackages (p: with p; [httpx pyotp]))];
+        environment.systemPackages = [(pkgs.python3.withPackages (p: with p; [httpx pyotp]))];
       };
 
       testScript = ''
