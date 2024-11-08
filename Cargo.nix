@@ -876,7 +876,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -1208,7 +1208,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -1255,7 +1255,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
           {
@@ -1375,7 +1375,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -1490,7 +1490,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -1604,7 +1604,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -1745,7 +1745,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -1906,7 +1906,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -2285,7 +2285,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -2443,7 +2443,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
           {
@@ -2499,7 +2499,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
         ];
@@ -2638,7 +2638,7 @@ rec {
           }
           {
             name = "thiserror";
-            packageId = "thiserror 2.0.0";
+            packageId = "thiserror 2.0.1";
             usesDefaultFeatures = false;
           }
           {
@@ -12527,18 +12527,18 @@ rec {
         ];
 
       };
-      "thiserror 2.0.0" = rec {
+      "thiserror 2.0.1" = rec {
         crateName = "thiserror";
-        version = "2.0.0";
+        version = "2.0.1";
         edition = "2021";
-        sha256 = "0s161v57pq3bm6g0gb68bxxfqnv6mzcrwh7kkxpvrwdzx63i4a8m";
+        sha256 = "037c0qgnn731dlqwg95ngyw49491phn76v63xpl2la4ash6y9h87";
         authors = [
           "David Tolnay <dtolnay@gmail.com>"
         ];
         dependencies = [
           {
             name = "thiserror-impl";
-            packageId = "thiserror-impl 2.0.0";
+            packageId = "thiserror-impl 2.0.1";
           }
         ];
         features = {
@@ -12571,11 +12571,11 @@ rec {
         ];
 
       };
-      "thiserror-impl 2.0.0" = rec {
+      "thiserror-impl 2.0.1" = rec {
         crateName = "thiserror-impl";
-        version = "2.0.0";
+        version = "2.0.1";
         edition = "2021";
-        sha256 = "0wl91gfabcy2rzga3zay151qv36kqdbbkjm790lacgzr6c7x1vr2";
+        sha256 = "1xamxq63gfp0z33is4jja8201n21xg2v35aw7af8vnpi8vjafjl7";
         procMacro = true;
         libName = "thiserror_impl";
         authors = [
