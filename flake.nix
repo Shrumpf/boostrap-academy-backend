@@ -48,10 +48,16 @@
       // {
         tests = pkgs.callPackages ./nix/tests {inherit self;};
         devenv-up = self.devShells.${system}.default.config.procfileScript;
-        devShell = mkDevShell {
-          inherit system;
-          root = "/fake-root";
-        };
+
+        checks = pkgs.linkFarm "academy-checks" (builtins.removeAttrs self.packages.${system} ["checks" "devenv-up"]
+          // rec {
+            tests = self.packages.${system}.tests.composite;
+            devShell = mkDevShell {
+              inherit system;
+              root = "/fake-root";
+            };
+            devenv-up = devShell.config.procfileScript;
+          });
       });
 
     nixosModules = {
@@ -63,8 +69,6 @@
     });
 
     formatter = eachDefaultSystem (system: (importNixpkgs system).alejandra);
-
-    checks = builtins.mapAttrs (system: packages: builtins.removeAttrs packages ["tests" "devenv-up"]) self.packages;
   };
 
   nixConfig = {
