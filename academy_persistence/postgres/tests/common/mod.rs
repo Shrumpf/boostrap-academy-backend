@@ -1,6 +1,6 @@
 use academy_persistence_contracts::{Database, Transaction};
 use academy_persistence_postgres::{
-    mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
+    jobs::PostgresJobsRepository, mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
     session::PostgresSessionRepository, user::PostgresUserRepository, PostgresDatabase,
     PostgresDatabaseConfig,
 };
@@ -20,6 +20,7 @@ pub async fn setup() -> Db {
         PostgresSessionRepository,
         PostgresMfaRepository,
         PostgresOAuth2Repository,
+        PostgresJobsRepository,
     )
     .await
     .unwrap();

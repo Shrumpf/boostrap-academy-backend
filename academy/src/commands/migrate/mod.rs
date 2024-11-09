@@ -1,7 +1,7 @@
 use academy_config::Config;
 use academy_persistence_contracts::{Database, Transaction};
 use academy_persistence_postgres::{
-    mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
+    jobs::PostgresJobsRepository, mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
     session::PostgresSessionRepository, user::PostgresUserRepository, MigrationStatus,
     PostgresDatabase,
 };
@@ -112,6 +112,7 @@ async fn demo(db: PostgresDatabase) -> anyhow::Result<()> {
         PostgresSessionRepository,
         PostgresMfaRepository,
         PostgresOAuth2Repository,
+        PostgresJobsRepository,
     )
     .await
     .context("Failed to restore demo dataset")?;

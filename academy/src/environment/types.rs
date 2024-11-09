@@ -9,6 +9,7 @@ use academy_core_config_impl::ConfigFeatureServiceImpl;
 use academy_core_contact_impl::ContactFeatureServiceImpl;
 use academy_core_health_impl::HealthFeatureServiceImpl;
 use academy_core_internal_impl::InternalServiceImpl;
+use academy_core_jobs_impl::{jobs::JobsServiceImpl, JobsFeatureServiceImpl};
 use academy_core_mfa_impl::{
     authenticate::MfaAuthenticateServiceImpl, disable::MfaDisableServiceImpl,
     recovery::MfaRecoveryServiceImpl, totp_device::MfaTotpDeviceServiceImpl, MfaFeatureServiceImpl,
@@ -30,8 +31,9 @@ use academy_extern_impl::{
     internal::InternalApiServiceImpl, oauth2::OAuth2ApiServiceImpl,
     recaptcha::RecaptchaApiServiceImpl, vat::VatApiServiceImpl,
 };
+use academy_persistence_contracts::jobs::JobsRepository;
 use academy_persistence_postgres::{
-    mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
+    jobs::PostgresJobsRepository, mfa::PostgresMfaRepository, oauth2::PostgresOAuth2Repository,
     session::PostgresSessionRepository, user::PostgresUserRepository, PostgresDatabase,
 };
 use academy_shared_impl::{
@@ -51,6 +53,7 @@ pub type RestServer = academy_api_rest::RestServer<
     MfaFeature,
     OAuth2Feature,
     Internal,
+    JobsFeature,
 >;
 
 // Persistence
@@ -87,6 +90,7 @@ pub type SessionRepo = PostgresSessionRepository;
 pub type UserRepo = PostgresUserRepository;
 pub type MfaRepo = PostgresMfaRepository;
 pub type OAuth2Repo = PostgresOAuth2Repository;
+pub type JobsRepo = PostgresJobsRepository;
 
 // Auth
 pub type Auth =
@@ -163,3 +167,6 @@ pub type OAuth2Login = OAuth2LoginServiceImpl<OAuth2Api>;
 pub type OAuth2Registration = OAuth2RegistrationServiceImpl<Secret, Cache>;
 
 pub type Internal = InternalServiceImpl<Database, AuthInternal, UserRepo>;
+
+pub type JobsService = JobsServiceImpl<Id, JobsRepo>;
+pub type JobsFeature = JobsFeatureServiceImpl<Database, JobsRepo, JobsService>;

@@ -5,6 +5,7 @@ use academy_auth_impl::AuthServiceConfig;
 use academy_config::Config;
 use academy_core_contact_impl::ContactFeatureConfig;
 use academy_core_health_impl::HealthFeatureConfig;
+use academy_core_jobs_impl::JobsFeatureConfig;
 use academy_core_oauth2_impl::OAuth2FeatureConfig;
 use academy_core_session_impl::SessionFeatureConfig;
 use academy_core_user_impl::UserFeatureConfig;
@@ -52,6 +53,7 @@ provider! {
             HealthFeatureConfig,
             SessionFeatureConfig,
             UserFeatureConfig,
+            JobsFeatureConfig,
         }
     }
 }
@@ -93,6 +95,7 @@ provider! {
         health_feature_config: HealthFeatureConfig,
         session_feature_config: SessionFeatureConfig,
         user_feature_config: UserFeatureConfig,
+        jobs_feature_config: JobsFeatureConfig,
     }
 }
 
@@ -208,6 +211,8 @@ impl ConfigProvider {
             newsletter_subscription_verification_code_ttl: config.user.newsletter_code_ttl.into(),
         };
 
+        let jobs_feature_config = JobsFeatureConfig {};
+
         Ok(Self {
             _cache: Default::default(),
 
@@ -233,6 +238,7 @@ impl ConfigProvider {
             health_feature_config,
             session_feature_config,
             user_feature_config,
+            jobs_feature_config,
         })
     }
 }

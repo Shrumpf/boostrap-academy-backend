@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 pub mod auth;
 pub mod contact;
 pub mod email_address;
+pub mod job;
 mod macros;
 pub mod mfa;
 pub mod oauth2;

@@ -12,6 +12,7 @@ use bb8_postgres::{
 use ouroboros::self_referencing;
 use tracing::trace;
 
+pub mod jobs;
 pub mod mfa;
 pub mod oauth2;
 pub mod session;

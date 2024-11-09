@@ -2,11 +2,13 @@ use std::sync::LazyLock;
 
 use academy_models::{Sha256Hash, VerificationCode};
 use academy_persistence_contracts::{
-    mfa::MfaRepository, oauth2::OAuth2Repository, session::SessionRepository, user::UserRepository,
+    jobs::JobsRepository, mfa::MfaRepository, oauth2::OAuth2Repository, session::SessionRepository,
+    user::UserRepository,
 };
 use anyhow::Context;
 use uuid::{uuid, Uuid};
 
+pub mod jobs;
 pub mod mfa;
 pub mod oauth2;
 pub mod session;
@@ -38,6 +40,7 @@ pub async fn create<Txn: Send + Sync + 'static>(
     session: impl SessionRepository<Txn>,
     mfa: impl MfaRepository<Txn>,
     oauth2: impl OAuth2Repository<Txn>,
+    jobs: impl JobsRepository<Txn>,
 ) -> anyhow::Result<()> {
     macro_rules! create {
         ($($ident:ident),* $(,)?) => { $(

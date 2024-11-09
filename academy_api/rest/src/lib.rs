@@ -7,6 +7,7 @@ use academy_core_config_contracts::ConfigFeatureService;
 use academy_core_contact_contracts::ContactFeatureService;
 use academy_core_health_contracts::HealthFeatureService;
 use academy_core_internal_contracts::InternalService;
+use academy_core_jobs_contracts::JobsFeatureService;
 use academy_core_mfa_contracts::MfaFeatureService;
 use academy_core_oauth2_contracts::OAuth2FeatureService;
 use academy_core_session_contracts::SessionFeatureService;
@@ -39,7 +40,7 @@ mod models;
 mod routes;
 
 #[derive(Debug, Clone, Build)]
-pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal> {
+pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal, Jobs> {
     _config: RestServerConfig,
     health: Health,
     config: Config,
@@ -49,6 +50,7 @@ pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Inter
     mfa: Mfa,
     oauth2: OAuth2,
     internal: Internal,
+    jobs: Jobs,
 }
 
 #[derive(Debug, Clone)]
@@ -64,8 +66,8 @@ pub struct RestServerRealIpConfig {
     pub set_from: IpAddr,
 }
 
-impl<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>
-    RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal>
+impl<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal, Jobs>
+    RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Internal, Jobs>
 where
     Health: HealthFeatureService,
     Config: ConfigFeatureService,
@@ -75,6 +77,7 @@ where
     Mfa: MfaFeatureService,
     OAuth2: OAuth2FeatureService,
     Internal: InternalService,
+    Jobs: JobsFeatureService,
 {
     pub async fn serve(self) -> anyhow::Result<()> {
         let RestServerConfig {
@@ -101,6 +104,7 @@ where
                 routes::mfa::TAG,
                 routes::oauth2::TAG,
                 routes::internal::TAG,
+                routes::jobs::TAG,
             ]
             .into_iter()
             .map(|tag| Tag {
@@ -173,6 +177,7 @@ where
             .merge(routes::mfa::router(self.mfa.into()))
             .merge(routes::oauth2::router(self.oauth2.into()))
             .merge(routes::internal::router(self.internal.into()))
+            .merge(routes::jobs::router(self.jobs.into()))
     }
 }
 

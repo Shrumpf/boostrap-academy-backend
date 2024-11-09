@@ -7,6 +7,7 @@ use serde::Deserialize;
 use crate::const_schema;
 
 pub mod contact;
+pub mod job;
 pub mod oauth2;
 pub mod session;
 pub mod user;
