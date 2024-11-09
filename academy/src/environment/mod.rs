@@ -107,6 +107,7 @@ impl ConfigProvider {
                     set_from: real_ip_config.set_from,
                 })
             }),
+            allowed_origins: Arc::new(config.http.allowed_origins.clone()),
         };
 
         // Extern

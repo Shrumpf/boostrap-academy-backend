@@ -1,5 +1,6 @@
 [http]
 address = "127.0.0.1:8000"
+allowed_origins = [".*"] # RegexSet
 
 [database]
 url = "postgres://academy@127.0.0.1:5432/academy" # https://docs.rs/tokio-postgres/latest/tokio_postgres/config/struct.Config.html

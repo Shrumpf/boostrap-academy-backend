@@ -46,6 +46,7 @@
       extraConfigFiles = ["/run/academy-backend/secrets.toml"];
       settings = {
         http.address = "127.0.0.1:8000";
+        http.allowed_origins = [".*"];
         database.acquire_timeout = "2s";
         cache.acquire_timeout = "2s";
         email = {

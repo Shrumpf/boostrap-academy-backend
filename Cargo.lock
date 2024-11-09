@@ -72,6 +72,7 @@ dependencies = [
  "axum-extra",
  "base64 0.22.1",
  "futures",
+ "regex",
  "schemars",
  "serde",
  "serde_json",
@@ -150,6 +151,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "config",
+ "regex",
  "serde",
  "serde_json",
 ]

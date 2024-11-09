@@ -9,7 +9,8 @@ use academy_models::{email_address::EmailAddressWithName, mfa::TotpSecretLength,
 use anyhow::Context;
 use config::{File, FileFormat};
 use duration::Duration;
-use serde::Deserialize;
+use regex::bytes::RegexSet;
+use serde::{Deserialize, Deserializer};
 
 pub mod duration;
 
@@ -96,6 +97,16 @@ pub struct Config {
 pub struct HttpConfig {
     pub address: SocketAddr,
     pub real_ip: Option<HttpRealIpConfig>,
+    #[serde(deserialize_with = "deserialize_regex_set")]
+    pub allowed_origins: RegexSet,
+}
+
+fn deserialize_regex_set<'de, D>(deserializer: D) -> Result<RegexSet, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let regexes = Vec::<String>::deserialize(deserializer)?;
+    RegexSet::new(regexes).map_err(serde::de::Error::custom)
 }
 
 #[derive(Debug, Deserialize)]
