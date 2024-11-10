@@ -168,4 +168,4 @@
 
   composite = linkFarm "academy-tests-composite" (builtins.mapAttrs (_: toString) tests);
 in
-  tests // {inherit composite tests;}
+  tests // {inherit composite;}

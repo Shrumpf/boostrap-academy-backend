@@ -1,4 +1,4 @@
-name: build
+name: nix
 
 on:
   push:
@@ -22,8 +22,4 @@ jobs:
         with:
           name: academy-backend
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          useDaemon: false
-      - run: nix build -L --keep-going
-      - run: nix build -L --keep-going .#testing
-      - run: nix build -L --keep-going .#devShell
-      - run: nix build -L --keep-going .#tests.composite
+      - run: nix build -L --keep-going .#checks
