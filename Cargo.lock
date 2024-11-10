@@ -94,7 +94,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -181,7 +181,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -195,7 +195,7 @@ dependencies = [
  "academy_shared_contracts",
  "academy_utils",
  "anyhow",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
  "tokio",
  "tracing",
 ]
@@ -228,7 +228,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -256,7 +256,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -283,7 +283,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -313,7 +313,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -347,7 +347,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -441,7 +441,7 @@ dependencies = [
  "academy_models",
  "anyhow",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -479,7 +479,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
  "url",
  "uuid",
 ]
@@ -492,7 +492,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "mockall",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
 ]
 
 [[package]]
@@ -526,7 +526,7 @@ dependencies = [
  "chrono",
  "mockall",
  "serde",
- "thiserror 2.0.1",
+ "thiserror 2.0.2",
  "uuid",
 ]
 
@@ -3608,11 +3608,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.1"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07c1e40dd48a282ae8edc36c732cbc219144b87fb6a4c7316d611c6b1f06ec0c"
+checksum = "037e29b009aa709f293b974da5cd33b15783c049e07f8435778ce8c4871525d8"
 dependencies = [
- "thiserror-impl 2.0.1",
+ "thiserror-impl 2.0.2",
 ]
 
 [[package]]
@@ -3628,9 +3628,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.1"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "874aa7e446f1da8d9c3a5c95b1c5eb41d800045252121dc7f8e0ba370cee55f5"
+checksum = "ea4778c7e8ff768bdb32a58a2349903859fe719a320300d7d4ce8636f19a1e69"
 dependencies = [
  "proc-macro2",
  "quote",
