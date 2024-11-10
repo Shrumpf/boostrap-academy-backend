@@ -788,6 +788,11 @@ rec {
             features = [ "std" ];
           }
           {
+            name = "regex";
+            packageId = "regex";
+            usesDefaultFeatures = false;
+          }
+          {
             name = "schemars";
             packageId = "schemars";
             usesDefaultFeatures = false;
@@ -820,7 +825,7 @@ rec {
             name = "tower-http";
             packageId = "tower-http";
             usesDefaultFeatures = false;
-            features = [ "trace" ];
+            features = [ "cors" "trace" ];
           }
           {
             name = "tracing";
@@ -1110,6 +1115,11 @@ rec {
             packageId = "config";
             usesDefaultFeatures = false;
             features = [ "toml" ];
+          }
+          {
+            name = "regex";
+            packageId = "regex";
+            usesDefaultFeatures = false;
           }
           {
             name = "serde";
@@ -13509,7 +13519,7 @@ rec {
           "uuid" = [ "dep:uuid" ];
           "validate-request" = [ "mime" ];
         };
-        resolvedDefaultFeatures = [ "trace" "tracing" ];
+        resolvedDefaultFeatures = [ "cors" "trace" "tracing" ];
       };
       "tower-layer" = rec {
         crateName = "tower-layer";

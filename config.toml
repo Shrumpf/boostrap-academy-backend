@@ -1,6 +1,7 @@
 [http]
 # address = "0.0.0.0:80"
 # real_ip = { header = "X-Real-Ip", set_from = "127.0.0.1" }
+allowed_origins = [] # RegexSet
 
 [database]
 # url = "" # https://docs.rs/tokio-postgres/latest/tokio_postgres/config/struct.Config.html

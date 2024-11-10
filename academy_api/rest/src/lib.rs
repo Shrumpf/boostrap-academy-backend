@@ -20,11 +20,14 @@ use aide::{
 };
 use anyhow::Context;
 use axum::{
+    http::{request::Parts, HeaderValue},
     response::{IntoResponse, Response},
     Extension, Json,
 };
 use extractors::auth::ApiTokenType;
+use regex::bytes::RegexSet;
 use tokio::net::TcpListener;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tracing::{debug, info};
 
 mod docs;
@@ -52,6 +55,7 @@ pub struct RestServer<Health, Config, User, Session, Contact, Mfa, OAuth2, Inter
 pub struct RestServerConfig {
     pub addr: SocketAddr,
     pub real_ip_config: Option<Arc<RestServerRealIpConfig>>,
+    pub allowed_origins: Arc<RegexSet>,
 }
 
 #[derive(Debug, Clone)]
@@ -76,8 +80,10 @@ where
         let RestServerConfig {
             addr,
             ref real_ip_config,
+            ref allowed_origins,
         } = self._config;
         let real_ip_config = real_ip_config.as_ref().map(Arc::clone);
+        let allowed_origins = Arc::clone(allowed_origins);
 
         let mut api = OpenApi {
             info: Info {
@@ -120,6 +126,14 @@ where
             }),
             ..Default::default()
         };
+        let cors = CorsLayer::new()
+            .allow_methods(Any)
+            .allow_origin(AllowOrigin::predicate(
+                move |origin: &HeaderValue, _request_parts: &Parts| {
+                    allowed_origins.is_match(origin.as_bytes())
+                },
+            ))
+            .allow_headers(Any);
 
         let router = self
             .router()
@@ -131,6 +145,7 @@ where
             .apply(middlewares::client_ip::add(real_ip_config))
             .finish_api(&mut api)
             .layer(Extension(Arc::new(api)))
+            .layer(cors)
             .into_make_service_with_connect_info::<SocketAddr>();
 
         let listener = TcpListener::bind(addr)
